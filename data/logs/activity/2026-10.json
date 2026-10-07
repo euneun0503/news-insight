@@ -8,7 +8,16 @@
    "ev": "처음 설정",
    "detail": "마스터 계정 health 생성",
    "ua": "Chrome · Windows"
+  },
+  {
+   "t": "2026-10-07T03:58:44.538Z",
+   "id": "health",
+   "name": "마스터",
+   "role": "master",
+   "ev": "계정 생성",
+   "detail": "손은희(eh_son) · 권한: 뉴스통계 (N), 키워드 랭킹, 매체 비교, 기사 목록, 공지·게시판, 엑셀 다운로드",
+   "ua": "Edge · Windows"
   }
  ],
- "updated_at": "2026-10-07T03:22:03.090Z"
+ "updated_at": "2026-10-07T03:58:44.963Z"
 }
