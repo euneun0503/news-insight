@@ -74,9 +74,11 @@ function sortableTable(el, cols, rows, { sort, desc = true, limit, rowClass, pag
 }
 
 // 급상승 검색어 목록: 10개씩 번호 탭 + 검색
-function trendPager(box, list, row, { per = 10 } = {}) {
+function trendPager(box, list, row, { per = 10, pagerTop = false } = {}) {
   let page = 1, q = "";
-  box.innerHTML = `<div class="tr-tools"><input class="input" placeholder="검색어 찾기" style="width:150px"><span class="form-hint"></span></div><div class="tr-body"></div><div class="tr-pager"></div>`;
+  box.innerHTML = pagerTop
+    ? `<div class="tr-tools"><input class="input" placeholder="검색어 찾기" style="width:150px"><span class="form-hint"></span></div><div class="tr-pager top"></div><div class="tr-body"></div>`
+    : `<div class="tr-tools"><input class="input" placeholder="검색어 찾기" style="width:150px"><span class="form-hint"></span></div><div class="tr-body"></div><div class="tr-pager"></div>`;
   const body = $(".tr-body", box), pager = $(".tr-pager", box), hint = $(".tr-tools .form-hint", box);
   const draw = () => {
     const f = list.map((x, i) => [x, i]).filter(([x]) => !q || x.title.includes(q));
@@ -294,7 +296,7 @@ export async function dashboard(el, R, ctx) {
     const list = S.google.slice(0, 200);
     $("#trSub", topRow).textContent = S.days.length ? `구글 트렌드 한국 · ${S.fallback ? "가장 최근 수집 " : ""}${S.days.map(mmdd).join(", ").slice(0, 40)}${S.fallback ? " (선택 기간 밖)" : ""}` : "구글 트렌드 한국";
     const maxT = Math.max(...list.map((x) => x.traffic), 1);
-    trendPager($("#trList", topRow), list, (rows) => `<div class="kw-list">${rows.map(([x, i]) => `<a class="kw-row" href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.news[0]?.[0] || "")}"><span class="n">${i + 1}</span><span class="w">${esc(x.title)}</span><div class="bar orange"><span style="width:${(x.traffic / maxT) * 100}%"></span></div><span class="v num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</span></a>`).join("")}</div>`, { per: 20 });
+    trendPager($("#trList", topRow), list, (rows) => `<div class="kw-list">${rows.map(([x, i]) => `<a class="kw-row" href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.news[0]?.[0] || "")}"><span class="n">${i + 1}</span><span class="w">${esc(x.title)}</span><div class="bar orange"><span style="width:${(x.traffic / maxT) * 100}%"></span></div><span class="v num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</span></a>`).join("")}</div>`, { per: 20, pagerTop: true });
   });
   // 기사 목록 > 랭킹 기사와 같은 기준: 선택 매체 랭킹 기사 전체를 조회수 순으로 (요약본 상위 30건은 전 매체 기준이라 쓰지 않음)
   (async () => {
