@@ -478,7 +478,8 @@ export async function media(el, R, ctx) {
   const pubMedia = mediaListFor(A, "pub");
   const charts = h(`<div class="grid g-2">
     <div class="card"><div class="card-head"><div><h3>랭킹 조회수 vs 발행량 ${info("mediaCombo")}</h3><div class="sub">막대: 랭킹 조회수 · 선: 발행 기사수 (둘 다 수집되는 매체)</div></div></div>${canvas("lg")}</div>
-    <div class="card"><div class="card-head"><div><h3>요일별 랭킹 조회수 합 (하루 평균) ${info("weekday")}</h3><div class="sub" id="wdSub">매체별 · 하루 랭킹 조회수 합(상위 20건)을 요일마다 평균</div></div></div>${canvas("lg")}</div>
+    <div class="card"><div class="card-head"><div><h3><span id="wdTitle">요일별 랭킹 조회수 합</span> ${info("weekday")}</h3><div class="sub" id="wdSub"></div></div>
+      <div class="seg" id="wdSeg"><button data-g="wd" class="on">요일별</button><button data-g="wk">주별</button><button data-g="mo">월별</button></div></div>${canvas("lg")}</div>
   </div>`);
   el.append(charts);
   const both = rows.filter((r) => r.views != null).sort((a, b) => b.views - a.views);
@@ -487,18 +488,30 @@ export async function media(el, R, ctx) {
     { label: "랭킹 조회수", data: both.map((r) => r.views), backgroundColor: both.map((r) => mediaColor(r.oid)) },
     { label: "발행 기사수", data: both.map((r) => r.pub), borderColor: "#0f2341", backgroundColor: "#0f2341", spanGaps: true });
 
-  // 요일별: summary rankDay 사용
-  const wdDs = rankMedia.map((oid) => {
-    const sum = Array(7).fill(0), cnt = Array(7).fill(0);
-    for (const d of R.days) {
-      const v = A.rankDay[d]?.[oid];
-      if (v != null) { const w = new Date(d + "T00:00:00Z").getUTCDay(); sum[w] += v; cnt[w]++; }
-    }
-    return { label: mediaName(oid), data: WD_ORDER.map((w) => (cnt[w] ? sum[w] / cnt[w] : null)), backgroundColor: mediaColor(oid) };
-  });
-  const wdN = WD_ORDER.map((w) => R.days.filter((d) => new Date(d + "T00:00:00Z").getUTCDay() === w && A.rankDay[d] && Object.keys(A.rankDay[d]).length).length);
-  if (wdN.every((n) => n <= 1)) $("#wdSub", charts).textContent = "매체별 · 하루 랭킹 조회수 합(상위 20건) · 기간이 짧아 요일마다 하루씩이라 그날 합계와 같습니다 (기간을 늘리면 요일별 평균이 됩니다)";
-  barChart(c2, WD_ORDER.map((w, i) => [WD_NAME[w], `${wdN[i]}일`]), wdDs, { plugins: { legend: { display: false }, tooltip: { backgroundColor: "#0f2341", callbacks: { label: (c) => ` ${c.dataset.label}: ${fmt(c.raw)}` } } } });
+  // 요일별 / 주별(월~일) / 월별 랭킹 조회수 합 (매체별 상위 20건 조회수를 더한 값)
+  const wkStart = (d) => { const t = new Date(d + "T00:00:00Z"); const k = (t.getUTCDay() + 6) % 7; return addDaysISO(d, -k); };
+  const groupers = {
+    wd: { title: "요일별 랭킹 조회수 합", key: (d) => new Date(d + "T00:00:00Z").getUTCDay(), order: WD_ORDER, label: (k, n) => [WD_NAME[k], `${n}일`], sub: "같은 요일끼리 하루 랭킹 조회수 합(상위 20건)을 더한 값 · 요일 아래는 더한 날 수" },
+    wk: { title: "주별 랭킹 조회수 합", key: wkStart, label: (k, n) => [`${mmdd(k)}~${mmdd(addDaysISO(k, 6))}`, `${n}일`], sub: "월~일 한 주 단위 합계 · 아래는 그 주에서 수집된 날 수 (7일 미만이면 일부 기간)" },
+    mo: { title: "월별 랭킹 조회수 합", key: (d) => d.slice(0, 7), label: (k, n) => [`${+k.slice(5)}월`, `${n}일`], sub: "월 단위 합계 · 아래는 그 달에서 수집된 날 수 (기간을 넓히면 여러 달 비교)" },
+  };
+  let wdChart;
+  const drawWd = (g) => {
+    const G = groupers[g];
+    const keys = G.order || [...new Set(R.days.map(G.key))].sort();
+    const n = keys.map((k) => R.days.filter((d) => G.key(d) === k && A.rankDay[d] && Object.keys(A.rankDay[d]).length).length);
+    const ds = rankMedia.map((oid) => {
+      const sum = new Map();
+      for (const d of R.days) { const v = A.rankDay[d]?.[oid]; if (v != null) sum.set(G.key(d), (sum.get(G.key(d)) || 0) + v); }
+      return { label: mediaName(oid), data: keys.map((k) => sum.get(k) ?? null), backgroundColor: mediaColor(oid) };
+    });
+    $("#wdTitle", charts).textContent = G.title;
+    $("#wdSub", charts).textContent = `매체별 · ${G.sub}`;
+    wdChart?.destroy();
+    wdChart = barChart(c2, keys.map((k, i) => G.label(k, n[i])), ds, { plugins: { legend: { position: "bottom", labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: "rectRounded", font: { size: 11 } } }, tooltip: { backgroundColor: "#0f2341", callbacks: { label: (c) => ` ${c.dataset.label}: ${fmt(c.raw)}` } } } });
+  };
+  drawWd("wd");
+  $$("#wdSeg button", charts).forEach((b) => b.addEventListener("click", () => { $$("#wdSeg button", charts).forEach((x) => x.classList.toggle("on", x === b)); drawWd(b.dataset.g); }));
 
   // 발행 시간대 히트맵
   if (pubMedia.length) {
