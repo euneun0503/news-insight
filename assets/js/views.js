@@ -1016,7 +1016,7 @@ async function searchKeywords(el, R, ctx) {
             <div class="card kpi"><div class="label">검색량 1위</div>${nTop[0] ? `<div class="value" style="font-size:22px;color:#03a94d">${esc(nTop[0].word)}</div><div class="meta">월 ${fmt(nTop[0].total)}회 · 키워드 ${fmt(Object.keys(S.volume).length)}개 + 연관 ${fmt(S.related.length)}개</div>` : '<div class="meta">아직 없음</div>'}</div>
             <div class="card kpi"><div class="label">가장 많이 검색된 분야</div>${grpTop[0] ? `<div class="value" style="font-size:22px;color:#03a94d">${esc(grpTop[0][0])}</div><div class="meta">월 ${short(grpTop[0][1].total)}회 · 키워드 ${fmt(grpTop[0][1].n)}개 · 1위 ${esc(grpTop[0][1].top.word)}</div>` : '<div class="meta">수집 후 표시</div>'}</div>
           </div>
-          <h4 class="kw-h">월간 검색수 TOP 15 <span class="form-hint">PC + 모바일</span></h4><div class="chart-box lg"><canvas id="srN"></canvas></div>
+          <h4 class="kw-h">월간 검색수 TOP 15 <span class="form-hint">진한 초록 = 모바일 · 연한 초록 = PC(웹)</span></h4><div class="chart-box lg"><canvas id="srN"></canvas></div>
           <h4 class="kw-h">분야별 검색량 <span class="form-hint">관심 키워드 + 연관검색어 월간 검색수 합계</span></h4>
           ${grpTop.length ? `<div class="form-hint" style="margin:-4px 0 6px">분야를 누르면 키워드 전체가 PC·모바일 검색량과 함께 펼쳐집니다</div><table class="t grp-t"><thead><tr><th>분야</th><th class="r">키워드</th><th class="r">월간 검색 합계</th><th>가장 많이 검색된 키워드</th></tr></thead><tbody>${grpTop.map(([g, x]) => `<tr class="grp-row" data-g="${esc(g)}"><td><span class="grp-arrow">▸</span> <b>${esc(g)}</b></td><td class="r num"><u>${fmt(x.n)}개</u></td><td class="r num">${fmt(x.total)}</td><td>${esc(x.top.word)} <span class="form-hint">${short(x.top.total)}</span></td></tr>
             <tr class="grp-detail" data-gd="${esc(g)}" hidden><td colspan="4"><div class="table-wrap" style="max-height:360px;overflow-y:auto"><table class="t"><thead><tr><th class="c">#</th><th>키워드</th><th>구분</th><th class="r">PC(웹)</th><th class="r">모바일</th><th class="r">월간 합계</th><th class="r">모바일 비중</th></tr></thead><tbody>${[...x.rows].sort((a, b) => b.total - a.total).map((r, i) => `<tr><td class="c num">${i + 1}</td><td style="white-space:nowrap"><a href="${ctx.link("keywords", { k: r.word })}"><b>${esc(r.word)}</b></a>${r.seed && r.src === "연관" ? ` <span class="form-hint">← ${esc(r.seed)}</span>` : ""}</td><td style="white-space:nowrap"><span class="tag ${r.src === "관심" ? "green" : "gray"}">${r.src === "관심" ? "관심" : r.src === "연관" ? "연관" : "제목"}</span></td><td class="r num">${fmt(r.pc)}</td><td class="r num">${fmt(r.mo)}</td><td class="r num"><b>${fmt(r.total)}</b></td><td class="r num">${pct(r.mobile, 0)}</td></tr>`).join("")}</tbody></table></div></td></tr>`).join("")}</tbody></table>` : emptyBox("네이버 검색량 수집 후 표시됩니다.")}
@@ -1044,7 +1044,14 @@ async function searchKeywords(el, R, ctx) {
       tr.classList.toggle("open", !d.hidden);
     }));
     const hbar = (id, rows, val, color, f) => rows.length && barChart($(id, rep), rows.map((r) => r.word), [{ label: "", data: rows.map(val), backgroundColor: color }], { horizontal: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => " " + f(c.raw) } } } });
-    hbar("#srN", nTop.slice(0, 15), (r) => r.total, "#03a94d", (v) => `월 ${fmt(v)}회`);
+    // 네이버: PC(웹)·모바일을 나눠 쌓은 막대
+    if (nTop.length) {
+      const top = nTop.slice(0, 15);
+      const ch = barChart($("#srN", rep), top.map((r) => r.word), [
+        { label: "모바일", data: top.map((r) => r.mo), backgroundColor: "#03a94d" },
+        { label: "PC(웹)", data: top.map((r) => r.pc), backgroundColor: "#9be3b8" },
+      ], { horizontal: true, stacked: true, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, boxHeight: 10 } }, tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${fmt(c.raw)}회`, footer: (items) => `합계 ${fmt(top[items[0].dataIndex].total)}회` } } } });
+    }
     hbar("#srG", gTop.slice(0, 15), (r) => r.g, "#1a73e8", (v) => `관심도 ${fmt1(v)}`);
     if (!nTop.length) $("#srN", rep).parentElement.innerHTML = emptyBox("네이버 검색량이 아직 없습니다.");
     if (!gTop.length) $("#srG", rep).parentElement.innerHTML = emptyBox("구글 관심도가 아직 없습니다.");

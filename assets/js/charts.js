@@ -69,6 +69,8 @@ export function lineChart(canvas, labels, datasets, opts = {}) {
 }
 
 export function barChart(canvas, labels, datasets, opts = {}) {
+  const { stacked, ...rest } = opts;
+  opts = rest;
   const o = base(opts);
   if (opts.horizontal) {
     o.indexAxis = "y";
@@ -78,6 +80,7 @@ export function barChart(canvas, labels, datasets, opts = {}) {
     };
   }
   if (datasets.length === 1) o.plugins.legend.display = false;
+  if (stacked) { o.scales.x = { ...o.scales.x, stacked: true }; o.scales.y = { ...o.scales.y, stacked: true }; }
   return make(canvas, {
     type: "bar",
     data: { labels, datasets: datasets.map((d) => ({ borderRadius: 4, maxBarThickness: 28, ...d })) },
