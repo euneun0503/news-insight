@@ -450,7 +450,8 @@ export async function media(el, R, ctx) {
     return {
       oid, name: mediaName(oid),
       pub: A.pub[oid] ?? null,
-      pubAvg: A.pub[oid] != null ? A.pub[oid] / Math.max(1, A.pubDayCount) : null,
+      pubDays: A.pubDays?.[oid] || 0,
+      pubAvg: A.pub[oid] != null ? A.pub[oid] / Math.max(1, A.pubDays?.[oid] || 1) : null,
       views: r?.views ?? null,
       prevViews: P.rank[oid]?.views ?? null,
       dayAvg: r ? r.views / r.days : null,
@@ -458,21 +459,19 @@ export async function media(el, R, ctx) {
       share: r ? r.views / A.rankViews : null,
       avg: r ? r.views / r.n : null,
       top1: r?.top1Days ? r.top1 / r.top1Days : null,
-      eff: r && A.pub[oid] ? r.views / A.pub[oid] : null,
     };
   });
-  const tcard = h(`<div class="card"><div class="card-head"><div><h3>매체별 성과표 ${info("mediaTable")}</h3><div class="sub">열 제목을 눌러 정렬 · 효율 = 랭킹 조회수 ÷ 발행 기사수${A.noView.size ? ` · 조회수 미공개: ${[...A.noView].map((o) => esc(mediaName(o))).join(", ")}` : ""}</div></div></div><div id="mt"></div></div>`);
+  const tcard = h(`<div class="card"><div class="card-head"><div><h3>매체별 성과표 ${info("mediaTable")}</h3><div class="sub">열 제목을 눌러 정렬 · 발행 기사 = 그 매체가 네이버에 송고한 전체 기사 수 (일평균은 수집된 날 기준)${A.noView.size ? ` · 조회수 미공개: ${[...A.noView].map((o) => esc(mediaName(o))).join(", ")}` : ""}</div></div></div><div id="mt"></div></div>`);
   el.append(tcard);
   const maxShare = Math.max(...rows.map((r) => r.share || 0), 0.0001);
   sortableTable($("#mt", tcard), [
     { key: "name", label: "매체", html: (r) => chip(r.oid) },
-    { key: "pub", label: "발행 기사", cls: "r num", html: (r) => fmt(r.pub) },
+    { key: "pub", label: "발행 기사", cls: "r num", html: (r) => (r.pub == null ? '<span class="form-hint">수집 중</span>' : `${fmt(r.pub)}${r.pubDays < R.n ? `<div class="form-hint">${r.pubDays}/${R.n}일 수집</div>` : ""}`) },
     { key: "pubAvg", label: "일평균", cls: "r num", html: (r) => fmt1(r.pubAvg) },
     { key: "views", label: "랭킹 조회수", cls: "r num", html: (r) => `${fmt(r.views)}${delta(r.dayAvg, r.prevDayAvg)}` },
     { key: "share", label: "점유율", html: (r) => (r.share == null ? "-" : `<div style="display:flex;gap:8px;align-items:center"><div class="bar ${isOur(r.oid) ? "orange" : ""}" style="flex:1"><span style="width:${(r.share / maxShare) * 100}%"></span></div><span class="num" style="width:44px;text-align:right">${pct(r.share)}</span></div>`) },
     { key: "avg", label: "랭킹 기사 평균", cls: "r num", html: (r) => fmt(r.avg) },
     { key: "top1", label: "1위 평균", cls: "r num", html: (r) => fmt(r.top1) },
-    { key: "eff", label: "효율", cls: "r num", html: (r) => fmt(r.eff) },
   ], rows, { sort: "views", rowClass: (r) => (isOur(r.oid) ? "ours" : "") });
 
   const rankMedia = mediaListFor(A, "rank");

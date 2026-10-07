@@ -46,7 +46,8 @@ def _expand_config(cfg):
     if cfg.get("ranking_all"):
         cfg["ranking_media"] = cfg["ranking_media"] + [o for o in sorted(cat) if cat[o].get("ranking") and o not in cfg["ranking_media"]]
     if cfg.get("count_all"):
-        cfg["count_media"] = [o for o in sorted(cat) if o not in cfg["publish_media"]]
+        # 상세 수집 매체도 건수는 함께 집계 → 상세 수집이 아직 안 된 날짜도 발행 수가 보임 (상세 수집분이 있으면 그것을 우선)
+        cfg["count_media"] = sorted(set(cat) | set(cfg["publish_media"]))
     return cfg
 
 
