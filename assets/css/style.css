@@ -425,3 +425,8 @@ body.gated .topbar, body.gated .layout { display: none; }
 .seed-row { display: grid; grid-template-columns: 140px 1fr auto; gap: 8px; margin-bottom: 8px; align-items: start; }
 .seed-row textarea { resize: vertical; font-family: inherit; min-height: 40px; }
 @media (max-width: 640px) { .seed-row { grid-template-columns: 1fr; } }
+
+.grp-row { cursor: pointer; }
+.grp-row:hover td, .grp-row.open td { background: #e8f7ee; }
+.grp-arrow { display: inline-block; width: 12px; color: #03a94d; }
+.grp-detail > td { background: #fff; padding: 6px 4px 12px !important; }

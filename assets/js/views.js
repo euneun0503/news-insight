@@ -1001,7 +1001,7 @@ async function searchKeywords(el, R, ctx) {
     const gTop = gRows.filter(inScope).sort((a, b) => b.g - a.g);
     // 분야별 검색량 합계 (관심 키워드 + 연관검색어)
     const grp = {};
-    for (const r of nRows) if (r.group) { const g = (grp[r.group] ||= { n: 0, total: 0, top: null }); g.n++; g.total += r.total; if (!g.top || r.total > g.top.total) g.top = r; }
+    for (const r of nRows) if (r.group) { const g = (grp[r.group] ||= { n: 0, total: 0, top: null, rows: [] }); g.n++; g.total += r.total; g.rows.push(r); if (!g.top || r.total > g.top.total) g.top = r; }
     const grpTop = Object.entries(grp).sort((a, b) => b[1].total - a[1].total);
     const trendNo = S.google.filter((x) => !supply(x.title).pub).slice(0, 10);
     const ourHit = S.google.slice(0, 30).filter((x) => supply(x.title).pub).length;
@@ -1018,7 +1018,8 @@ async function searchKeywords(el, R, ctx) {
           </div>
           <h4 class="kw-h">월간 검색수 TOP 15 <span class="form-hint">PC + 모바일</span></h4><div class="chart-box lg"><canvas id="srN"></canvas></div>
           <h4 class="kw-h">분야별 검색량 <span class="form-hint">관심 키워드 + 연관검색어 월간 검색수 합계</span></h4>
-          ${grpTop.length ? `<table class="t"><thead><tr><th>분야</th><th class="r">키워드</th><th class="r">월간 검색 합계</th><th>가장 많이 검색된 키워드</th></tr></thead><tbody>${grpTop.map(([g, x]) => `<tr><td><b>${esc(g)}</b></td><td class="r num">${fmt(x.n)}</td><td class="r num">${fmt(x.total)}</td><td><a href="${ctx.link("keywords", { k: x.top.word })}">${esc(x.top.word)}</a> <span class="form-hint">${short(x.top.total)}</span></td></tr>`).join("")}</tbody></table>` : emptyBox("네이버 검색량 수집 후 표시됩니다.")}
+          ${grpTop.length ? `<div class="form-hint" style="margin:-4px 0 6px">분야를 누르면 키워드 전체가 PC·모바일 검색량과 함께 펼쳐집니다</div><table class="t grp-t"><thead><tr><th>분야</th><th class="r">키워드</th><th class="r">월간 검색 합계</th><th>가장 많이 검색된 키워드</th></tr></thead><tbody>${grpTop.map(([g, x]) => `<tr class="grp-row" data-g="${esc(g)}"><td><span class="grp-arrow">▸</span> <b>${esc(g)}</b></td><td class="r num"><u>${fmt(x.n)}개</u></td><td class="r num">${fmt(x.total)}</td><td>${esc(x.top.word)} <span class="form-hint">${short(x.top.total)}</span></td></tr>
+            <tr class="grp-detail" data-gd="${esc(g)}" hidden><td colspan="4"><div class="table-wrap" style="max-height:360px;overflow-y:auto"><table class="t"><thead><tr><th class="c">#</th><th>키워드</th><th>구분</th><th class="r">PC(웹)</th><th class="r">모바일</th><th class="r">월간 합계</th><th class="r">모바일 비중</th></tr></thead><tbody>${[...x.rows].sort((a, b) => b.total - a.total).map((r, i) => `<tr><td class="c num">${i + 1}</td><td style="white-space:nowrap"><a href="${ctx.link("keywords", { k: r.word })}"><b>${esc(r.word)}</b></a>${r.seed && r.src === "연관" ? ` <span class="form-hint">← ${esc(r.seed)}</span>` : ""}</td><td style="white-space:nowrap"><span class="tag ${r.src === "관심" ? "green" : "gray"}">${r.src === "관심" ? "관심" : r.src === "연관" ? "연관" : "제목"}</span></td><td class="r num">${fmt(r.pc)}</td><td class="r num">${fmt(r.mo)}</td><td class="r num"><b>${fmt(r.total)}</b></td><td class="r num">${pct(r.mobile, 0)}</td></tr>`).join("")}</tbody></table></div></td></tr>`).join("")}</tbody></table>` : emptyBox("네이버 검색량 수집 후 표시됩니다.")}
         </section>
         <section class="sr-panel google">
           <div class="sr-head"><span class="sr-logo g">G</span><b>구글 키워드 랭킹</b><span class="form-hint">상대 관심도 (‘${esc(S.gvolAnchor)}’=100) · 급상승 검색어</span></div>
@@ -1035,6 +1036,13 @@ async function searchKeywords(el, R, ctx) {
     repEl = rep;
     $$("#srScope button[data-s]", rep).forEach((b) => b.addEventListener("click", () => drawReport(b.dataset.s)));
     $("#srScope [data-cfg]", rep).addEventListener("click", () => openSeedEditor(rep, S));
+    $$(".grp-row", rep).forEach((tr) => tr.addEventListener("click", (e) => {
+      if (e.target.closest("a")) return;
+      const d = $(`.grp-detail[data-gd="${CSS.escape(tr.dataset.g)}"]`, rep);
+      d.hidden = !d.hidden;
+      $(".grp-arrow", tr).textContent = d.hidden ? "▸" : "▾";
+      tr.classList.toggle("open", !d.hidden);
+    }));
     const hbar = (id, rows, val, color, f) => rows.length && barChart($(id, rep), rows.map((r) => r.word), [{ label: "", data: rows.map(val), backgroundColor: color }], { horizontal: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => " " + f(c.raw) } } } });
     hbar("#srN", nTop.slice(0, 15), (r) => r.total, "#03a94d", (v) => `월 ${fmt(v)}회`);
     hbar("#srG", gTop.slice(0, 15), (r) => r.g, "#1a73e8", (v) => `관심도 ${fmt1(v)}`);
