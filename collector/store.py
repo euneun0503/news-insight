@@ -331,12 +331,12 @@ def build_day_summary(day):
         s["pubH"] = dict(pub_h)
         s["pubMedia"] = sorted(ar.get("media", {}).keys())
     if cn and cn.get("media"):
+        # 발행 수는 네이버 목록으로 센 '건수'를 모든 매체에 같은 기준으로 우선 사용 (상세 수집은 일부 실패로 조금 적을 수 있음)
         s.setdefault("pub", {})
         s.setdefault("pubMedia", [])
-        extra = [o for o in cn["media"] if o not in s["pub"]]
-        for o in extra:
-            s["pub"][o] = cn["media"][o]["n"]
-        s["pubCnt"] = sorted(extra)
+        for o, m in cn["media"].items():
+            s["pub"][o] = m["n"]
+        s["pubCnt"] = sorted(cn["media"])
 
     if rk:
         rank = {}

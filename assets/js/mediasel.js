@@ -22,7 +22,7 @@ export async function openMediaSettings(slot) {
   const cur = mediaSel();
   const sel = { rank: new Set(cur.rank), pub: new Set(cur.pub) };
 
-  const rankState = (m) => (!rankOK.has(m.oid) ? (m.ranking === false ? ["랭킹 없음", false] : ["수집 전", false]) : m.views === false ? ["조회수 미공개", true] : ["조회수", true]);
+  const rankState = (m) => (!rankOK.has(m.oid) ? (m.ranking === false ? ["랭킹 없음", false] : ["수집 전", false]) : m.views === false ? ["조회수 미공개", true] : (M.coverage || {})[m.oid]?.r ? ["조회수", true] : ["조회수(수집 중)", true]);
   const pubState = (m) => (pubDetail.has(m.oid) ? ["발행·기자", true] : pubCount.has(m.oid) ? ["발행 건수", true] : ["수집 전", false]);
 
   // 수집 현황(데이터 시작·끝, 빠진 날)

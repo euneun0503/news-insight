@@ -4,7 +4,7 @@
 GitHub 하나로 돌아갑니다 — 서버 비용 없음.
 
 ```
-GitHub Actions (2시간마다)          GitHub 저장소 (= 데이터베이스)          GitHub Pages (사이트)
+GitHub Actions (30분마다(3시간마다 전체, 매일 07:30 강제 전체))          GitHub 저장소 (= 데이터베이스)          GitHub Pages (사이트)
  collector/collect.py   ──커밋──▶   data/ranking/날짜.json        ──배포──▶  index.html
   · 랭킹 10개 매체                  data/articles/날짜.json                   · 시장현황 · 키워드 랭킹
   · 발행목록 7개 매체               data/summary/월.json (집계)                · 매체비교 · 기사목록
@@ -58,7 +58,7 @@ git push -u origin main
 3. 주소는 `https://<조직또는아이디>.github.io/<저장소>/` 입니다.
 
 ### 3. 첫 수집 (과거 데이터 채우기)
-**Actions → 뉴스 수집 → Run workflow** 에서 시작일/종료일을 넣고 실행합니다. 처음에는 한 번에 **7~31일** 단위로 나눠 돌리는 것을 권장합니다(상세페이지를 모두 확인하므로 시간이 걸립니다). 이후에는 2시간마다 자동으로 어제~오늘을 갱신합니다.
+**Actions → 뉴스 수집 → Run workflow** 에서 시작일/종료일을 넣고 실행합니다. 처음에는 한 번에 **7~31일** 단위로 나눠 돌리는 것을 권장합니다(상세페이지를 모두 확인하므로 시간이 걸립니다). 이후에는 30분마다(3시간마다 전체, 매일 07:30 강제 전체) 자동으로 어제~오늘을 갱신합니다.
 
 ### 4. 관리자 등록 (3~4명)
 1. **Settings → Collaborators (Organization이면 Members/Teams)** 에서 관리자를 초대하고 Write 권한을 줍니다.
@@ -150,6 +150,6 @@ collector/
 data/                      수집 데이터 (자동 생성)
 tools/make_demo_data.py    화면 테스트용 가짜 데이터 (실제 저장소에서는 실행 금지)
 .github/workflows/
-  collect.yml              2시간마다 수집 + 배포
+  collect.yml              30분마다(3시간마다 전체, 매일 07:30 강제 전체) 수집 + 배포
   deploy.yml               관리자 글 저장/코드 수정 시 배포
 ```

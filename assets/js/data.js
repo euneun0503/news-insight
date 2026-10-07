@@ -57,7 +57,7 @@ export function mediaSel() {
   const base = personalSel() || defaultSel();
   const fixed = [META?.our_media, META?.compare_media].filter(Boolean);
   // 랭킹에 넣은 매체는 발행 기사 수도 함께 보여줌 (전체 매체 발행 건수를 수집하므로)
-  return { rank: new Set([...base.rank, ...fixed]), pub: new Set([...base.pub, ...base.rank, ...fixed]), custom: !!personalSel() };
+  return { rank: new Set([...base.rank, ...fixed]), pub: new Set([...base.pub, ...fixed]), custom: !!personalSel() };
 }
 export async function loadCatalog() {
   return (await getJSON("data/media_catalog.json", { fresh: true })) || null;
@@ -67,7 +67,9 @@ export async function loadCatalog() {
 export function naverCoverage() {
   const C = META?.naver_catalog;
   const T = C?.total ? { count: C.total, basis: "네이버 뉴스 언론사 목록(카테고리별)에 있는 언론사", as_of: (C.updated_at || "").slice(0, 10), source: "네이버 뉴스 언론사 목록 · 매체별 랭킹 페이지 직접 확인", url: "https://news.naver.com/main/officeList.naver" } : META?.naver_total;
-  const r = META?.ranking_media?.length || 0, p = new Set([...(META?.publish_media || []), ...(META?.count_media || [])]).size;
+  const cov = META?.coverage || {};
+  const r = Object.values(cov).filter((c) => c.r).length || META?.ranking_media?.length || 0;
+  const p = Object.values(cov).filter((c) => c.p || c.c).length || new Set([...(META?.publish_media || []), ...(META?.count_media || [])]).size;
   if (!T?.count) return { short: `랭킹 ${r}곳 · 발행목록 ${p}곳 수집`, T: null, r, p };
   const pc = (n) => Math.round((n / T.count) * 100) + "%";
   return { short: `네이버 언론사 ${T.count}곳 중 랭킹 ${r}곳(${pc(r)}) · 발행목록 ${p}곳(${pc(p)}) 수집`, T, r, p, pc };
@@ -244,6 +246,7 @@ export function aggregate(days, sum) {
       for (const [oid, n] of Object.entries(s.pub)) {
         if (!sel.pub.has(oid)) continue;
         (a.pubDays ||= {})[oid] = (a.pubDays[oid] || 0) + 1; // 매체별 수집된 날 수
+        const wo = ((a.wdO ||= {})[oid] ||= [Array(7).fill(0), Array(7).fill(0)]); wo[0][wi] += n; wo[1][wi]++; // 매체별 요일 합·날 수
         a.pub[oid] = (a.pub[oid] || 0) + n;
         a.pubDay[d][oid] = n;
         a.pubTotal += n;
@@ -351,12 +354,11 @@ export function keywordTable(agg, prevAgg) {
       ...k,
       score,
       prev: Math.round(prev * 10) / 10,
+      cur: Math.round(cur * 10) / 10,
       riseAmt: cur - prev,
       change: hasCmp ? (prev ? (cur - prev) / prev : null) : undefined,
       isNew: hasCmp ? prev === 0 && score >= 3 : false,
       perArticle: k.rankV ? k.views / k.rankV : 0,
-      // 기회 지수: 랭킹 조회수 / 전체 발행 기사수 (적게 쓰였는데 많이 읽힌 주제)
-      opportunity: k.pub ? k.views / k.pub : k.views,
     });
   }
   return rows;

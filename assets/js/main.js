@@ -180,7 +180,7 @@ async function exportReport() {
     ["조회 기간", `${R.s} ~ ${R.e} (${R.n}일)`],
     ["랭킹 수집일", `${A.rankDayCount}일`],
     ["발행 수집일", `${A.pubDayCount}일`],
-    ["전체 발행 기사", A.pubTotal],
+    ["선택 매체 발행 기사 합", A.pubTotal],
     ["랭킹 조회수 합", A.rankViews],
     [`${mediaName(our)} 랭킹 조회수`, A.rank[our]?.views ?? "-"],
     [`${mediaName(our)} 조회수 점유율`, A.rank[our] ? +(A.rank[our].views / A.rankViews * 100).toFixed(2) + "%" : "-"],
@@ -195,15 +195,15 @@ async function exportReport() {
     return row;
   });
   const mediaRows = [...new Set([...rankMedia, ...pubMedia])].map((o) => ({
-    매체: mediaName(o), 발행기사: A.pub[o] ?? "", 일평균발행: A.pub[o] != null ? +(A.pub[o] / Math.max(1, A.pubDayCount)).toFixed(1) : "",
+    매체: mediaName(o), 발행기사: A.pub[o] ?? "", 일평균발행: A.pub[o] != null ? +(A.pub[o] / Math.max(1, A.pubDays?.[o] || 1)).toFixed(1) : "", 발행수집일: A.pubDays?.[o] ?? "",
     랭킹조회수: A.rank[o]?.views ?? "", 직전기간조회수: P.rank[o]?.views ?? "", 점유율: A.rank[o] ? +(A.rank[o].views / A.rankViews * 100).toFixed(2) : "",
     랭킹기사평균조회수: A.rank[o] ? Math.round(A.rank[o].views / A.rank[o].n) : "",
   }));
   const kws = keywordTable(A, P.rankDayCount || P.pubDayCount ? P : null).sort((a, b) => b.score - a.score).slice(0, 300).map((k, i) => ({
-    순위: i + 1, 키워드: k.word, 발행기사: k.pub, 랭킹진입: k.rank, 랭킹조회수: k.views, 종합점수: k.score, 직전기간점수: k.prev ?? "", 변화율: k.change == null ? (k.isNew ? "NEW" : "") : Math.round(k.change * 100) + "%",
+    순위: i + 1, 키워드: k.word, 발행기사: k.pub, 랭킹진입: k.rank, 랭킹조회수: k.views, 종합점수: k.score, 하루평균점수: k.cur != null ? +k.cur.toFixed(2) : "", 직전기간하루평균: k.prev != null ? +k.prev.toFixed(2) : "", 변화율: k.change == null ? (k.isNew ? "NEW" : "") : Math.round(k.change * 100) + "%",
   }));
   const rk = (await R.ranking()) || A.top;
-  const rankRows = [...rk].sort((a, b) => b.views - a.views).map((a) => ({ 날짜: a.day, 매체: mediaName(a.oid), 순위: a.rank, 조회수: a.views, 제목: a.title, 기자: a.reporter || "", 발행일시: a.pub || "", 링크: articleUrl(a.oid, a.aid) }));
+  const rankRows = rk.filter((a) => a.views != null).sort((a, b) => b.views - a.views).map((a, i) => ({ 전체순위: i + 1, 날짜: a.day, 매체: mediaName(a.oid), 매체내순위: a.rank, 조회수: a.views, 제목: a.title, 기자: a.reporter || "", 발행일시: a.pub || "", 링크: articleUrl(a.oid, a.aid) }));
   const SR = await R.search();
   const searchRows = [...Object.entries(SR.volume).map(([w, [pc, mo, c]]) => ({ 검색어: w, 구분: SR.seeds.has(w) ? "관심" : "제목", PC: pc, 모바일: mo, 월간검색량: pc + mo, 기간발행: A.kw.get(w)?.pub ?? "" })),
     ...SR.related.map(([w, pc, mo, c, seed]) => ({ 검색어: w, 구분: "연관(" + seed + ")", PC: pc, 모바일: mo, 월간검색량: pc + mo, 기간발행: A.kw.get(w)?.pub ?? "" }))].sort((a, b) => b.월간검색량 - a.월간검색량);

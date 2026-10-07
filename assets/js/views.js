@@ -104,7 +104,8 @@ function mediaListFor(A, kind) {
 function coverageNote(R) {
   const A = R.agg;
   const parts = [];
-  parts.push(`랭킹 ${A.rankDayCount}/${R.n}일 · 발행 ${A.pubDayCount}/${R.n}일 수집됨`);
+  const our = meta().our_media;
+  parts.push(`랭킹 ${A.rankDayCount}/${R.n}일 · 발행 ${mediaName(our)} ${A.pubDays?.[our] || 0}/${R.n}일 · 선택 매체 전부 들어온 날 ${R.days.filter((d) => [...mediaSel().pub].every((o) => !((meta().coverage || {})[o]) || A.pubDay[d]?.[o] != null)).length}/${R.n}일`);
   if (A.partialDays.length) parts.push(`<span class="warn">${A.partialDays.map(mmdd).join(", ")} 랭킹은 집계 중(하루가 끝나지 않은 날)</span>`);
   return parts.join(" · ");
 }
@@ -152,7 +153,7 @@ export async function dashboard(el, R, ctx) {
     const partial = cur != null && nd < R.n;
     return `<div class="card kpi"><div class="label">${esc(mediaName(oid))} 발행 기사 ${info("ourPub")}</div>
       <div class="value ${oid === our ? "green" : "blue"} num">${cur != null ? fmt(cur) : "-"}<span title="${prevLabel}${fair ? "" : " · 수집된 날 수가 달라 하루 평균끼리 비교"}">${d}</span></div>
-      <div class="meta">${cur != null ? `일평균 ${fmt1(cur / Math.max(1, nd))}건 · ${pubMedia.length}개 중 ${pubMedia.indexOf(oid) + 1}위 · ${R.n === 1 ? mmdd(R.s) : `${R.n}일`} 합계` : "발행 데이터 없음 (수집 중)"}</div>
+      <div class="meta">${cur != null ? `일평균 ${fmt1(cur / Math.max(1, nd))}건 · ${pubMedia.length}개 중 ${[...pubMedia].sort((a, b) => A.pub[b] / (A.pubDays?.[b] || 1) - A.pub[a] / (A.pubDays?.[a] || 1)).indexOf(oid) + 1}위(일평균) · ${R.n === 1 ? mmdd(R.s) : `${R.n}일`} 합계` : "발행 데이터 없음 (수집 중)"}</div>
       ${partial ? `<div class="meta warn">⚠ ${R.n}일 중 ${nd}일만 수집됨 — 나머지 날짜 수집 중이라 합계가 실제보다 적습니다 (일평균은 수집된 ${nd}일 기준)</div>` : ""}</div>`;
   };
   const cmp = M.compare_media || "296";
@@ -172,7 +173,7 @@ export async function dashboard(el, R, ctx) {
   // 일별 추이 + 매체 순위
   const row = h(`<div class="grid g-21">
     <div class="card" style="display:flex;flex-direction:column"><div class="card-head"><div><h3>일별 추이 ${info("trend")}</h3><div class="sub" id="trendSub"></div></div>
-      <div class="tools"><select class="input" id="trendMedia"></select><div class="seg" id="trendSeg"><button data-m="pub" class="on">발행 기사수</button><button data-m="views">랭킹 조회수</button><button data-m="both">발행 + 조회수 (매체별)</button><button data-m="cmp">${esc(mediaName(our))}·${esc(mediaName(M.compare_media || "296"))} 비교</button></div></div></div>
+      <div class="tools"><select class="input" id="trendMedia"></select><div class="seg" id="trendSeg"><button data-m="cmp" class="on">${esc(mediaName(our))}·${esc(mediaName(M.compare_media || "296"))} 비교</button><button data-m="pub">발행 기사수</button><button data-m="views">랭킹 조회수</button><button data-m="both">발행 + 조회수 (매체별)</button></div></div></div>
       <div class="chart-box lg" style="flex:1;min-height:340px"><canvas></canvas></div>
       <div id="trendTbl"></div>
       <div class="form-hint" style="margin-top:6px">날짜 아래 요일 표시 · <b style="color:#dc2626">빨강</b> 일요일·공휴일(대체공휴일 포함, ‘휴’) · <b style="color:#2563eb">파랑</b> 토요일</div></div>
@@ -187,7 +188,7 @@ export async function dashboard(el, R, ctx) {
   const tMedia = [...new Set([...pubMedia, ...rankMedia])];
   const tSel = $("#trendMedia", row);
   tSel.innerHTML = tMedia.map((o) => `<option value="${o}" ${o === our ? "selected" : ""}>${esc(mediaName(o))}</option>`).join("");
-  let tMode = "pub";
+  let tMode = "cmp";
   const drawTrend = () => {
     trendChart?.destroy();
     tSel.hidden = tMode !== "both";
@@ -280,7 +281,7 @@ export async function dashboard(el, R, ctx) {
 
   // 랭킹 상위 기사
   const topRow = h(`<div class="grid g-21">
-    <div class="card"><div class="card-head"><div><h3>랭킹 상위 기사 ${info("topArticles")}</h3><div class="sub">선택 기간 전체 매체 기사 중 조회수 높은 순 · 순위 = 전체 순위, 매체 옆 숫자 = 그 매체 랭킹 순위</div></div><a href="${ctx.link("articles")}">전체 보기</a></div><div id="topTable"></div></div>
+    <div class="card"><div class="card-head"><div><h3>랭킹 상위 기사 ${info("topArticles")}</h3><div class="sub">선택 매체의 랭킹 기사 중 조회수 높은 순 · 순위 = 전체 순위, 매체 옆 숫자 = 그 매체 랭킹 순위</div></div><a href="${ctx.link("articles")}">전체 보기</a></div><div id="topTable"></div></div>
     <div class="card"><div class="card-head"><div><h3>급상승 검색어 TOP 200 ${info("googleTrends")}</h3><div class="sub" id="trSub">구글 트렌드 한국</div></div><a href="${ctx.link("keywords", { tab: "search" })}">더 보기</a></div><div id="trList"><div class="loading"></div></div></div>
   </div>`);
   el.append(topRow);
@@ -373,14 +374,12 @@ export async function keywords(el, R, ctx) {
     views: "해당 키워드가 들어간 랭킹 기사들의 조회수 합",
     pub: "선택한 발행목록 매체들이 해당 키워드로 쓴 기사 수",
     rise: A.riseMode === "half" ? `직전 기간 자료가 없어 선택 기간 앞쪽(${mmdd(A.riseSplit[0])}~${mmdd(A.riseSplit[1])}) 대비 뒤쪽(${mmdd(A.riseSplit[2])}~${mmdd(A.riseSplit[3])}) 하루 평균 증가 · NEW는 앞쪽에 없던 키워드` : `직전 동일기간(${R.n}일) 대비 종합점수 증가 · NEW는 직전 기간에 없던 키워드`,
-    opp: "기회 = 랭킹 조회수 ÷ 발행 기사수. 적게 쓰였지만 많이 읽힌 주제 (발행 2건 이상, 랭킹 진입 1건 이상)",
   };
   const render = () => {
     $$("#kwSort button", card).forEach((b) => b.classList.toggle("on", b.dataset.s === state.sort));
     $("#sortHint", card).textContent = hints[state.sort];
     let list = rows.filter((r) => !state.q || r.word.toLowerCase().includes(state.q.toLowerCase()));
     if (state.sort === "rise") list = list.filter((r) => r.isNew || (r.change != null && r.change > 0)).sort((a, b) => b.riseAmt - a.riseAmt);
-    else if (state.sort === "opp") list = list.filter((r) => r.pub >= 2 && r.rank >= 1).sort((a, b) => b.opportunity - a.opportunity);
     else if (state.sort === "views") list.sort((a, b) => b.views - a.views);
     else if (state.sort === "pub") list.sort((a, b) => b.pub - a.pub);
     else list.sort((a, b) => b.score - a.score);
@@ -443,7 +442,7 @@ export async function keywords(el, R, ctx) {
         <div><span>제목에 쓴 발행 기사</span><b>${fmt(pubN)}건</b><em>기자·제목까지 수집한 ${fmt(arMedia.size)}개 매체 기준</em></div>
         <div><span>랭킹 20위 안에 든 기사</span><b>${fmt(rkHits.length)}건</b><em>${fmt(new Set(rkHits.map((a) => a.oid)).size)}개 매체 랭킹</em></div>
         <div><span>그 기사들의 랭킹 조회수 합</span><b>${fmt(rkViews)}</b><em>조회수 미공개 매체 제외</em></div>
-        ${sv ? `<div><span>네이버 월간 검색</span><b>${fmt(sv[0] + sv[1])}회</b><em>모바일 ${pct(sv[1] / Math.max(1, sv[0] + sv[1]), 0)}</em></div>` : SR.gvol[word] != null ? `<div><span>구글 관심도</span><b>${fmt1(SR.gvol[word])}</b><em>‘${esc(SR.gvolAnchor)}’ = 100</em></div>` : ""}
+        ${sv ? `<div><span>네이버 월간 검색</span><b>${fmt(sv[0] + sv[1])}회</b><em>모바일 ${pct(sv[1] / Math.max(1, sv[0] + sv[1]), 0)}</em></div>` : ""}
       </div>
       ${!ar ? `<div class="form-hint">발행 기사 목록은 ${LIMITS.articleDays}일 이하 기간에서 제공합니다.</div>` : ""}
       <div class="${R.n > 1 ? "grid g-21" : ""}">
@@ -459,7 +458,7 @@ export async function keywords(el, R, ctx) {
     $("#kwClose", box).addEventListener("click", () => { detail.innerHTML = ""; state.k = ""; ctx.setQuery({ k: "" }); render(); });
     if (R.n > 1) {
       comboChart($("canvas", box), dayLabels(R.days),
-        { label: "발행 기사수", data: R.days.map((d) => (arHits ? dayPub[d] || 0 : row.daily[d] || 0)), backgroundColor: "#bfd3fb" },
+        { label: "발행 기사수", data: R.days.map((d) => (arHits ? dayPub[d] ?? null : row.dP?.[d] ?? null)), backgroundColor: "#bfd3fb" },
         { label: "랭킹 조회수", data: R.days.map((d) => dayViews[d] || 0), borderColor: OUR_COLOR, backgroundColor: OUR_COLOR }, { days: R.days });
     }
     const mm = Object.entries(byMedia).sort((a, b) => b[1].views - a[1].views || b[1].pub - a[1].pub);
@@ -585,7 +584,7 @@ export async function media(el, R, ctx) {
   if (pubMedia.length) {
     const hcard = h(`<div class="card"><div class="card-head"><div><h3>발행 시간대 히트맵 ${info("heatmap")}</h3><div class="sub">매체별 시간대(0~23시) 발행 기사 비중 · 칸에 마우스를 올리면 건수</div></div></div><div id="heat"></div></div>`);
     el.append(hcard);
-    heatmap($("#heat", hcard), pubMedia.map((oid) => ({ label: mediaName(oid), oid, values: A.pubH[oid] || Array(24).fill(0) })));
+    heatmap($("#heat", hcard), pubMedia.filter((oid) => A.pubH[oid] && A.pubH[oid].some((v) => v)).map((oid) => ({ label: mediaName(oid), oid, values: A.pubH[oid] }))); // 발행 시각을 확인한 매체만
   }
 }
 
@@ -620,7 +619,7 @@ export async function articles(el, R, ctx) {
   el.append(card);
 
   const SORTS = {
-    rank: [["views", "조회수 높은 순"], ["date", "날짜·순위 순"], ["title", "제목 가나다"]],
+    rank: [["views", "조회수 높은 순 (전체 순위)"]],
     pub: [["date", "최신 발행 순"], ["old", "오래된 순"], ["title", "제목 가나다"]],
   };
   let data = [];
@@ -681,7 +680,7 @@ export async function articles(el, R, ctx) {
     const listOnly = state.src === "pub" && filtered.some((a) => a.listOnly) ? " · 발행 시각·기자명은 상세 수집 매체(헬스조선·코메디닷컴 등)만 표시, 나머지는 네이버 목록 기준" : "";
     $("#count", card).textContent = `${fmt(filtered.length)}건${rankNote}${nvNote}${listOnly}`;
     const box = $("#list", card);
-    articleTable(box, items, { showDay: true, showRank: state.src === "rank", showViews: state.src === "rank", showTime: true, overall: state.src === "rank" && state.sort === "views" ? (state.page - 1) * PAGE : null });
+    articleTable(box, items, { showDay: true, showRank: state.src === "rank", showViews: state.src === "rank", showTime: true, overall: state.src === "rank" ? (state.page - 1) * PAGE : null });
     if (pages > 1) {
       box.append(h(`<div class="pager"><button class="btn sm" data-p="-1" ${state.page === 1 ? "disabled" : ""}>이전</button><span>${state.page} / ${pages}</span><button class="btn sm" data-p="1" ${state.page === pages ? "disabled" : ""}>다음</button></div>`));
       $$(".pager button", box).forEach((b) => b.addEventListener("click", () => { state.page += Number(b.dataset.p); draw(); card.scrollIntoView({ block: "start" }); }));
@@ -732,7 +731,8 @@ export async function insights(el, R, ctx) {
   const busiest = pubHourAll.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]).slice(0, 3);
   // 요일
   const wdAvg = WD_ORDER.map((w) => (A.wd.rankDays[w] ? A.wd.views[w] / A.wd.rankDays[w] : null));
-  const wdPubAvg = WD_ORDER.map((w) => (A.wd.pubDays[w] ? A.wd.pub[w] / A.wd.pubDays[w] : null));
+  // 매체마다 그 요일 하루 평균을 구해 더함 (매체별 수집일 수가 달라도 공정)
+  const wdPubAvg = WD_ORDER.map((w) => { let t = 0, any = false; for (const [o, [sum, days]] of Object.entries(A.wdO || {})) if (days[w]) { t += sum[w] / days[w]; any = true; } return any ? t : null; });
   const bestWd = WD_ORDER.map((w, i) => [w, wdAvg[i]]).filter(([, v]) => v != null).sort((a, b) => b[1] - a[1])[0];
 
   // 제목 패턴
@@ -762,7 +762,7 @@ export async function insights(el, R, ctx) {
 
   const tips = [];
   if (bestHours.length) tips.push(["⏰", `랭킹 기사의 평균 조회수는 <b>${bestHours.map(([i]) => `${i}시`).join(", ")}</b> 발행 기사에서 가장 높았습니다 (각 ${bestHours.map(([, v]) => short(v)).join(" / ")}).`]);
-  if (busiest.length && busiest[0][1]) tips.push(["📰", `전체 매체의 발행이 몰리는 시간은 <b>${busiest.map(([i]) => `${i}시`).join(", ")}</b>입니다. 이 시간대는 경쟁이 치열합니다.`]);
+  if (busiest.length && busiest[0][1]) tips.push(["📰", `선택 매체의 발행이 몰리는 시간은 <b>${busiest.map(([i]) => `${i}시`).join(", ")}</b>입니다. 이 시간대는 경쟁이 치열합니다.`]);
   if (ourPeak.length && ourH.some((v) => v)) tips.push(["🏠", `${esc(mediaName(M.our_media))}은(는) 주로 <b>${ourPeak.map((i) => `${i}시`).join(", ")}</b>에 발행했습니다.${bestHours.length && !ourPeak.includes(bestHours[0][0]) ? ` 조회수가 높은 ${bestHours[0][0]}시대 발행을 늘려보는 것도 방법입니다.` : ""}`]);
   if (bestWd) tips.push(["📅", `요일별로는 <b>${WD_NAME[bestWd[0]]}요일</b>의 하루 랭킹 조회수 합(평균)이 가장 높았습니다.`]);
   const strong = pat.filter((p) => p.lift != null && p.n >= 5).sort((a, b) => b.lift - a.lift);
@@ -775,7 +775,7 @@ export async function insights(el, R, ctx) {
     <ul class="insight-list">${tips.map(([i, t]) => `<li><span class="ico">${i}</span><span>${t}</span></li>`).join("") || `<li>${emptyBox("분석할 데이터가 부족합니다.")}</li>`}</ul></div>`));
 
   const charts = h(`<div class="grid g-2">
-    <div class="card"><div class="card-head"><div><h3>발행 시간대별 반응 ${info("insightHour")}</h3><div class="sub">막대: 전체 매체 발행 기사수 · 선: 그 시간에 발행된 랭킹 기사의 평균 조회수${avgByHour.every((v) => v == null) ? '<br><span style="color:#b45309">랭킹 기사의 입력시각이 아직 없어 선은 표시되지 않습니다 (엑셀에서 가져온 자료는 ‘기자명 채우기’를 하면 입력시각도 함께 채워집니다)</span>' : ""}</div></div></div>${canvas("lg")}</div>
+    <div class="card"><div class="card-head"><div><h3>발행 시간대별 반응 ${info("insightHour")}</h3><div class="sub">막대: 선택 매체 발행 기사수 · 선: 그 시간에 발행된 랭킹 기사의 평균 조회수${avgByHour.every((v) => v == null) ? '<br><span style="color:#b45309">랭킹 기사의 입력시각이 아직 없어 선은 표시되지 않습니다 (엑셀에서 가져온 자료는 ‘기자명 채우기’를 하면 입력시각도 함께 채워집니다)</span>' : ""}</div></div></div>${canvas("lg")}</div>
     <div class="card"><div class="card-head"><div><h3>요일별 반응 ${info("insightWeekday")}</h3><div class="sub">막대: 하루 평균 발행 기사수 · 선: 하루 랭킹 조회수 합의 요일 평균</div></div></div>${canvas("lg")}</div>
   </div>`);
   el.append(charts);
@@ -1012,9 +1012,8 @@ async function searchKeywords(el, R, ctx) {
   const relGroup = (w, grp) => { const ws = (S.seedGroups || {})[grp] || []; const k = nz(w); return ws.some((x) => k.includes(nz(x))) ? grp : ""; };
   for (const [w, [pc, mo, comp]] of Object.entries(S.volume)) nRows.push({ word: w, src: S.seeds.has(w) ? "관심" : "제목", group: groupOf[w] || "", pc, mo, comp });
   for (const [w, pc, mo, comp, seed, grp] of S.related.slice(0, 800)) if (!S.volume[w]) nRows.push({ word: w, src: "연관", seed, group: relGroup(w, grp || groupOf[seed] || ""), pc, mo, comp });
-  for (const r of nRows) { r.total = r.pc + r.mo; Object.assign(r, supply(r.word)); r.gap = r.total / (r.pub + 1); r.mobile = r.total ? r.mo / r.total : 0; }
+  for (const r of nRows) { r.total = r.pc + r.mo; Object.assign(r, supply(r.word)); r.mobile = r.total ? r.mo / r.total : 0; }
   const gRows = Object.entries(S.gvol).map(([w, g]) => ({ word: w, src: S.seeds.has(w) ? "관심" : "제목", group: groupOf[w] || "", g, ...supply(w) }));
-  for (const r of gRows) r.gap = r.g / (r.pub + 1);
 
   // ⓪ 검색 키워드 요약 보고서 (그래프)
   const drawReport = (scope) => {
@@ -1048,10 +1047,10 @@ async function searchKeywords(el, R, ctx) {
           <div class="sr-head"><span class="sr-logo g">G</span><b>구글 급상승 검색어</b><span class="form-hint">구글 트렌드 한국 · ${S.days.map(mmdd).join(", ")} 누적</span></div>
           <div class="grid g-2">
             <div class="card kpi"><div class="label">급상승 1위</div>${S.google[0] ? `<div class="value" style="font-size:22px;color:#1a73e8">${esc(S.google[0].title)}</div><div class="meta">검색 ${S.google[0].traffic ? fmt(S.google[0].traffic) + "+" : "-"}${S.google[0].news[0] ? " · " + esc(S.google[0].news[0][0]).slice(0, 40) : ""}</div>` : '<div class="meta">아직 없음</div>'}</div>
-            <div class="card kpi"><div class="label">급상승 검색어</div><div class="value num" style="color:#1a73e8">${fmt(S.google.length)}개</div><div class="meta">TOP 200 중 우리가 쓴 주제 ${ourHit}개</div></div>
+            <div class="card kpi"><div class="label">급상승 검색어</div><div class="value num" style="color:#1a73e8">${fmt(S.google.length)}개</div><div class="meta">TOP 200 중 선택 매체가 쓴 주제 ${ourHit}개</div></div>
           </div>
           <h4 class="kw-h">급상승 검색어 TOP 15 <span class="form-hint">구글이 알려주는 대략 검색량 (예: 20,000+)</span></h4><div class="chart-box lg"><canvas id="srG"></canvas></div>
-          <h4 class="kw-h">급상승 중인데 우리 기간 기사가 없는 검색어 <span class="form-hint">선택 기간 발행 0건</span></h4>
+          <h4 class="kw-h">급상승 중인데 선택 매체 기사가 없는 검색어 <span class="form-hint">선택 기간 발행 0건</span></h4>
           ${trendNo.length ? `<table class="t tr-t"><colgroup><col style="width:34%"><col style="width:18%"><col></colgroup><thead><tr><th>검색어</th><th class="r">검색량</th><th>관련 뉴스</th></tr></thead><tbody>${trendNo.map((x) => `<tr><td class="one"><a href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.title)}"><b>${esc(x.title)}</b></a></td><td class="r num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</td><td class="one">${x.news[0] && /^https?:/.test(x.news[0][1]) ? `<a href="${esc(x.news[0][1])}" target="_blank" rel="noopener" title="${esc(x.news[0][0])}">${esc(x.news[0][0])}</a>` : '<span class="form-hint">-</span>'}</td></tr>`).join("")}</tbody></table>` : emptyBox("없음")}
         </section>
       </div></div>`);
@@ -1118,16 +1117,6 @@ async function searchKeywords(el, R, ctx) {
       setup: hasN ? "" : `<div class="ok-box">네이버 검색량은 <b>네이버 검색광고 API</b>(무료)로 가져옵니다. <a href="https://searchad.naver.com" target="_blank" rel="noopener">searchad.naver.com</a> 가입 → 도구 → API 사용 관리에서 키를 발급받아 GitHub 저장소 Settings → Secrets and variables → Actions 에 <span class="code">NAVER_AD_API_KEY</span>, <span class="code">NAVER_AD_SECRET</span>, <span class="code">NAVER_AD_CUSTOMER_ID</span> 로 등록하면 다음 수집부터 표시됩니다.</div>`,
       table: (list) => { const max = Math.max(...list.map((r) => r.total), 1); return `<thead><tr><th class="c">#</th><th>검색어</th><th>구분</th><th style="min-width:160px">월간 검색수</th><th class="r">PC</th><th class="r">모바일</th><th class="c">광고 경쟁</th><th class="r">기간 발행</th><th class="r">랭킹 조회수</th></tr></thead><tbody>${list.map((r, i) => `<tr><td class="c num">${i + 1}</td><td>${wordCell(r)}</td><td>${srcTag(r)}</td><td>${bar(r.total, max, "", short)}</td><td class="r num">${fmt(r.pc)}</td><td class="r num">${fmt(r.mo)}</td><td class="c">${COMP[r.comp]}</td><td class="r num">${fmt(r.pub)}</td><td class="r num">${r.views ? short(r.views) : "-"}</td></tr>`).join("")}</tbody>`; },
     },
-    google: {
-      title: `구글 검색량 랭킹 ${info("searchGoogle")}`,
-      sub: () => `최근 30일 구글 검색 관심도 · 기준어 ‘${esc(S.gvolAnchor)}’ = 100${hasG ? ` · ${dotDate(S.gvolDay)} 조회` : ""} · 발행·조회수는 선택 기간 기준`,
-      hint: "구글은 실제 검색 횟수를 공개하지 않아 기준어 대비 상대값으로 보여줍니다. 150 = 기준어보다 1.5배 많이 검색됨.",
-      sorts: [["g", "관심도"]],
-      srcs: [["", "전체"], ...grpOpts, ["관심", "관심 키워드만"], ["제목", "기사 제목 키워드"]],
-      rows: gRows,
-      setup: hasG ? "" : `<div class="ok-box">구글 검색량은 키 없이 <b>GitHub 자동 수집에서 하루 한 번</b> 받아옵니다. 아직 수집 전이라 비어 있어요. 구글이 일시적으로 막으면 다음 수집 때 다시 시도합니다.</div>`,
-      table: (list) => { const max = Math.max(...list.map((r) => r.g), 1); return `<thead><tr><th class="c">#</th><th>검색어</th><th>구분</th><th style="min-width:200px">구글 관심도 (기준어=100)</th><th class="r">기간 발행</th><th class="r">랭킹 조회수</th></tr></thead><tbody>${list.map((r, i) => `<tr><td class="c num">${i + 1}</td><td>${wordCell(r)}</td><td>${srcTag(r)}</td><td>${bar(r.g, max, "orange", fmt1)}</td><td class="r num">${fmt(r.pub)}</td><td class="r num">${r.views ? short(r.views) : "-"}</td></tr>`).join("")}</tbody>`; },
-    },
   };
   const setTab = () => {
     const v = V[st.vt];
@@ -1159,7 +1148,7 @@ async function searchKeywords(el, R, ctx) {
     <div id="gTrend"></div>
     <div class="form-hint" style="margin-top:8px">검색량은 구글이 제공하는 대략치(예: 2,000+)입니다. 네이버는 2021년 실시간 검색어를 종료해 급상승 목록을 공식 제공하지 않습니다. 네이버 쪽 흐름은 위 표의 월간 검색수로 확인하세요.</div></div>`);
   el.append(gcard);
-  trendPager($("#gTrend", gcard), g.slice(0, 200), (rows) => `<div class="table-wrap"><table class="t"><thead><tr><th class="c">#</th><th>검색어</th><th class="r">최대 검색량</th><th class="c">등장일</th><th>최근</th><th>관련 뉴스</th><th class="r">우리 기간 발행</th></tr></thead><tbody>
+  trendPager($("#gTrend", gcard), g.slice(0, 200), (rows) => `<div class="table-wrap"><table class="t"><thead><tr><th class="c">#</th><th>검색어</th><th class="r">최대 검색량</th><th class="c">등장일</th><th>최근</th><th>관련 뉴스</th><th class="r">선택 매체 발행</th></tr></thead><tbody>
     ${rows.map(([x, i]) => {
       const sp = supply(x.title);
       const n = x.news[0];
