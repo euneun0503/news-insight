@@ -424,16 +424,61 @@ def list_candidates(session, oid, day, seen, max_pages=150):
     return out
 
 
-def list_day_exact(session, oid, day, max_pages=150):
-    """발행 '건수'용 빠른 집계: 목록(date=그날)만 넘기며 날짜가 '2026.10.03.'처럼 정확히 적힌 기사만 센다.
-    최근 며칠 기사는 목록에 '3일전'처럼 상대 표기라 날짜를 확정할 수 없으므로,
-    그날 근처에 상대 표기 기사가 섞여 있으면 (건수, False)를 돌려 '아직 확정 못 함'으로 처리한다.
-    → 며칠 지나 정확한 날짜가 표시되면 정기 수집(최근 8일 재집계)에서 확정된다."""
-    out, prev_keys, stale = {}, None, 0
+def fetch_pub_date(session, oid, aid, cache):
+    """기사 입력 날짜만 확인 (캐시 우선). 기자명은 찾지 않아 빠름"""
+    k = f"{oid}_{aid}"
+    m = cache.get(k)
+    if m and m[0]:
+        return m[0][:10]
+    r = session.get(f"https://n.news.naver.com/mnews/article/{oid}/{aid}", timeout=12)
+    r.raise_for_status()
+    soup = BeautifulSoup(r.text, "html.parser")
+    pub = None
+    tag = soup.select_one("span.media_end_head_info_datestamp_time[data-date-time]")
+    if tag:
+        pub = _norm_dt(tag.get("data-date-time"))
+    if not pub:
+        meta = soup.select_one('meta[property="article:published_time"]')
+        if meta:
+            pub = _norm_dt(meta.get("content"))
+    if pub:
+        with _cache_lock:
+            cache.setdefault(k, [pub, "", 0])   # 버전 0: 기자명은 나중에 상세 수집 때 채움
+        return pub[:10]
+    return None
+
+
+def split_by_boundary(session, oid, day, cands, cache):
+    """기사번호(aid)는 등록 순서대로 커지므로, 날짜 경계 기사만 상세페이지로 확인(이진 탐색)해 그날 기사 범위를 정확히 자름"""
+    arr = sorted(cands.items(), key=lambda kv: int(kv[0][1]))
+    nxt = (dt.date.fromisoformat(day) + dt.timedelta(days=1)).isoformat()
+
+    def first_ge(target):
+        lo, hi = 0, len(arr)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            d = fetch_pub_date(session, oid, arr[mid][0][1], cache)
+            if d is None:
+                raise RuntimeError("날짜 확인 실패")
+            if d < target:
+                lo = mid + 1
+            else:
+                hi = mid
+        return lo
+
+    a, b = first_ge(day), first_ge(nxt)
+    return dict(arr[a:b])
+
+
+def list_day_exact(session, oid, day, cache=None, max_pages=150):
+    """발행 '건수'용 빠른 집계: 목록(date=그날)을 넘기며 그날 기사 {key: title}.
+    날짜가 '2026.10.03.'처럼 적힌 기사는 바로 확정. 최근 기사는 '3일전'처럼 상대 표기라,
+    그날 근처 기사들을 모아 기사번호 순서 + 경계 기사 몇 건의 상세 날짜로 정확히 자른다."""
+    out, cands, prev_keys, stale = {}, {}, None, 0
     seen = set()
     today = today_kst()
     d0 = dt.date.fromisoformat(day)
-    sure = True
+    relative = False
     for page in range(1, max_pages + 1):
         params = {"mode": "LPOD", "mid": "sec", "oid": oid, "listType": "title", "date": day.replace("-", ""), "page": page}
         r = session.get("https://news.naver.com/main/list.naver?" + urlencode(params), timeout=15)
@@ -450,31 +495,48 @@ def list_day_exact(session, oid, day, max_pages=150):
                 continue
             seen.add(key)
             new_n += 1
+            title = clean_text(a.get_text())
             span = li.select_one("span.date")
             raw = span.get_text(strip=True) if span else ""
             m = re.search(r"(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})", raw)
-            if not m:
-                rd = rough_date(raw, today)
-                if rd is None or abs((rd - d0).days) <= 1:
-                    sure = False          # 그날일 수도 있는 상대 표기 기사 → 확정 불가
+            if m:
+                d = dt.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                if d.isoformat() == day:
+                    out[key] = title
+                    cands[key] = title
+                elif abs((d - d0).days) <= 1:
+                    cands[key] = title
+                if d < d0 - dt.timedelta(days=1):
+                    older += 1
                 continue
-            d = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
-            if d == day:
-                out[key] = clean_text(a.get_text())
-            elif d < day:
+            rd = rough_date(raw, today)   # 상대 표기: 실제 날짜는 rd 또는 rd-1
+            if rd is None or (d0 - dt.timedelta(days=1)) <= rd <= (d0 + dt.timedelta(days=2)):
+                relative = relative or rd is None or abs((rd - d0).days) <= 1
+                cands[key] = title
+            elif rd < d0 - dt.timedelta(days=1):
                 older += 1
         if not page_keys or page_keys == prev_keys or new_n == 0:
-            return out, sure
+            break
         prev_keys = page_keys
         stale = stale + 1 if older and older == new_n else 0
         if stale >= 2:
-            return out, sure
+            break
         time.sleep(0.1)
-    err(f"발행 건수 {day} {CONFIG['media'].get(oid, oid)}: 페이지 상한 도달")
-    return out, False
+    else:
+        err(f"발행 건수 {day} {CONFIG['media'].get(oid, oid)}: 페이지 상한 도달")
+        return out, False
+    if not relative:
+        return out, True
+    if cache is None or not cands:
+        return out, False
+    try:
+        return split_by_boundary(session, oid, day, cands, cache), True
+    except Exception as e:
+        err(f"발행 건수 {day} {CONFIG['media'].get(oid, oid)}: 경계 확인 실패 {e}")
+        return out, False
 
 
-def collect_counts(session, days, media, workers):
+def collect_counts(session, days, media, workers, cache=None):
     """상세 수집 대상이 아닌 매체들의 발행 '건수'만 집계 (매체 단위 병렬)"""
     if not media:
         return {}
@@ -485,7 +547,7 @@ def collect_counts(session, days, media, workers):
     def one(oid):
         for d in days:
             try:
-                keys, sure = list_day_exact(session, oid, d)
+                keys, sure = list_day_exact(session, oid, d, cache)
                 res[d][oid] = len(keys) if sure else "unsure"   # 확정 못 한 날은 저장하지 않음(기존 값도 지움)
                 if sure:
                     titles.setdefault(oid, {})[d] = [[k[1], t] for k, t in keys.items()]
@@ -592,7 +654,7 @@ def main():
                 cdays = days
                 if not a.start:
                     cdays = sorted(set(days) | set(store.date_range((today - dt.timedelta(days=8)).isoformat(), today.isoformat())))
-                status["counts"] = collect_counts(session, cdays, cmedia, workers)
+                status["counts"] = collect_counts(session, cdays, cmedia, workers, cache)
                 touched |= set(cdays)
     finally:
         save_cache(cache)
