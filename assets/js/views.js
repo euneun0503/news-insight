@@ -604,12 +604,12 @@ function heatmap(el, rows) {
 // 4. 기사 목록
 // ═══════════════════════════════════════════════════════
 export async function articles(el, R, ctx) {
-  el.append(h(`<div class="page-head"><div><h1>기사 목록 ${info("articles")}</h1><p>랭킹 기사와 매체별 전체 발행 기사를 검색·정렬하고 엑셀로 내려받습니다.</p></div></div>`));
+  el.append(h(`<div class="page-head"><div><h1>기사 목록 ${info("articles")}</h1><p>매체별 랭킹 기사와 헬스조선·코메디닷컴 발행 기사를 검색·정렬하고 엑셀로 내려받습니다.</p></div></div>`));
   const state = { src: ctx.q.src || "rank", media: ctx.q.m || "", q: ctx.q.q || "", sort: ctx.q.sort || "", page: 1 };
   const card = h(`<div class="card">
     <div class="card-head" style="flex-wrap:wrap">
       <div class="tools">
-        <div class="seg" id="src"><button data-s="rank">랭킹 기사</button><button data-s="pub">전체 발행 기사</button></div>
+        <div class="seg" id="src"><button data-s="rank">랭킹 기사</button><button data-s="pub">${esc(mediaName(meta().our_media))} & ${esc(mediaName(meta().compare_media || "296"))} 발행 기사</button></div>
         <select class="input" id="mSel"><option value="">전체 매체</option></select>
         <input class="input" id="q" placeholder="제목·기자 검색 (공백=AND)" style="width:220px" value="${esc(state.q)}">
         <select class="input" id="sort"></select>
@@ -647,12 +647,10 @@ export async function articles(el, R, ctx) {
         $("#count", card).textContent = "";
         return;
       }
-      // 매체 설정에서 고른 매체 중 상세 수집(기자·시각)이 없는 날은 네이버 목록에서 받은 제목으로 채움
+      // 발행 기사 탭: 헬스조선 & 코메디닷컴만
       const M = meta();
-      const have = new Set(data.map((a) => a.oid + "|" + a.day));
-      const want = [...mediaSel().pub].filter((o) => (M.count_media || []).includes(o));
-      const extra = (await loadTitles(R.days, want)).filter((a) => !have.has(a.oid + "|" + a.day));
-      data = [...data, ...extra];
+      const two = new Set([M.our_media, M.compare_media || "296"]);
+      data = data.filter((a) => two.has(a.oid));
     }
     const medias = [...new Set(data.map((a) => a.oid))];
     const mSel = $("#mSel", card);
