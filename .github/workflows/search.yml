@@ -41,6 +41,7 @@ jobs:
           git add data/search
           if git diff --cached --quiet; then echo "변경 없음"; exit 0; fi
           git commit -m "검색 키워드 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') KST"
+          git checkout -- . && git clean -fdq   # 커밋하지 않는 변경(meta.json 등)은 버려야 pull --rebase 가능
           for i in 1 2 3 4 5; do
             git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push && exit 0
             sleep $((i * 5))
