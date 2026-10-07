@@ -24,6 +24,10 @@ on:
         description: "매체코드 쉼표구분 (예: 346) / 비우면 설정 전체"
         required: false
         default: ""
+      lane:
+        description: "급한 보충 수집을 다른 수집과 동시에 돌릴 때 이름 (예: fast) / 비우면 차례대로"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -31,7 +35,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: collect
+  group: ${{ github.event.inputs.lane && format('collect-{0}', github.event.inputs.lane) || 'collect' }}
   cancel-in-progress: false
 
 jobs:

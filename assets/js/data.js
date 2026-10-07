@@ -192,7 +192,7 @@ export function aggregate(days, sum) {
     days,
     covered: { pub: [], rank: [] },
     partialDays: [],
-    pub: {}, pubDay: {}, pubH: {}, pubTotal: 0,
+    pub: {}, pubDay: {}, pubDays: {}, pubH: {}, pubTotal: 0,
     rank: {}, rankDay: {}, rankViews: 0, rankCount: 0, noView: new Set(),
     rankH: [Array(24).fill(0), Array(24).fill(0)],
     wd: { pub: Array(7).fill(0), views: Array(7).fill(0), pubDays: Array(7).fill(0), rankDays: Array(7).fill(0) },
@@ -214,6 +214,7 @@ export function aggregate(days, sum) {
       a.wd.pubDays[wi]++;
       for (const [oid, n] of Object.entries(s.pub)) {
         if (!sel.pub.has(oid)) continue;
+        (a.pubDays ||= {})[oid] = (a.pubDays[oid] || 0) + 1; // 매체별 수집된 날 수
         a.pub[oid] = (a.pub[oid] || 0) + n;
         a.pubDay[d][oid] = n;
         a.pubTotal += n;

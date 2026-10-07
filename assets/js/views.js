@@ -126,11 +126,14 @@ export async function dashboard(el, R, ctx) {
   // 발행 카드: 기간 합계 + 일평균 + 직전 동일 기간 대비(같은 날 수가 수집됐으면 합계끼리, 아니면 하루 평균끼리)
   const pubCard = (oid) => {
     const cur = A.pub[oid], prev = P.pub[oid];
-    const fair = A.pubDayCount === P.pubDayCount;
-    const d = cur == null ? "" : fair ? delta(cur, prev ?? null) : delta(cur / (A.pubDayCount || 1), prev != null && P.pubDayCount ? prev / P.pubDayCount : null);
+    const nd = A.pubDays?.[oid] || 0, pnd = P.pubDays?.[oid] || 0; // 이 매체가 실제로 수집된 날 수
+    const fair = nd === pnd && nd === R.n;
+    const d = cur == null ? "" : fair ? delta(cur, prev ?? null) : delta(cur / (nd || 1), prev != null && pnd ? prev / pnd : null);
+    const partial = cur != null && nd < R.n;
     return `<div class="card kpi"><div class="label">${esc(mediaName(oid))} 발행 기사 ${info("ourPub")}</div>
-      <div class="value ${oid === our ? "green" : "blue"} num">${cur != null ? fmt(cur) : "-"}<span title="${prevLabel}${fair ? "" : " · 수집일 수가 달라 하루 평균끼리 비교"}">${d}</span></div>
-      <div class="meta">${cur != null ? `일평균 ${fmt1(cur / Math.max(1, A.pubDayCount))}건 · ${pubMedia.length}개 중 ${pubMedia.indexOf(oid) + 1}위 · ${R.n === 1 ? mmdd(R.s) : `${R.n}일`} 합계` : "발행 데이터 없음"}</div></div>`;
+      <div class="value ${oid === our ? "green" : "blue"} num">${cur != null ? fmt(cur) : "-"}<span title="${prevLabel}${fair ? "" : " · 수집된 날 수가 달라 하루 평균끼리 비교"}">${d}</span></div>
+      <div class="meta">${cur != null ? `일평균 ${fmt1(cur / Math.max(1, nd))}건 · ${pubMedia.length}개 중 ${pubMedia.indexOf(oid) + 1}위 · ${R.n === 1 ? mmdd(R.s) : `${R.n}일`} 합계` : "발행 데이터 없음 (수집 중)"}</div>
+      ${partial ? `<div class="meta warn">⚠ ${R.n}일 중 ${nd}일만 수집됨 — 나머지 날짜 수집 중이라 합계가 실제보다 적습니다 (일평균은 수집된 ${nd}일 기준)</div>` : ""}</div>`;
   };
   const cmp = M.compare_media || "296";
   el.append(h(`<div class="grid g-4">

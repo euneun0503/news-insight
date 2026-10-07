@@ -343,3 +343,4 @@ table.t { overflow-wrap: normal; }
 .rep-chip { background: var(--line-2); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
 .rep-chip b { color: var(--blue); font-weight: 650; }
 .rep-chip.ours { background: var(--orange-soft); }
+.kpi .meta.warn { color: #b45309; margin-top: 4px; }
