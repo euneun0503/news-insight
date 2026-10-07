@@ -285,7 +285,7 @@ export async function dashboard(el, R, ctx) {
 
   // 랭킹 상위 기사
   const topRow = h(`<div class="grid g-21">
-    <div class="card"><div class="card-head"><div><h3>랭킹 상위 기사 ${info("topArticles")}</h3><div class="sub">선택 매체의 랭킹 기사 중 조회수 높은 순 · 순위 = 전체 순위, 매체 옆 숫자 = 그 매체 랭킹 순위</div></div><a href="${ctx.link("articles")}">전체 보기</a></div><div id="topTable"></div></div>
+    <div class="card"><div class="card-head"><div><h3>랭킹 상위 기사 ${info("topArticles")}</h3><div class="sub">선택 매체 랭킹 기사 TOP 50 · 매체 상관없이 조회수 높은 순 (기사 목록과 같은 기준) · 조회수 미공개 매체 제외</div></div><a href="${ctx.link("articles")}">전체 보기</a></div><div id="topTable"></div></div>
     <div class="card"><div class="card-head"><div><h3>급상승 검색어 TOP 200 ${info("googleTrends")}</h3><div class="sub" id="trSub">구글 트렌드 한국</div></div><a href="${ctx.link("keywords", { tab: "search" })}">더 보기</a></div><div id="trList"><div class="loading"></div></div></div>
   </div>`);
   el.append(topRow);
@@ -296,7 +296,24 @@ export async function dashboard(el, R, ctx) {
     const maxT = Math.max(...list.map((x) => x.traffic), 1);
     trendPager($("#trList", topRow), list, (rows) => `<div class="kw-list">${rows.map(([x, i]) => `<a class="kw-row" href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.news[0]?.[0] || "")}"><span class="n">${i + 1}</span><span class="w">${esc(x.title)}</span><div class="bar orange"><span style="width:${(x.traffic / maxT) * 100}%"></span></div><span class="v num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</span></a>`).join("")}</div>`, { per: 20 });
   });
-  articleTable($("#topTable", topCard), A.top.filter((a) => a.views != null).slice(0, 10), { showDay: R.n > 1, overall: 0 });
+  // 기사 목록 > 랭킹 기사와 같은 기준: 선택 매체 랭킹 기사 전체를 조회수 순으로 (요약본 상위 30건은 전 매체 기준이라 쓰지 않음)
+  (async () => {
+    const box = $("#topTable", topCard);
+    box.innerHTML = '<div class="loading">불러오는 중…</div>';
+    const full = await R.ranking().catch(() => null);
+    const list = (full || A.top).filter((a) => a.views != null).sort((a, b) => b.views - a.views).slice(0, 50);
+    const PER = 10;
+    let page = 1;
+    const draw = () => {
+      const pages = Math.max(1, Math.ceil(list.length / PER));
+      articleTable(box, list.slice((page - 1) * PER, page * PER), { showDay: R.n > 1, overall: (page - 1) * PER });
+      if (pages > 1) {
+        box.append(h(`<div class="pager">${Array.from({ length: pages }, (_, i) => `<button class="btn sm ${i + 1 === page ? "primary" : ""}" data-p="${i + 1}">${i * PER + 1}~${Math.min((i + 1) * PER, list.length)}위</button>`).join("")}</div>`));
+        $$(".pager button", box).forEach((b) => b.addEventListener("click", () => { page = +b.dataset.p; draw(); }));
+      }
+    };
+    list.length ? draw() : (box.innerHTML = '<div class="empty">랭킹 기사가 없습니다.</div>');
+  })();
 
   // 수집 상태
   el.append(statusCard());
