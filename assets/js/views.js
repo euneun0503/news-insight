@@ -471,10 +471,18 @@ export async function keywords(el, R, ctx) {
 // ═══════════════════════════════════════════════════════
 export async function media(el, R, ctx) {
   const A = R.agg;
-  el.append(h(`<div class="page-head"><div><h1>매체 비교 ${info("mediaTable")}</h1><p>매체별 발행량과 랭킹 성과를 나란히 비교합니다. · ${coverageNote(R)}</p></div></div>`));
+  const M = meta();
+  const SEL = mediaSel();
+  const head = h(`<div class="page-head"><div><h1>매체 비교 ${info("mediaTable")}</h1><p>매체별 발행량과 랭킹 성과를 나란히 비교합니다. · ${coverageNote(R)}</p></div>
+    <button class="btn" id="msBtn">⚙ 매체 설정 <span class="tag ${SEL.custom ? "orange" : "gray"}">랭킹 ${[...SEL.rank].filter((o) => (M.ranking_media || []).includes(o)).length} · 발행 ${[...SEL.pub].filter((o) => (M.publish_media || []).includes(o) || (M.count_media || []).includes(o)).length}</span></button></div>`);
+  const msSlot = h(`<div></div>`);
+  el.append(head, msSlot);
+  $("#msBtn", head).addEventListener("click", () => openMediaSettings(msSlot));
   if (!A.rankDayCount && !A.pubDayCount) return el.append(h(noData(R)));
   const P = (await R.previous()).agg;
-  const all = [...new Set([...Object.keys(A.rank), ...Object.keys(A.pub)])];
+  // 매체 설정에서 고른 매체는 이 기간 데이터가 없어도 표에 모두 표시 (없으면 '수집 중')
+  const collectedR = new Set(M.ranking_media || []), collectedP = new Set([...(M.publish_media || []), ...(M.count_media || [])]);
+  const all = [...new Set([...Object.keys(A.rank), ...Object.keys(A.pub), ...[...SEL.rank].filter((o) => collectedR.has(o)), ...[...SEL.pub].filter((o) => collectedP.has(o))])];
   const rows = all.map((oid) => {
     const r = A.rank[oid];
     return {
@@ -498,7 +506,7 @@ export async function media(el, R, ctx) {
     { key: "name", label: "매체", html: (r) => chip(r.oid) },
     { key: "pub", label: "발행 기사", cls: "r num", html: (r) => (r.pub == null ? '<span class="form-hint">수집 중</span>' : `${fmt(r.pub)}${r.pubDays < R.n ? `<div class="form-hint">${r.pubDays}/${R.n}일 수집</div>` : ""}`) },
     { key: "pubAvg", label: "일평균", cls: "r num", html: (r) => fmt1(r.pubAvg) },
-    { key: "views", label: "랭킹 조회수", cls: "r num", html: (r) => `${fmt(r.views)}${delta(r.dayAvg, r.prevDayAvg)}` },
+    { key: "views", label: "랭킹 조회수", cls: "r num", html: (r) => (r.views == null ? `<span class="form-hint">${A.noView.has(r.oid) ? "조회수 미공개" : "수집 중"}</span>` : `${fmt(r.views)}${delta(r.dayAvg, r.prevDayAvg)}`) },
     { key: "share", label: "점유율", html: (r) => (r.share == null ? "-" : `<div style="display:flex;gap:8px;align-items:center"><div class="bar ${isOur(r.oid) ? "orange" : ""}" style="flex:1"><span style="width:${(r.share / maxShare) * 100}%"></span></div><span class="num" style="width:44px;text-align:right">${pct(r.share)}</span></div>`) },
     { key: "avg", label: "랭킹 기사 평균", cls: "r num", html: (r) => fmt(r.avg) },
     { key: "top1", label: "1위 평균", cls: "r num", html: (r) => fmt(r.top1) },
