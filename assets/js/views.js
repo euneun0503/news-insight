@@ -776,7 +776,7 @@ export async function reporters(el, R, ctx) {
   const map = new Map();
   const get = (name, oid) => {
     const key = name + "|" + oid;
-    if (!map.has(key)) map.set(key, { name, oid, mname: mediaName(oid), pub: 0, rank: 0, top1: 0, top3: 0, views: 0, viewN: 0, best: null, rkItems: [], pubItems: [] });
+    if (!map.has(key)) map.set(key, { name, oid, mname: mediaName(oid), pub: 0, rank: 0, rankDays: 0, top1: 0, top3: 0, views: 0, viewN: 0, best: null, rkItems: [], pubItems: [], pubSet: new Set(), rankSet: new Set() });
     return map.get(key);
   };
   // 매체 이름이 기자명 자리에 들어간 예전 수집분은 제외 (예: "서울신문", "헬스조선")
@@ -791,7 +791,7 @@ export async function reporters(el, R, ctx) {
       if (names.length) rkNamed++;
       for (const n of names) {
         const r = get(n, a.oid);
-        r.rank++; if (a.rank === 1) r.top1++; if (a.rank <= 3) r.top3++;
+        r.rankDays++; r.rankSet.add(a.oid + "_" + a.aid); if (a.rank === 1) r.top1++; if (a.rank <= 3) r.top3++;
         if (a.views != null) { r.views += a.views; r.viewN++; if (!r.best || a.views > r.best.views) r.best = a; }
         r.rkItems.push(a);
       }
@@ -802,14 +802,22 @@ export async function reporters(el, R, ctx) {
       arTotal++;
       const names = split(a.reporter);
       if (names.length) arNamed++;
-      for (const n of names) { const r = get(n, a.oid); r.pub++; r.pubItems.push(a); }
+      for (const n of names) { const r = get(n, a.oid); r.pubSet.add(a.oid + "_" + a.aid); r.pubItems.push(a); } // 공동 기자는 각자 발행 수에 포함
     }
+    // 랭킹에 오른 기사 중 기간 안에 발행됐는데 발행 목록에서 빠진 기사(공동 바이라인 표기 차이 등)도 발행 수에 더함
+    const detail = new Set(ar.map((a) => a.oid)); // 이 기간 발행목록이 실제로 수집된 매체만
+    for (const r of map.values()) {
+      if (!detail.has(r.oid)) continue;
+      for (const a of r.rkItems) { const pd = (a.pub || a.day || "").slice(0, 10); if (pd >= R.s && pd <= R.e) r.pubSet.add(a.oid + "_" + a.aid); }
+    }
+    for (const r of map.values()) r.pub = r.pubSet.size;
   } else {
     // 31일 넘는 기간: 발행 수는 일별 요약값 사용
     for (const x of A.rep.values()) for (const n of split(x.name)) get(n, x.oid).pub += x.pub;
   }
+  for (const r of map.values()) r.rank = r.rankSet.size; // 랭킹 진입 = 랭킹에 오른 서로 다른 기사 수 (같은 기사가 며칠 올라도 1건)
   if (!rk) for (const x of A.rep.values()) for (const n of split(x.name)) { const r = get(n, x.oid); r.rank += x.rank; r.views += x.views; r.viewN += x.rank; }
-  const rows = [...map.values()].map((r) => ({ ...r, bestViews: r.best ? r.best.views : null, avg: r.viewN ? r.views / r.viewN : null, rate: r.pub ? r.rank / r.pub : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
+  const rows = [...map.values()].map((r) => ({ ...r, bestViews: r.best ? r.best.views : null, avg: r.viewN ? r.views / r.viewN : null, rate: r.pub ? Math.min(1, r.rank / r.pub) : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
 
   if (!rows.length) {
     el.append(h(`<div class="card">${emptyBox("이 기간 기사에는 아직 기자명이 없습니다.<br>엑셀에서 가져온 과거 자료는 기자명이 비어 있어요. 자동 수집으로 새로 받은 기사부터 기자명이 들어갑니다.")}</div>`));
@@ -839,7 +847,7 @@ export async function reporters(el, R, ctx) {
   </div></div>`));
 
   const medias = [...new Set(rows.map((r) => r.oid))].sort((a, b) => (a === M.our_media ? -1 : b === M.our_media ? 1 : mediaName(a).localeCompare(mediaName(b), "ko")));
-  const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 랭킹 진입 ÷ 발행 기사 (발행목록을 수집하는 매체만) · 공동 바이라인은 각 기자에게 모두 반영 · 취합 조회수 합계 = 랭킹(매체별 상위 20건)에 오른 기사 조회수의 합</div></div>
+  const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 랭킹에 오른 기사 수 ÷ 발행 기사 수 (최고 100%, 발행목록을 수집하는 매체만) · 공동 기자 기사는 각 기자의 발행·랭킹에 모두 포함 · 취합 조회수 합계 = 랭킹(매체별 상위 20건)에 오른 기사 조회수의 합</div></div>
     <div class="tools"><select class="input" id="rm"><option value="">전체 매체</option>${medias.map((o) => `<option value="${o}">${esc(mediaName(o))}</option>`).join("")}</select>
     <input class="input" id="rq" placeholder="기자명 검색" style="width:130px"><div class="seg" id="rsize"><button data-n="30" class="on">30명씩</button><button data-n="100">100명씩</button></div><button class="btn sm dl" id="rx">엑셀 저장</button></div></div><div id="rt"></div></div>`);
   el.append(card);
