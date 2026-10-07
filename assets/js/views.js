@@ -907,24 +907,36 @@ export async function reporters(el, R, ctx) {
       if (names.length) arNamed++;
       for (const n of names) { const r = get(n, a.oid); r.pubSet.add(a.oid + "_" + a.aid); r.pubItems.push(a); } // 공동 기자는 각자 발행 수에 포함
     }
-    // 랭킹에 오른 기사 중 기간 안에 발행됐는데 발행 목록에서 빠진 기사(공동 바이라인 표기 차이 등)도 발행 수에 더함
-    const detail = new Set(ar.map((a) => a.oid)); // 이 기간 발행목록이 실제로 수집된 매체만
+    // 발행 = 기자명까지 확인한 발행목록(상세 수집) + 기간 안에 발행돼 랭킹에 오른 기사(그 기자가 쓴 게 확실한 기사)
+    // 발행목록(기자명)을 아직 수집하지 못한 날이 있는 매체는 랭킹 기사만 세게 되므로 '일부'로 표시하고 진입률은 수집된 날만으로 계산
     const arDay = new Set(ar.map((a) => a.oid + "|" + a.day)); // 기자명까지 확인한 발행목록이 있는 매체·날짜
-    for (const r of map.values()) {
-      if (!detail.has(r.oid)) continue;
-      for (const a of r.rkItems) { const pd = (a.pub || a.day || "").slice(0, 10); if (pd >= R.s && pd <= R.e && arDay.has(a.oid + "|" + pd)) r.pubSet.add(a.oid + "_" + a.aid); } // 그날 발행목록이 수집된 경우만
-    }
-    for (const r of map.values()) r.pub = r.pubSet.size;
-    // 기간 발행 기사 중 20위 안에 든 기사 (기간 안 랭킹 + 기간 뒤 2일 랭킹)
+    const capDay = R.e < kstTodayISO() ? R.e : kstTodayISO();
+    const periodDays = R.days.filter((d) => d <= capDay);
+    const missDays = (oid) => periodDays.filter((d) => !arDay.has(oid + "|" + d));
     const ranked = new Set([...(rk || []), ...rkAfter].map((a) => a.oid + "_" + a.aid));
-    for (const r of map.values()) for (const k of r.pubSet) if (ranked.has(k)) r.enterSet.add(k);
+    for (const r of map.values()) {
+      const covSet = new Set(r.pubSet); // 발행목록이 수집된 날의 기사
+      for (const a of r.rkItems) {
+        const pd = (a.pub || a.day || "").slice(0, 10);
+        if (pd < R.s || pd > R.e) continue; // 기간 전에 발행돼 기간 중 랭킹에 오른 기사는 발행 수에 넣지 않음
+        const k = a.oid + "_" + a.aid;
+        r.pubSet.add(k);
+        if (arDay.has(a.oid + "|" + pd)) covSet.add(k);
+      }
+      r.pub = r.pubSet.size;
+      const miss = missDays(r.oid);
+      r.pubPartial = miss.length ? miss.length : 0;
+      // 진입률: 발행목록이 수집된 날 발행 기사 중 20위 진입 (기간 안 랭킹 + 기간 뒤 2일 랭킹)
+      r.covPub = covSet.size;
+      for (const k of covSet) if (ranked.has(k)) r.enterSet.add(k);
+    }
   } else {
     // 31일 넘는 기간: 발행 수는 일별 요약값 사용
     for (const x of A.rep.values()) for (const n of split(x.name)) get(n, x.oid).pub += x.pub;
   }
   for (const r of map.values()) r.rank = r.rankSet.size; // 랭킹 진입 = 랭킹에 오른 서로 다른 기사 수 (같은 기사가 며칠 올라도 1건)
   if (!rk) for (const x of A.rep.values()) for (const n of split(x.name)) { const r = get(n, x.oid); r.rank += x.rank; r.views += x.views; r.viewN += x.rank; }
-  const rows = [...map.values()].map((r) => ({ ...r, bestViews: r.best ? r.best.views : null, avg: r.viewN ? r.views / r.viewN : null, enter: ar ? r.enterSet.size : null, rate: ar && r.pub ? r.enterSet.size / r.pub : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
+  const rows = [...map.values()].map((r) => ({ ...r, bestViews: r.best ? r.best.views : null, avg: r.viewN ? r.views / r.viewN : null, enter: ar && r.covPub ? r.enterSet.size : null, rate: ar && r.covPub ? r.enterSet.size / r.covPub : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
 
   if (!rows.length) {
     el.append(h(`<div class="card">${emptyBox("이 기간 기사에는 아직 기자명이 없습니다.<br>엑셀에서 가져온 과거 자료는 기자명이 비어 있어요. 자동 수집으로 새로 받은 기사부터 기자명이 들어갑니다.")}</div>`));
@@ -976,8 +988,8 @@ export async function reporters(el, R, ctx) {
     sortableTable($("#rt", card), [
       { key: "name", label: "기자", html: (r) => `<a href="javascript:void 0" data-rep="${esc(r.name + "|" + r.oid)}"><b>${esc(r.name)}</b></a>` },
       { key: "mname", label: "매체", html: (r) => chip(r.oid) },
-      { key: "pub", label: "발행", cls: "r num", html: (r) => (r.pub ? fmt(r.pub) : "-") },
-      { key: "rank", label: "랭킹 진입", cls: "r num", html: (r) => fmt(r.rank) },
+      { key: "pub", label: `발행 ${info("repPub")}`, cls: "r num", html: (r) => (!r.pub ? "-" : r.pubPartial ? `<span title="이 기간 중 ${r.pubPartial}일은 이 매체의 발행목록(기자명)을 아직 수집하지 못해, 그날은 랭킹에 오른 기사만 셌습니다">${fmt(r.pub)}<sup class="warn">일부</sup></span>` : fmt(r.pub)) },
+      { key: "rank", label: `랭킹 진입 ${info("repRank")}`, cls: "r num", html: (r) => fmt(r.rank) },
       { key: "enter", label: "발행 중 20위 진입", cls: "r num", html: (r) => (r.enter == null ? "-" : fmt(r.enter)) },
       { key: "top1", label: "1위", cls: "r num", html: (r) => (r.top1 ? `<span class="tag orange">${r.top1}</span>` : "-") },
       { key: "views", label: `취합 조회수 합계 ${info("repViews")}`, cls: "r num", val: (r) => (r.viewN ? r.views : -1), html: (r) => (r.viewN ? fmt(r.views) : '<span class="form-hint" title="네이버가 이 매체의 조회수를 공개하지 않습니다">미공개</span>') },

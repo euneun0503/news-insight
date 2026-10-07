@@ -40,7 +40,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: ${{ github.event.inputs.lane && format('collect-{0}', github.event.inputs.lane) || 'collect' }}
+  # 30분마다 가벼운 수집(light)은 오래 걸리는 전체 수집 뒤에 줄 서지 않도록 따로 돈다
+  group: ${{ github.event.inputs.lane && format('collect-{0}', github.event.inputs.lane) || (github.event.inputs.mode == 'light' && 'collect-light') || 'collect' }}
   cancel-in-progress: false
 
 jobs:

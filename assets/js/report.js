@@ -259,9 +259,9 @@ export function slides(m) {
   const ourReps = reps.filter((r) => r.oid === k.our).sort((a, b) => b.views - a.views || b.pub - a.pub).slice(0, 10);
   const allReps = reps.filter((r) => r.views > 0).sort((a, b) => b.views - a.views).slice(0, 10);
   out.push({
-    ...head("기자 성과", "공동 바이라인은 각 기자에게 모두 반영 · 진입률 = 랭킹 진입 ÷ 발행 (최대 100%)"),
+    ...head("기자 성과", "공동 바이라인은 각 기자에게 모두 반영 · 랭킹 진입(일별) = 매일 매체 랭킹 20위 안에 오른 횟수 · 랭킹 조회수 = 오른 날들의 랭킹 조회수 합"),
     blocks: [
-      { t: "table", box: [48, 112, 584, 568], size: 12, title: `${k.ourN} 기자 TOP 10 (조회수)`, head: ["#", "기자", "발행", "랭킹 진입", "진입률", "랭킹 조회수"], widths: [0.07, 0.25, 0.13, 0.17, 0.15, 0.23], align: ["c", "l", "r", "r", "r", "r"], rows: ourReps.map((r, i) => [String(i + 1), r.name, fmt(r.pub), fmt(r.rank), r.pub ? pct(Math.min(1, r.rank / r.pub), 0) : "-", fmt(r.views)]), empty: "기자 자료가 없습니다" },
+      { t: "table", box: [48, 112, 584, 568], size: 12, title: `${k.ourN} 기자 TOP 10 (조회수)`, head: ["#", "기자", "발행", "랭킹 진입(일별)", "랭킹 조회수"], widths: [0.08, 0.28, 0.16, 0.22, 0.26], align: ["c", "l", "r", "r", "r"], rows: ourReps.map((r, i) => [String(i + 1), r.name, fmt(r.pub), fmt(r.rank), fmt(r.views)]), empty: "기자 자료가 없습니다" },
       { t: "table", box: [648, 112, 584, 568], size: 12, title: "선택 매체 기자 TOP 10 (조회수)", head: ["#", "기자", "매체", "발행", "랭킹 조회수"], widths: [0.07, 0.25, 0.26, 0.14, 0.28], align: ["c", "l", "l", "r", "r"], rows: allReps.map((r, i) => [String(i + 1), r.name, mediaName(r.oid), fmt(r.pub), fmt(r.views)]), hl: allReps.map((r, i) => (r.oid === k.our ? i : -1)).filter((i) => i >= 0) },
     ],
   });
