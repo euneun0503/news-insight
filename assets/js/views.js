@@ -687,7 +687,10 @@ export async function reporters(el, R, ctx) {
     if (!map.has(key)) map.set(key, { name, oid, mname: mediaName(oid), pub: 0, rank: 0, top1: 0, top3: 0, views: 0, viewN: 0, best: null, rkItems: [], pubItems: [] });
     return map.get(key);
   };
-  const split = (s) => (s || "").split("·").map((x) => x.trim()).filter(Boolean);
+  // 매체 이름이 기자명 자리에 들어간 예전 수집분은 제외 (예: "서울신문", "헬스조선")
+  const mediaNames = new Set(Object.values(M.media || {}));
+  const isPerson = (n) => /^[가-힣]{2,4}$/.test(n) && !mediaNames.has(n) && !/(일보|신문|뉴스|닷컴|조선|방송|미디어|경제|이미지|사진|영상)/.test(n);
+  const split = (s) => (s || "").split("·").map((x) => x.trim()).filter(isPerson);
   let rkTotal = 0, rkNamed = 0, arTotal = 0, arNamed = 0;
   if (rk) {
     for (const a of rk) {
