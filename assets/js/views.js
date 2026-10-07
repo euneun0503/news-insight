@@ -189,54 +189,58 @@ export async function dashboard(el, R, ctx) {
   const tSel = $("#trendMedia", row);
   tSel.innerHTML = tMedia.map((o) => `<option value="${o}" ${o === our ? "selected" : ""}>${esc(mediaName(o))}</option>`).join("");
   let tMode = "cmp";
+  // 선택 기간이 짧으면(7일 미만) 추이가 안 보이므로, 일별 추이는 끝 날짜 기준 최근 14일로 보여줌
+  const TR = R.n < 7 ? await new Range(addDaysISO(R.e, -13), R.e).init() : R;
+  const TA = TR.agg;
   const drawTrend = () => {
     trendChart?.destroy();
     tSel.hidden = tMode !== "both";
     const sub = $("#trendSub", row);
+    const shortNote = TR !== R ? `최근 ${TR.n}일 추이 (${mmdd(TR.s)}~${mmdd(TR.e)}) · ` : "";
     if (tMode === "both") {
       const oid = tSel.value;
-      sub.textContent = `${mediaName(oid)} · 막대: 발행 기사수(왼쪽) · 선: 랭킹 조회수(오른쪽)${A.pubDay && !Object.values(A.pubDay).some((x) => x[oid] != null) ? " · 이 매체는 발행목록을 수집하지 않습니다" : ""}`;
-      trendChart = comboChart(trendCanvas, dayLabels(R.days),
-        { label: "발행 기사수", data: R.days.map((d) => A.pubDay[d]?.[oid] ?? null), backgroundColor: mediaColor(oid) + "99" },
-        { label: "랭킹 조회수", data: R.days.map((d) => A.rankDay[d]?.[oid] ?? null), borderColor: "#0f2341", backgroundColor: "#0f2341", spanGaps: false }, { days: R.days });
+      sub.textContent = `${shortNote}${mediaName(oid)} · 막대: 발행 기사수(왼쪽) · 선: 랭킹 조회수(오른쪽)${TA.pubDay && !Object.values(TA.pubDay).some((x) => x[oid] != null) ? " · 이 매체는 발행목록을 수집하지 않습니다" : ""}`;
+      trendChart = comboChart(trendCanvas, dayLabels(TR.days),
+        { label: "발행 기사수", data: TR.days.map((d) => TA.pubDay[d]?.[oid] ?? null), backgroundColor: mediaColor(oid) + "99" },
+        { label: "랭킹 조회수", data: TR.days.map((d) => TA.rankDay[d]?.[oid] ?? null), borderColor: "#0f2341", backgroundColor: "#0f2341", spanGaps: false }, { days: TR.days });
       return;
     }
     $("#trendTbl", row).innerHTML = "";
     if (tMode === "cmp") {
       // 헬스조선 vs 코메디닷컴 발행 기사수 비교 (막대 + 날짜별 표)
       const two = [our, cmp];
-      sub.textContent = `${mediaName(our)} vs ${mediaName(cmp)} · 날짜별 발행 기사수`;
-      const val = (d, o) => A.pubDay[d]?.[o] ?? null;
-      trendChart = barChart(trendCanvas, dayLabels(R.days), two.map((o) => ({ label: mediaName(o), data: R.days.map((d) => val(d, o)), backgroundColor: o === our ? OUR_COLOR : "#2563eb", maxBarThickness: 16 })), { days: R.days });
-      const tot = two.map((o) => R.days.reduce((t, d) => t + (val(d, o) || 0), 0));
-      const nd = two.map((o) => R.days.filter((d) => val(d, o) != null).length);
+      sub.textContent = `${shortNote}${mediaName(our)} vs ${mediaName(cmp)} · 날짜별 발행 기사수`;
+      const val = (d, o) => TA.pubDay[d]?.[o] ?? null;
+      trendChart = barChart(trendCanvas, dayLabels(TR.days), two.map((o) => ({ label: mediaName(o), data: TR.days.map((d) => val(d, o)), backgroundColor: o === our ? OUR_COLOR : "#2563eb", maxBarThickness: 16 })), { days: TR.days });
+      const tot = two.map((o) => TR.days.reduce((t, d) => t + (val(d, o) || 0), 0));
+      const nd = two.map((o) => TR.days.filter((d) => val(d, o) != null).length);
       const diff = (a, b) => (a == null || b == null ? "-" : `<span style="color:${a - b > 0 ? "#c2410c" : a - b < 0 ? "#2563eb" : "inherit"}">${a - b > 0 ? "+" : ""}${fmt(a - b)}</span>`);
       const dayCell = (d) => { const k = dayKind(d); return `<span style="color:${k ? DAY_COLOR[k] : "inherit"}" title="${esc(holiday(d))}">${mmdd(d)}(${weekday(d)}${holiday(d) ? "·휴" : ""})</span>`; };
       $("#trendTbl", row).innerHTML = `<div class="table-wrap trend-tbl"><table class="t"><thead><tr><th>날짜</th>${two.map((o) => `<th class="r">${esc(mediaName(o))}</th>`).join("")}<th class="r">차이</th></tr></thead><tbody>
-        <tr class="ours"><td><b>합계</b> <span class="form-hint">${R.n}일</span></td>${tot.map((t, i) => `<td class="r num"><b>${nd[i] ? fmt(t) : "-"}</b></td>`).join("")}<td class="r num">${nd[0] && nd[0] === nd[1] ? diff(tot[0], tot[1]) : `<span class="form-hint" title="수집된 날 수가 달라 합계 차이는 표시하지 않음">${nd[0]}일·${nd[1]}일 수집</span>`}</td></tr>
+        <tr class="ours"><td><b>합계</b> <span class="form-hint">${TR.n}일</span></td>${tot.map((t, i) => `<td class="r num"><b>${nd[i] ? fmt(t) : "-"}</b></td>`).join("")}<td class="r num">${nd[0] && nd[0] === nd[1] ? diff(tot[0], tot[1]) : `<span class="form-hint" title="수집된 날 수가 달라 합계 차이는 표시하지 않음">${nd[0]}일·${nd[1]}일 수집</span>`}</td></tr>
         <tr><td>일평균</td>${tot.map((t, i) => `<td class="r num">${nd[i] ? fmt1(t / nd[i]) : "-"}</td>`).join("")}<td class="r num">${nd[0] && nd[1] ? fmt1(tot[0] / nd[0] - tot[1] / nd[1]) : "-"}</td></tr>
-        ${[...R.days].reverse().map((d) => `<tr><td style="white-space:nowrap">${dayCell(d)}</td>${two.map((o) => `<td class="r num">${val(d, o) != null ? fmt(val(d, o)) : '<span class="form-hint">수집 전</span>'}</td>`).join("")}<td class="r num">${diff(val(d, our), val(d, cmp))}</td></tr>`).join("")}
+        ${[...TR.days].reverse().map((d) => `<tr><td style="white-space:nowrap">${dayCell(d)}</td>${two.map((o) => `<td class="r num">${val(d, o) != null ? fmt(val(d, o)) : '<span class="form-hint">수집 전</span>'}</td>`).join("")}<td class="r num">${diff(val(d, our), val(d, cmp))}</td></tr>`).join("")}
         </tbody></table></div><div class="form-hint" style="margin-top:4px">차이 = ${esc(mediaName(our))} − ${esc(mediaName(cmp))}</div>`;
       return;
     }
     const SELm = mediaSel();
     const media = tMode === "views"
-      ? [...new Set([...rankMedia, ...[...SELm.rank].filter((o) => (M.ranking_media || []).includes(o) && !A.noView.has(o))])]
+      ? [...new Set([...rankMedia, ...[...SELm.rank].filter((o) => (M.ranking_media || []).includes(o) && !TA.noView.has(o))])]
       : [...new Set([...pubMedia, ...[...SELm.pub].filter((o) => (M.publish_media || []).includes(o) || (M.count_media || []).includes(o))])];
-    const srcM = tMode === "views" ? A.rankDay : A.pubDay;
-    const missing = media.filter((o) => !R.days.some((d) => srcM[d]?.[o] != null));
-    sub.textContent = `${tMode === "views" ? "매체 설정에서 고른 랭킹 매체" : "매체 설정에서 고른 발행 매체"} ${media.length - missing.length}곳${R.n === 1 ? " · 하루만 선택됨" : " · 범례를 눌러 숨길 수 있음"}${missing.length ? ` · 아직 집계 전: ${missing.map(mediaName).join(", ")}` : ""}`;
-    const src = tMode === "views" ? A.rankDay : A.pubDay;
+    const srcM = tMode === "views" ? TA.rankDay : TA.pubDay;
+    const missing = media.filter((o) => !TR.days.some((d) => srcM[d]?.[o] != null));
+    sub.textContent = `${shortNote}${tMode === "views" ? "매체 설정에서 고른 랭킹 매체" : "매체 설정에서 고른 발행 매체"} ${media.length - missing.length}곳${TR.n === 1 ? " · 하루만 선택됨" : " · 범례를 눌러 숨길 수 있음"}${missing.length ? ` · 아직 집계 전: ${missing.map(mediaName).join(", ")}` : ""}`;
+    const src = tMode === "views" ? TA.rankDay : TA.pubDay;
     const ds = media.map((oid) => ({
       label: mediaName(oid),
-      data: R.days.map((d) => src[d]?.[oid] ?? null),
+      data: TR.days.map((d) => src[d]?.[oid] ?? null),
       color: mediaColor(oid),
       bold: isOur(oid),
       order: isOur(oid) ? 0 : 1,
     }));
-    trendChart = R.n === 1
-      ? (() => { const ms = media.filter((o) => src[R.days[0]]?.[o] != null).sort((a, b) => src[R.days[0]][b] - src[R.days[0]][a]); return barChart(trendCanvas, ms.map(mediaName), [{ label: tMode === "views" ? "조회수" : "발행", data: ms.map((o) => src[R.days[0]][o]), backgroundColor: ms.map(mediaColor) }]); })()
-      : lineChart(trendCanvas, dayLabels(R.days), ds, { spanGaps: false, days: R.days });
+    trendChart = TR.n === 1
+      ? (() => { const ms = media.filter((o) => src[TR.days[0]]?.[o] != null).sort((a, b) => src[TR.days[0]][b] - src[TR.days[0]][a]); return barChart(trendCanvas, ms.map(mediaName), [{ label: tMode === "views" ? "조회수" : "발행", data: ms.map((o) => src[TR.days[0]][o]), backgroundColor: ms.map(mediaColor) }]); })()
+      : lineChart(trendCanvas, dayLabels(TR.days), ds, { spanGaps: false, days: TR.days });
   };
   drawTrend();
   tSel.addEventListener("change", drawTrend);
