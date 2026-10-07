@@ -235,8 +235,8 @@ function renderStatus() {
   pill.className = "status-pill " + (run && !run.ok ? "warn" : hours > 6 ? "warn" : "ok");
   pill.lastElementChild.textContent = `최근 수집 ${relTime(run?.at || M.updated_at)}${run && !run.ok ? ` · 경고 ${run.errors_n}` : ""} · 데이터 ~${(M.last || "").replace(/-/g, ".")}`;
   pill.title = kstDateTime(run?.at || M.updated_at);
-  $("#navFoot").innerHTML = `우리 매체: <b>${esc(mediaName(M.our_media))}</b><br>${esc(naverCoverage().short)}<br>${M.first ? `${M.first.replace(/-/g, ".")} 부터 누적` : ""}`;
-  $("#foot").innerHTML = `* 조회수는 네이버 언론사별 랭킹(상위 ${M.ranking_size || 20}건)에 표시된 값이며, 오늘 날짜는 하루가 끝날 때까지 바뀝니다. 발행 기사는 기사 상세페이지의 입력시각(한국시간) 기준으로 날짜를 확정합니다. 키워드는 제목에서 자동 추출한 단어 빈도로, 검색량과는 다른 지표입니다.`;
+  $("#navFoot").innerHTML = `우리 매체: <b>${esc(mediaName(M.our_media))}</b><br>${esc(naverCoverage().short)}<br>${M.first ? `${M.first.replace(/-/g, ".")} 부터 누적` : ""}<br>데이터 보관 ${M.retention_months || 24}개월`;
+  $("#foot").innerHTML = `* 조회수는 네이버 언론사별 랭킹(상위 ${M.ranking_size || 20}건)에 표시된 값이며, 오늘 날짜는 하루가 끝날 때까지 바뀝니다. 발행 기사는 기사 상세페이지의 입력시각(한국시간) 기준으로 날짜를 확정합니다. 키워드는 제목에서 자동 추출한 단어 빈도로, 검색량과는 다른 지표입니다. 데이터 보관 기간은 ${M.retention_months || 24}개월이며, 지난 데이터는 오래된 것부터 자동 삭제됩니다.`;
 }
 
 // 계정 권한을 화면에 반영: 메뉴 숨김, 다운로드 버튼 숨김, 상단에 이름·로그아웃
