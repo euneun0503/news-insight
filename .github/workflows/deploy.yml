@@ -5,6 +5,8 @@ name: 사이트 배포
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "data/logs/**"
   workflow_dispatch:
 
 permissions:

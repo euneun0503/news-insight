@@ -414,6 +414,69 @@ def list_candidates(session, oid, day, seen, max_pages=150):
     return out
 
 
+def list_day_exact(session, oid, day, max_pages=150):
+    """발행 '건수'용 빠른 집계: 목록(date=그날)만 넘기며 그날 기사 key 모음. 상세페이지는 열지 않는다.
+    목록에 날짜가 적혀 있으면 그 날짜가 같은 것만, 시각만 있으면 요청한 날짜로 본다."""
+    out, prev_keys, stale = set(), None, 0
+    seen = set()
+    for page in range(1, max_pages + 1):
+        params = {"mode": "LPOD", "mid": "sec", "oid": oid, "listType": "title", "date": day.replace("-", ""), "page": page}
+        r = session.get("https://news.naver.com/main/list.naver?" + urlencode(params), timeout=15)
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, "html.parser")
+        page_keys, new_n, older = set(), 0, 0
+        for li in soup.select(LIST_SELECTOR):
+            a = li.find("a", href=True)
+            key = article_key(a["href"]) if a else None
+            if not key or key[0] != oid:
+                continue
+            page_keys.add(key)
+            if key in seen:
+                continue
+            seen.add(key)
+            new_n += 1
+            span = li.select_one("span.date")
+            m = re.search(r"(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})", span.get_text() if span else "")
+            d = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}" if m else day
+            if d == day:
+                out.add(key)
+            elif d < day:
+                older += 1
+        if not page_keys or page_keys == prev_keys or new_n == 0:
+            return out
+        prev_keys = page_keys
+        stale = stale + 1 if older and older == new_n else 0
+        if stale >= 2:
+            return out
+        time.sleep(0.1)
+    err(f"발행 건수 {day} {CONFIG['media'].get(oid, oid)}: 페이지 상한 도달")
+    return out
+
+
+def collect_counts(session, days, media, workers):
+    """상세 수집 대상이 아닌 매체들의 발행 '건수'만 집계 (매체 단위 병렬)"""
+    if not media:
+        return {}
+    log(f"\n🔢 발행 건수 {len(media)}개 매체 ({days[0]} ~ {days[-1]})")
+    res = {d: {} for d in days}
+
+    def one(oid):
+        for d in days:
+            try:
+                res[d][oid] = len(list_day_exact(session, oid, d))
+            except Exception as e:
+                res[d][oid] = None
+                err(f"발행 건수 {d} {CONFIG['media'].get(oid, oid)}: {e}")
+
+    with ThreadPoolExecutor(max_workers=min(8, workers)) as ex:
+        list(ex.map(one, media))
+    ts = now_kst().isoformat(timespec="seconds")
+    for d in days:
+        store.save_counts(d, res[d], ts)
+    log("   " + ", ".join(f"{d[5:]} {sum(v for v in res[d].values() if v)}건" for d in days))
+    return {d: {o: ("error" if n is None else n) for o, n in res[d].items()} for d in days}
+
+
 def collect_publish(session, days, media, cache, workers, fast=False):
     summary = {}
     touched = set()
@@ -454,10 +517,11 @@ def main():
     ap = argparse.ArgumentParser(description="네이버 뉴스 랭킹/발행목록 수집")
     ap.add_argument("--start", help="YYYY-MM-DD (기본: 어제)")
     ap.add_argument("--end", help="YYYY-MM-DD (기본: 오늘)")
-    ap.add_argument("--only", choices=["ranking", "publish"], help="한 종류만 수집")
+    ap.add_argument("--only", choices=["ranking", "publish", "counts"], help="한 종류만 수집")
     ap.add_argument("--media", help="매체코드 쉼표구분 (기본: config.json)")
     ap.add_argument("--fast", action="store_true", help="상세페이지 확인 생략")
     ap.add_argument("--no-build", action="store_true", help="요약 재생성 생략")
+    ap.add_argument("--no-counts", action="store_true", help="발행 건수(전체 매체) 집계 생략")
     a = ap.parse_args()
 
     today = today_kst()
@@ -479,14 +543,19 @@ def main():
     status = {"at": now_kst().isoformat(timespec="seconds"), "range": [days[0], days[-1]]}
     touched = set()
     try:
-        if a.only != "publish":
+        if a.only not in ("publish", "counts"):
             media = [m for m in CONFIG["ranking_media"] if not media_filter or m in media_filter]
             status["ranking"] = collect_ranking(session, days, media, cache, workers)
             touched |= set(days)
-        if a.only != "ranking":
+        if a.only not in ("ranking", "counts"):
             media = [m for m in CONFIG["publish_media"] if not media_filter or m in media_filter]
             status["articles"], t = collect_publish(session, days, media, cache, workers, a.fast)
             touched |= t
+        if a.only != "ranking":
+            cmedia = [m for m in CONFIG.get("count_media", []) if not media_filter or m in media_filter]
+            if cmedia and not a.no_counts:
+                status["counts"] = collect_counts(session, days, cmedia, workers)
+                touched |= set(days)
     finally:
         save_cache(cache)
 

@@ -17,7 +17,7 @@ on:
         required: false
         default: ""
       only:
-        description: "ranking / publish / 비우면 둘 다"
+        description: "ranking / publish / counts(전체 매체 발행 건수만) / 비우면 모두"
         required: false
         default: ""
       media:
@@ -65,12 +65,12 @@ jobs:
           fi
           [[ "$IN_START" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && ARGS="$ARGS --start $IN_START"
           [[ "$IN_END" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && ARGS="$ARGS --end $IN_END"
-          [[ "$IN_ONLY" == "ranking" || "$IN_ONLY" == "publish" ]] && ARGS="$ARGS --only $IN_ONLY"
+          [[ "$IN_ONLY" == "ranking" || "$IN_ONLY" == "publish" || "$IN_ONLY" == "counts" ]] && ARGS="$ARGS --only $IN_ONLY"
           [[ "$IN_MEDIA" =~ ^[0-9,]+$ ]] && ARGS="$ARGS --media $IN_MEDIA"
           python collector/collect.py $ARGS
 
       - name: 검색 키워드 (구글 급상승 + 네이버 검색량)
-        if: github.event.inputs.only != 'ranking' && github.event.inputs.only != 'publish'
+        if: github.event.inputs.only != 'ranking' && github.event.inputs.only != 'publish' && github.event.inputs.only != 'counts'
         continue-on-error: true
         env:
           NAVER_AD_API_KEY: ${{ secrets.NAVER_AD_API_KEY }}

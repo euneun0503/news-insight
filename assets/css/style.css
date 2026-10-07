@@ -302,3 +302,16 @@ table.t { overflow-wrap: normal; }
   .status-pill { max-width: 40vw; overflow: hidden; }
 }
 .pager { flex-wrap: wrap; }
+
+/* 관리자 로그인·마스터 페이지 */
+.auth-card { max-width: 400px; margin: 24px auto; padding: 28px 26px; }
+.auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.auth-logo { width: 42px; height: 42px; border-radius: 12px; background: #18335c; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 20px; }
+.auth-fields { display: grid; gap: 10px; }
+.auth-fields .input { padding: 10px 12px; font-size: 14px; }
+.auth-fields .btn.primary { padding: 10px; font-size: 14px; }
+.auth-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 16px; font-size: 12.5px; }
+.admin-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.admin-top .avatar { width: 36px; height: 36px; border-radius: 50%; background: #18335c; color: #fff; display: grid; place-items: center; font-weight: 700; }
+.admin-tabs { margin-left: auto; flex-wrap: wrap; }
+@media (max-width: 640px) { .admin-tabs { margin-left: 0; width: 100%; } .auth-card { margin: 8px auto; padding: 22px 18px; } }

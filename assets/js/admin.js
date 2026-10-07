@@ -1,12 +1,21 @@
-// 관리자 백단 — GitHub 저장소를 데이터베이스로 사용
-// 관리자 3~4명은 저장소 협업자(Collaborator)로 초대하고, 각자 개인 토큰으로 로그인합니다.
+// 관리자 백단 — 아이디·비밀번호 로그인 / 마스터 페이지 / 접속·활동 기록
+// 서버 없이 GitHub 저장소를 데이터베이스로 씁니다.
+// - 마스터가 처음 한 번 GitHub 키(토큰)를 등록하면, 그 키는 '금고 키'로 암호화되어 data/auth/users.json 에 저장됩니다.
+// - 각 계정은 자기 비밀번호로만 금고 키를 열 수 있습니다(PBKDF2 31만 회 + AES-GCM). 비밀번호 원문·GitHub 키 원문은 어디에도 저장되지 않습니다.
+// - 접속 기록: data/logs/access/YYYY-MM.json · 활동 기록: data/logs/activity/YYYY-MM.json
 import { esc, h, $, $$, markdown, toast, kstToday, dotDate, kstDateTime, relTime } from "./util.js";
 import { TYPES, isActive } from "./board.js";
 import { meta } from "./data.js";
 
 const API = "https://api.github.com";
 const CFG = window.SITE_CONFIG || {};
-const TOKEN_KEY = "nk_admin_token";
+const AUTH_PATH = "data/auth/users.json";
+const MAX_USERS = 20;
+const ITER = 310000;
+const SESS_KEY = "nk_sess";
+const KEEP_DAYS = 30;
+const PERMS = { posts: "게시글·배너·공지", collect: "데이터 수집" };
+const ID_RE = /^[A-Za-z0-9._\-가-힣]{2,20}$/;
 
 export function repoInfo() {
   if (CFG.repo && CFG.repo.includes("/")) {
@@ -22,24 +31,14 @@ export function repoInfo() {
   return null;
 }
 
-// ── 토큰/세션 ─────────────────────────
-function getToken() {
-  try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
-}
-function setToken(t, remember) {
-  try {
-    sessionStorage.setItem(TOKEN_KEY, t);
-    if (remember) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY);
-  } catch {}
-}
-function clearToken() {
-  try { sessionStorage.removeItem(TOKEN_KEY); localStorage.removeItem(TOKEN_KEY); } catch {}
-}
+// ── GitHub API ─────────────────────────
+let session = null; // { acct:{id,name,role,perms}, token, k(b64), ver, R }
 
-async function gh(path, opts = {}, token = getToken()) {
+async function gh(path, opts = {}, token = session?.token) {
   const res = await fetch(API + path, {
     ...opts,
-    headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", Authorization: `Bearer ${token}`, ...(opts.body ? { "Content-Type": "application/json" } : {}), ...(opts.headers || {}) },
+    cache: "no-store",
+    headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(opts.body ? { "Content-Type": "application/json" } : {}), ...(opts.headers || {}) },
   });
   if (res.status === 204) return null;
   const body = await res.json().catch(() => ({}));
@@ -59,24 +58,14 @@ const b64encode = (str) => {
 };
 const b64decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, "")), (c) => c.charCodeAt(0)));
 
-let session = null; // { user, repo }
-
-async function login(token) {
-  const R = repoInfo();
-  if (!R) throw new Error("저장소 정보를 알 수 없습니다. assets/js/config.js 의 repo 값을 '소유자/저장소명'으로 설정해 주세요.");
-  const user = await gh("/user", {}, token);
-  const repo = await gh(`/repos/${R.owner}/${R.repo}`, {}, token);
-  if (!repo.permissions?.push) throw new Error(`@${user.login} 계정은 ${R.owner}/${R.repo} 저장소에 쓰기 권한이 없습니다. 저장소 Settings → Collaborators에서 초대받아야 합니다.`);
-  if (CFG.admins?.length && !CFG.admins.map((x) => x.toLowerCase()).includes(user.login.toLowerCase()))
-    throw new Error(`@${user.login} 은(는) 관리자 목록(config.js admins)에 없습니다.`);
-  session = { user, R };
-  return session;
-}
-
-async function getFile(path) {
-  const { owner, repo, branch } = session.R;
+async function getFile(path, R = session.R, token = session?.token) {
+  const { owner, repo, branch } = R;
   try {
-    const f = await gh(`/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${Date.now()}`);
+    const f = await gh(`/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${Date.now()}`, {}, token);
+    if (f.content === "" && f.size > 0 && f.git_url) {
+      const blob = await gh(`/repos/${owner}/${repo}/git/blobs/${f.sha}`, {}, token); // 1MB 넘는 파일
+      return { text: b64decode(blob.content), sha: f.sha };
+    }
     return { text: b64decode(f.content), sha: f.sha };
   } catch (e) {
     if (e.status === 404) return { text: null, sha: null };
@@ -84,30 +73,643 @@ async function getFile(path) {
   }
 }
 
-async function putFile(path, contentB64, sha, message) {
-  const { owner, repo, branch } = session.R;
+async function putFile(path, contentB64, sha, message, R = session.R, token = session?.token) {
+  const { owner, repo, branch } = R;
   return gh(`/repos/${owner}/${repo}/contents/${path}`, {
     method: "PUT",
     body: JSON.stringify({ message, content: contentB64, branch, ...(sha ? { sha } : {}) }),
-  });
+  }, token);
 }
 
-// 동시에 여러 관리자가 저장해도 덮어쓰지 않도록: 최신본을 받아 변경을 다시 적용 후 저장 (충돌 시 재시도)
-async function updateBoard(mutate, message) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const { text, sha } = await getFile("data/board.json");
-    const doc = text ? JSON.parse(text) : { posts: [] };
-    doc.posts ||= [];
-    mutate(doc);
+// 최신본을 받아 변경을 다시 적용 후 저장 (동시 저장 충돌 시 재시도)
+async function updateJSON(path, empty, mutate, message, R, token) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const { text, sha } = await getFile(path, R, token);
+    let doc = text ? JSON.parse(text) : empty();
+    const r = mutate(doc);
+    if (r === false) return doc;
+    if (doc == null) doc = r;
     doc.updated_at = new Date().toISOString();
     try {
-      await putFile("data/board.json", b64encode(JSON.stringify(doc, null, 1)), sha, `${message} (@${session.user.login})`);
+      await putFile(path, b64encode(JSON.stringify(doc, null, 1)), sha, message, R, token);
       return doc;
     } catch (e) {
-      if ((e.status === 409 || e.status === 422) && attempt < 2) continue;
+      if ((e.status === 409 || e.status === 422) && attempt < 3) { await new Promise((r) => setTimeout(r, 400 * (attempt + 1))); continue; }
       throw e;
     }
   }
+}
+const who = () => (session ? `${session.acct.name}(${session.acct.id})` : "");
+const updateBoard = (mutate, message) => updateJSON("data/board.json", () => ({ posts: [] }), (d) => { d.posts ||= []; return mutate(d); }, `${message} — ${who()}`);
+
+// ── 암호 ─────────────────────────
+const te = new TextEncoder();
+const toB64 = (u8) => { let s = ""; u8.forEach((b) => (s += String.fromCharCode(b))); return btoa(s); };
+const fromB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+const rand = (n) => crypto.getRandomValues(new Uint8Array(n));
+
+async function derive(pw, saltB64, iter = ITER) {
+  const base = await crypto.subtle.importKey("raw", te.encode(pw), "PBKDF2", false, ["deriveBits"]);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: fromB64(saltB64), iterations: iter }, base, 512));
+  const vh = hex(await crypto.subtle.digest("SHA-256", bits.slice(0, 32)));
+  const key = await crypto.subtle.importKey("raw", bits.slice(32), "AES-GCM", false, ["encrypt", "decrypt"]);
+  return { vh, key };
+}
+const aesKey = (raw) => crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
+async function seal(key, u8) {
+  const iv = rand(12);
+  return { iv: toB64(iv), ct: toB64(new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, u8))) };
+}
+async function unseal(key, box) {
+  return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(box.iv) }, key, fromB64(box.ct)));
+}
+// 비밀번호 → { salt, it, vh, wk(금고 키를 이 비밀번호로 잠근 것) }
+async function makeCred(pw, kRaw) {
+  const salt = toB64(rand(16));
+  const { vh, key } = await derive(pw, salt);
+  return { salt, it: ITER, vh, wk: await seal(key, kRaw) };
+}
+async function sealVault(kRaw, token) {
+  return seal(await aesKey(kRaw), te.encode(token));
+}
+async function openVault(kRaw, vault) {
+  return new TextDecoder().decode(await unseal(await aesKey(kRaw), vault));
+}
+const pwRule = (pw) => (String(pw).length < 8 ? "비밀번호는 8자 이상으로 정해 주세요." : /^\d+$/.test(pw) ? "숫자만으로 된 비밀번호는 쓸 수 없어요. 영문이나 기호를 섞어 주세요." : "");
+
+// ── 계정 파일 ─────────────────────────
+// 로그인 전에는 토큰 없이 공개 API로 읽고, 실패하면 배포된 사이트 사본을 읽습니다.
+async function loadAuth(R) {
+  if (session?.token) {
+    const f = await getFile(AUTH_PATH);
+    return f.text ? JSON.parse(f.text) : null;
+  }
+  try {
+    const f = await getFile(AUTH_PATH, R, null);
+    return f.text ? JSON.parse(f.text) : null;
+  } catch {
+    const r = await fetch(`${AUTH_PATH}?t=${Date.now()}`, { cache: "no-store" });
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error("계정 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    return r.json();
+  }
+}
+const findAcct = (doc, id) => {
+  const k = String(id || "").trim().toLowerCase();
+  if (doc.master && doc.master.id.toLowerCase() === k) return { ...doc.master, role: "master", perms: { posts: true, collect: true }, active: true };
+  const u = (doc.users || []).find((x) => x.id.toLowerCase() === k);
+  return u ? { ...u, role: "staff" } : null;
+};
+const updateAuth = (mutate, message) => updateJSON(AUTH_PATH, () => null, mutate, `${message} — ${who()}`);
+
+// ── 세션 보관 ─────────────────────────
+function saveSess(remember) {
+  const s = JSON.stringify({ id: session.acct.id, ver: session.ver, token: session.token, k: session.k, exp: Date.now() + KEEP_DAYS * 864e5 });
+  try {
+    sessionStorage.setItem(SESS_KEY, s);
+    if (remember) localStorage.setItem(SESS_KEY, s); else localStorage.removeItem(SESS_KEY);
+  } catch {}
+}
+function readSess() {
+  try {
+    const s = sessionStorage.getItem(SESS_KEY) || localStorage.getItem(SESS_KEY);
+    const o = s ? JSON.parse(s) : null;
+    return o && o.exp > Date.now() ? o : null;
+  } catch { return null; }
+}
+function clearSess() {
+  try { sessionStorage.removeItem(SESS_KEY); localStorage.removeItem(SESS_KEY); localStorage.removeItem("nk_admin_token"); sessionStorage.removeItem("nk_admin_token"); } catch {}
+}
+
+// ── 로그인 잠금 (이 브라우저 기준 5번 틀리면 10분) · 실패 기록은 다음 로그인 때 접속 기록에 올림 ──
+const FAIL_KEY = "nk_fail";
+const failState = () => { try { return JSON.parse(localStorage.getItem(FAIL_KEY) || "{}"); } catch { return {}; } };
+const failSave = (o) => { try { localStorage.setItem(FAIL_KEY, JSON.stringify(o)); } catch {} };
+function lockCheck(id) {
+  const f = failState()[id.toLowerCase()];
+  if (f && f.until && f.until > Date.now()) throw new Error(`비밀번호를 5번 틀려 잠겼어요. ${Math.ceil((f.until - Date.now()) / 60000)}분 뒤에 다시 해 주세요.`);
+}
+function lockFail(id) {
+  const o = failState(); const k = id.toLowerCase();
+  const f = (o[k] && (!o[k].until || o[k].until > Date.now())) ? o[k] : { n: 0 };
+  f.n = (f.n || 0) + 1;
+  if (f.n >= 5) { f.until = Date.now() + 10 * 60000; f.n = 0; }
+  o[k] = f;
+  o._pending = [...(o._pending || []), { t: new Date().toISOString(), id, ua: uaSummary() }].slice(-50);
+  failSave(o);
+}
+function lockClear(id) { const o = failState(); delete o[id.toLowerCase()]; failSave(o); }
+
+// ── 기록 ─────────────────────────
+function uaSummary() {
+  const u = navigator.userAgent;
+  const os = /iPad/.test(u) ? "iPad" : /iPhone/.test(u) ? "iPhone" : /Android/.test(u) ? "Android" : /Windows/.test(u) ? "Windows" : /Mac OS X/.test(u) ? "Mac" : /Linux/.test(u) ? "Linux" : "기타";
+  const br = /Edg\//.test(u) ? "Edge" : /Whale\//.test(u) ? "Whale" : /SamsungBrowser/.test(u) ? "삼성 인터넷" : /Chrome\//.test(u) ? "Chrome" : /Firefox\//.test(u) ? "Firefox" : /Safari\//.test(u) ? "Safari" : "기타";
+  return `${br} · ${os}`;
+}
+const kstYM = () => kstToday().slice(0, 7);
+let logQ = Promise.resolve();
+function writeLog(kind, entries) {
+  if (!session || !entries.length) return logQ;
+  const path = `data/logs/${kind}/${kstYM()}.json`;
+  const R = session.R, token = session.token, by = who();
+  if (!token) return logQ;
+  logQ = logQ.then(() =>
+    updateJSON(path, () => ({ items: [] }), (d) => { d.items ||= []; d.items.push(...entries); }, `${kind === "access" ? "접속" : "활동"} 기록 — ${by}`, R, token)
+  ).catch((e) => console.warn("기록 저장 실패", e));
+  return logQ;
+}
+const entry = (ev, detail = "", extra = {}) => ({ t: new Date().toISOString(), id: session.acct.id, name: session.acct.name, role: session.acct.role, ev, detail, ua: uaSummary(), ...extra });
+const logAccess = (ev, detail = "") => writeLog("access", [entry(ev, detail)]);
+const logAct = (ev, detail = "") => writeLog("activity", [entry(ev, detail)]);
+function flushFails() {
+  const o = failState();
+  const p = o._pending || [];
+  if (!p.length) return;
+  delete o._pending; failSave(o);
+  writeLog("access", p.map((x) => ({ t: x.t, id: x.id, name: "", role: "", ev: "로그인 실패", detail: "비밀번호 불일치·없는 아이디", ua: x.ua })));
+}
+
+// ── 로그인 / 세션 복원 ─────────────────────────
+async function checkRepo(token, R) {
+  const repo = await gh(`/repos/${R.owner}/${R.repo}`, {}, token);
+  if (!repo.permissions?.push) throw new Error("이 GitHub 키에는 저장소 쓰기 권한이 없습니다.");
+  return repo;
+}
+
+async function login(id, pw, R) {
+  id = String(id || "").trim();
+  if (!id || !pw) throw new Error("아이디와 비밀번호를 입력하세요.");
+  lockCheck(id);
+  const doc = await loadAuth(R);
+  if (!doc?.master) throw new Error("아직 마스터 계정이 없습니다. 처음 설정을 먼저 해 주세요.");
+  const a = findAcct(doc, id);
+  if (!a) { lockFail(id); throw new Error("아이디 또는 비밀번호가 맞지 않습니다."); }
+  const { vh, key } = await derive(pw, a.salt, a.it || ITER);
+  if (vh !== a.vh) { lockFail(id); throw new Error("아이디 또는 비밀번호가 맞지 않습니다."); }
+  if (a.active === false) throw new Error("사용 중지된 계정입니다. 마스터에게 문의하세요.");
+  if (!a.wk) throw new Error("보안 키가 바뀌어 이 계정의 비밀번호를 다시 정해야 합니다. 마스터에게 비밀번호 재설정을 요청하세요.");
+  lockClear(id);
+  const kRaw = await unseal(key, a.wk);
+  const token = await openVault(kRaw, doc.vault);
+  try { await checkRepo(token, R); } catch (e) {
+    if (a.role === "master") { session = { acct: pick(a), token: null, k: toB64(kRaw), ver: a.ver || 1, R, expired: true }; return session; }
+    throw new Error("사이트의 GitHub 연결이 만료되었거나 끊겼습니다. 마스터에게 ‘GitHub 연결 교체’를 요청하세요.");
+  }
+  session = { acct: pick(a), token, k: toB64(kRaw), ver: a.ver || 1, R, mustChange: !!a.mustChange };
+  return session;
+}
+const pick = (a) => ({ id: a.id, name: a.name || a.id, role: a.role, perms: a.perms || {} });
+
+async function resume(R) {
+  const s = readSess();
+  if (!s) return null;
+  session = { acct: { id: s.id, name: s.id, role: "staff", perms: {} }, token: s.token, k: s.k, ver: s.ver, R };
+  try {
+    const doc = await loadAuth(R);
+    const a = doc && findAcct(doc, s.id);
+    if (!a || a.active === false || (a.ver || 1) !== s.ver || !a.wk) throw new Error("세션 만료");
+    session.acct = pick(a);
+    session.mustChange = !!a.mustChange;
+    if (!sessionStorage.getItem("nk_seen")) { sessionStorage.setItem("nk_seen", "1"); logAccess("재접속", "로그인 유지"); }
+    return session;
+  } catch {
+    session = null;
+    clearSess();
+    return null;
+  }
+}
+
+function logout(reason = "로그아웃") {
+  if (session?.token) logAccess(reason);
+  const q = logQ;
+  clearSess();
+  try { sessionStorage.removeItem("nk_seen"); } catch {}
+  session = null;
+  return q;
+}
+
+// ═══════════════════════════════════════════════════════
+export async function adminPage(el, ctx) {
+  el.append(h(`<div class="page-head"><div><h1>관리자</h1><p>아이디·비밀번호로 로그인해 공지·배너·게시글을 등록하고 데이터 수집을 실행합니다. 마스터는 계정(최대 ${MAX_USERS}개)과 접속·활동 기록을 관리합니다.</p></div></div>`));
+  const body = h(`<div class="view"></div>`);
+  el.append(body);
+  const R = repoInfo();
+  if (!R) { body.innerHTML = `<div class="err-box">저장소 정보를 알 수 없습니다. assets/js/config.js 의 repo 값을 '소유자/저장소명'으로 설정해 주세요.</div>`; return; }
+  if (!session) {
+    body.innerHTML = '<div class="card"><div class="loading">로그인 확인 중…</div></div>';
+    await resume(R);
+  }
+  if (session) return homeView(body, ctx);
+  let doc = null;
+  try { doc = await loadAuth(R); } catch (e) { body.innerHTML = `<div class="err-box">${esc(e.message)}</div>`; return; }
+  if (!doc?.master) return setupView(body, R, ctx, "setup");
+  return loginView(body, R, ctx);
+}
+
+function loginView(body, R, ctx, note = "") {
+  body.innerHTML = "";
+  let last = "";
+  try { last = localStorage.getItem("nk_last_id") || ""; } catch {}
+  const card = h(`<div class="card auth-card">
+    <div class="auth-brand"><div class="auth-logo">N</div><div><b>${esc(CFG.siteName || "뉴스 인사이트")}</b><div class="form-hint">관리자 로그인</div></div></div>
+    ${note ? `<div class="ok-box" style="margin-bottom:12px">${esc(note)}</div>` : ""}
+    <div class="auth-fields">
+      <input class="input" id="lid" placeholder="아이디" autocomplete="username" value="${esc(last)}">
+      <input class="input" id="lpw" type="password" placeholder="비밀번호" autocomplete="current-password">
+      <label class="check"><input type="checkbox" id="rm"> 로그인 유지 (${KEEP_DAYS}일 · 공용 PC에서는 체크하지 마세요)</label>
+      <button class="btn primary" id="go">로그인</button>
+      <div id="msg"></div>
+    </div>
+    <div class="auth-foot"><a href="javascript:void 0" id="forgot">마스터 비밀번호를 잊으셨나요?</a><span class="form-hint">계정이 없으면 마스터에게 요청하세요</span></div>
+  </div>`);
+  body.append(card);
+  (last ? $("#lpw", card) : $("#lid", card)).focus();
+  const go = async () => {
+    const id = $("#lid", card).value.trim(), pw = $("#lpw", card).value;
+    $("#go", card).disabled = true;
+    $("#msg", card).innerHTML = '<span class="status-line">확인 중… (암호 계산에 1~2초 걸려요)</span>';
+    try {
+      await login(id, pw, R);
+      try { localStorage.setItem("nk_last_id", session.acct.id); sessionStorage.setItem("nk_seen", "1"); } catch {}
+      if (session.expired) { saveSess(false); return reconnectView(body, ctx, true); }
+      saveSess($("#rm", card).checked);
+      logAccess("로그인", $("#rm", card).checked ? "로그인 유지" : "");
+      flushFails();
+      toast(`${session.acct.name} 님 환영합니다`);
+      homeView(body, ctx);
+    } catch (e) {
+      session = null;
+      $("#msg", card).innerHTML = `<div class="err-box">${esc(e.message)}</div>`;
+      $("#go", card).disabled = false;
+    }
+  };
+  $("#go", card).addEventListener("click", go);
+  $$("#lid,#lpw", card).forEach((x) => x.addEventListener("keydown", (e) => e.key === "Enter" && go()));
+  $("#forgot", card).addEventListener("click", () => setupView(body, R, ctx, "recover"));
+}
+
+// 처음 설정 · 마스터 비밀번호 복구 (둘 다 저장소 쓰기 권한이 있는 GitHub 키가 필요 = 저장소 주인만 가능)
+function setupView(body, R, ctx, mode) {
+  body.innerHTML = "";
+  const rec = mode === "recover";
+  const card = h(`<div class="card admin-login">
+    <div class="card-head"><div><h3>${rec ? "마스터 비밀번호 재설정" : "처음 설정 — 마스터 계정 만들기"}</h3><div class="sub">저장소 <span class="code">${esc(R.owner)}/${esc(R.repo)}</span></div></div>${rec ? '<button class="btn sm" id="back">로그인으로</button>' : ""}</div>
+    ${rec ? `<div class="form-hint" style="margin-bottom:10px">저장소 주인만 할 수 있도록 GitHub 키로 본인을 확인합니다. 재설정하면 보안 키가 새로 바뀌어 <b>다른 계정들은 비밀번호를 다시 정해야</b> 합니다(계정·권한은 그대로).</div>` : `<div class="form-hint" style="margin-bottom:10px">이 화면은 한 번만 나옵니다. GitHub 키는 이번에 한 번만 넣으면 되고, 이후 모든 관리자는 아이디·비밀번호로만 로그인합니다.</div>`}
+    <ol>
+      <li><a href="https://github.com/settings/personal-access-tokens/new?name=news-insight-admin&description=news-insight%20admin%20site&target_name=${encodeURIComponent(R.owner)}&contents=write&actions=write&expires_in=none" target="_blank" rel="noopener">GitHub 키 만들기</a> (${esc(R.owner)} 계정으로 로그인한 상태)</li>
+      <li>Repository access → <b>Only select repositories</b> → <b>${esc(R.repo)}</b> 선택</li>
+      <li>Permissions가 <b>Contents: Read and write</b>, <b>Actions: Read and write</b>인지 확인 → Generate token → 복사해서 아래에 붙여넣기</li>
+    </ol>
+    <div class="form-grid" style="margin-top:12px">
+      <label for="tk">GitHub 키</label><input class="input" id="tk" type="password" placeholder="github_pat_…" autocomplete="off">
+      <label for="mid">마스터 아이디</label><input class="input" id="mid" placeholder="예: admin" value="admin" maxlength="20">
+      <label for="mnm">이름</label><input class="input" id="mnm" placeholder="예: 편집국장" value="마스터" maxlength="20">
+      <label for="mpw">비밀번호</label><input class="input" id="mpw" type="password" placeholder="8자 이상" autocomplete="new-password">
+      <label for="mpw2">비밀번호 확인</label><input class="input" id="mpw2" type="password" autocomplete="new-password">
+      <span></span><div class="row"><button class="btn primary" id="go">${rec ? "재설정" : "마스터 계정 만들기"}</button><span id="msg"></span></div>
+    </div></div>`);
+  body.append(card);
+  if (rec) $("#back", card).addEventListener("click", () => loginView(body, R, ctx));
+  $("#go", card).addEventListener("click", async () => {
+    const token = $("#tk", card).value.trim(), id = $("#mid", card).value.trim(), name = $("#mnm", card).value.trim() || id, pw = $("#mpw", card).value;
+    const err = !token ? "GitHub 키를 넣어 주세요." : !ID_RE.test(id) ? "아이디는 2~20자 (한글·영문·숫자·._-)로 정해 주세요." : pwRule(pw) || (pw !== $("#mpw2", card).value ? "비밀번호 확인이 다릅니다." : "");
+    if (err) return ($("#msg", card).innerHTML = `<div class="err-box">${esc(err)}</div>`);
+    $("#go", card).disabled = true;
+    $("#msg", card).innerHTML = '<span class="status-line">확인 중…</span>';
+    try {
+      await checkRepo(token, R);
+      try { await gh(`/repos/${R.owner}/${R.repo}/actions/workflows?per_page=1`, {}, token); } catch { throw new Error("GitHub 키에 Actions: Read and write 권한이 필요합니다."); }
+      const kRaw = rand(32);
+      const vault = await sealVault(kRaw, token);
+      const cred = await makeCred(pw, kRaw);
+      const now = new Date().toISOString();
+      session = { acct: { id, name, role: "master", perms: { posts: true, collect: true } }, token, k: toB64(kRaw), ver: 1, R };
+      let reset = 0;
+      await updateAuth((d) => {
+        if (d && d.master && !rec) throw new Error("이미 마스터 계정이 있습니다. 로그인 화면에서 로그인하세요.");
+        const prev = d || {};
+        const ver = ((prev.master && prev.master.ver) || 0) + 1;
+        session.ver = ver;
+        const users = (prev.users || []).filter((u) => u.id.toLowerCase() !== id.toLowerCase()).map((u) => { reset++; return { ...u, wk: null, salt: null, vh: null, ver: (u.ver || 1) + 1, mustChange: true }; });
+        Object.keys(prev).forEach((k) => delete prev[k]);
+        Object.assign(prev, { v: 1, created_at: d?.created_at || now, vault, kver: ((d && d.kver) || 0) + 1, master: { id, name, ...cred, ver, created: d?.master?.created || now }, users });
+        return prev;
+      }, rec ? "마스터 비밀번호 재설정" : "마스터 계정 생성");
+      saveSess(false);
+      try { localStorage.setItem("nk_last_id", id); sessionStorage.setItem("nk_seen", "1"); } catch {}
+      logAccess("로그인", rec ? "GitHub 키로 비밀번호 재설정 후" : "처음 설정");
+      logAct(rec ? "마스터 비밀번호 재설정" : "처음 설정", rec ? `보안 키 교체 · 다른 계정 ${reset}개 비밀번호 재설정 필요` : `마스터 계정 ${id} 생성`);
+      toast(rec ? "재설정했습니다" : "마스터 계정을 만들었습니다");
+      homeView(body, ctx);
+    } catch (e) {
+      session = null;
+      $("#msg", card).innerHTML = `<div class="err-box">${esc(e.status === 401 ? "GitHub 키가 올바르지 않습니다." : e.message)}</div>`;
+      $("#go", card).disabled = false;
+    }
+  });
+}
+
+// 마스터 로그인 시 GitHub 키가 만료된 경우 / 마스터가 직접 교체할 때
+function reconnectView(body, ctx, forced) {
+  body.innerHTML = "";
+  const R = session.R;
+  const card = h(`<div class="card admin-login"><div class="card-head"><div><h3>GitHub 연결 교체</h3><div class="sub">${forced ? "사이트의 GitHub 키가 만료되었거나 삭제되었습니다. 새 키를 넣으면 모든 계정이 그대로 다시 쓸 수 있습니다." : "새 GitHub 키로 바꿉니다. 다른 계정의 비밀번호는 그대로 유지됩니다."}</div></div>${forced ? "" : '<button class="btn sm" id="back">닫기</button>'}</div>
+    <ol>
+      <li><a href="https://github.com/settings/personal-access-tokens/new?name=news-insight-admin&target_name=${encodeURIComponent(R.owner)}&contents=write&actions=write&expires_in=none" target="_blank" rel="noopener">GitHub 키 만들기</a> → <b>Only select repositories</b> → <b>${esc(R.repo)}</b></li>
+      <li><b>Contents</b>, <b>Actions</b> 모두 Read and write → Generate token</li>
+    </ol>
+    <div class="form-grid"><label for="tk">새 GitHub 키</label><input class="input" id="tk" type="password" placeholder="github_pat_…" autocomplete="off">
+    <span></span><div class="row"><button class="btn primary" id="go">교체</button><span id="msg"></span></div></div></div>`);
+  body.append(card);
+  if (!forced) $("#back", card).addEventListener("click", () => homeView(body, ctx));
+  $("#go", card).addEventListener("click", async () => {
+    const token = $("#tk", card).value.trim();
+    if (!token) return;
+    $("#go", card).disabled = true;
+    try {
+      await checkRepo(token, R);
+      const vault = await sealVault(fromB64(session.k), token);
+      session.token = token;
+      session.expired = false;
+      await updateAuth((d) => { d.vault = vault; }, "GitHub 연결 교체");
+      saveSess(false);
+      if (forced) logAccess("로그인", "GitHub 연결 교체 후");
+      logAct("GitHub 연결 교체", "새 GitHub 키 등록");
+      toast("GitHub 연결을 교체했습니다");
+      homeView(body, ctx);
+    } catch (e) {
+      $("#msg", card).innerHTML = `<div class="err-box">${esc(e.status === 401 ? "GitHub 키가 올바르지 않습니다." : e.message)}</div>`;
+      $("#go", card).disabled = false;
+    }
+  });
+}
+
+// ── 로그인 후 화면 ─────────────────────────
+function homeView(body, ctx) {
+  body.innerHTML = "";
+  const A = session.acct;
+  const isM = A.role === "master";
+  const tabs = [
+    A.perms.posts && ["posts", "게시글·배너·공지"],
+    A.perms.collect && ["collect", "데이터 수집"],
+    isM && ["accounts", "계정 관리"],
+    isM && ["access", "접속 기록"],
+    isM && ["activity", "활동 기록"],
+    ["me", "내 정보"],
+  ].filter(Boolean);
+  const top = h(`<div class="card admin-top">
+    <div class="avatar">${esc((A.name || A.id).slice(0, 1))}</div>
+    <div><b>${esc(A.name)}</b> <span class="tag ${isM ? "orange" : "blue"}">${isM ? "마스터" : "관리자"}</span><div class="status-line">${esc(A.id)}</div></div>
+    <div class="seg admin-tabs" id="atab">${tabs.map(([k, l]) => `<button data-t="${k}">${l}</button>`).join("")}</div>
+    <button class="btn sm" id="logout">로그아웃</button></div>`);
+  const pane = h(`<div class="view"></div>`);
+  body.append(top, pane);
+  $("#logout", top).addEventListener("click", async () => { const R = session.R; await logout(); toast("로그아웃했습니다"); loginView(body, R, ctx); });
+  const show = (t) => {
+    $$("#atab button", top).forEach((b) => b.classList.toggle("on", b.dataset.t === t));
+    pane.innerHTML = "";
+    ({ posts: () => postsView(pane, ctx), collect: () => collectView(pane), accounts: () => accountsView(pane), access: () => logView(pane, "access"), activity: () => logView(pane, "activity"), me: () => meView(pane, body, ctx) })[t]();
+  };
+  $$("#atab button", top).forEach((b) => b.addEventListener("click", () => show(b.dataset.t)));
+  if (session.mustChange) {
+    toast("처음 받은 비밀번호입니다. 새 비밀번호로 바꿔 주세요.", 4000);
+    return show("me");
+  }
+  show(tabs[0][0]);
+}
+
+// ── 계정 관리 (마스터) ─────────────────────────
+async function lastLogins() {
+  const ym = kstYM();
+  const [y, m] = ym.split("-").map(Number);
+  const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+  const out = {};
+  for (const p of [prev, ym]) {
+    try {
+      const f = await getFile(`data/logs/access/${p}.json`);
+      (f.text ? JSON.parse(f.text).items || [] : []).forEach((e) => { if (e.ev === "로그인" || e.ev === "재접속") out[e.id.toLowerCase()] = e.t; });
+    } catch {}
+  }
+  return out;
+}
+
+async function accountsView(pane) {
+  pane.innerHTML = '<div class="card"><div class="loading">계정 불러오는 중…</div></div>';
+  let doc, last = {};
+  try { [doc, last] = await Promise.all([loadAuth(session.R), lastLogins()]); } catch (e) { pane.innerHTML = `<div class="err-box">${esc(e.message)}</div>`; return; }
+  pane.innerHTML = "";
+  const formSlot = h(`<div></div>`);
+  const card = h(`<div class="card"><div class="card-head"><div><h3>계정 <span id="cnt"></span></h3><div class="sub">마스터 외 최대 ${MAX_USERS}개 · 계정마다 쓸 수 있는 메뉴를 정합니다 · 사용 중지·비밀번호 재설정 시 그 계정의 기존 로그인은 바로 끊깁니다</div></div><button class="btn primary" id="new">+ 계정 만들기</button></div><div id="al"></div></div>`);
+  pane.append(formSlot, card);
+  const draw = () => {
+    const users = doc.users || [];
+    $("#cnt", card).innerHTML = `<span class="tag ${users.length >= MAX_USERS ? "new" : "gray"}">${users.length} / ${MAX_USERS}</span>`;
+    $("#new", card).disabled = users.length >= MAX_USERS;
+    const m = doc.master;
+    const row = (u, isM) => `<tr>
+      <td><b>${esc(u.id)}</b></td><td>${esc(u.name || "")}</td>
+      <td>${isM ? '<span class="tag orange">마스터 · 전체</span>' : Object.entries(PERMS).map(([k, l]) => (u.perms?.[k] ? `<span class="tag blue">${l}</span>` : "")).join(" ") || '<span class="tag gray">없음</span>'}</td>
+      <td>${isM ? '<span class="tag green">사용</span>' : u.active === false ? '<span class="tag gray">사용 중지</span>' : !u.wk ? '<span class="tag new">비밀번호 재설정 필요</span>' : u.mustChange ? '<span class="tag orange">첫 로그인 전</span>' : '<span class="tag green">사용</span>'}</td>
+      <td class="num" style="white-space:nowrap">${last[u.id.toLowerCase()] ? `${kstDateTime(last[u.id.toLowerCase()])}<div class="form-hint">${relTime(last[u.id.toLowerCase()])}</div>` : "-"}</td>
+      <td class="num">${dotDate(u.created)}</td>
+      <td class="r" style="white-space:nowrap">${isM ? '<span class="form-hint">‘내 정보’에서 변경</span>' : `<button class="btn sm" data-a="edit" data-id="${esc(u.id)}">수정</button> <button class="btn sm" data-a="pw" data-id="${esc(u.id)}">비밀번호 재설정</button> <button class="btn sm" data-a="toggle" data-id="${esc(u.id)}">${u.active === false ? "사용" : "사용 중지"}</button> <button class="btn sm danger" data-a="del" data-id="${esc(u.id)}">삭제</button>`}</td></tr>`;
+    $("#al", card).innerHTML = `<div class="table-wrap"><table class="t"><thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>상태</th><th>최근 접속</th><th>만든 날</th><th class="r">관리</th></tr></thead><tbody>${row(m, true)}${users.map((u) => row(u, false)).join("")}</tbody></table></div>${users.length ? "" : '<div class="empty">아직 만든 계정이 없습니다. ‘+ 계정 만들기’로 관리자 아이디를 만들어 주세요.</div>'}`;
+    $$("button[data-a]", card).forEach((b) => b.addEventListener("click", () => act(b.dataset.a, b.dataset.id)));
+  };
+  const save = async (mutate, msg, detail) => {
+    try {
+      doc = await updateAuth(mutate, msg);
+      logAct(msg, detail);
+      draw();
+      toast("저장했습니다");
+      return true;
+    } catch (e) { toast("저장 실패: " + e.message, 5000); return false; }
+  };
+  const act = async (a, id) => {
+    const u = doc.users.find((x) => x.id === id);
+    if (!u) return;
+    if (a === "edit") return form(u);
+    if (a === "pw") return form(u, true);
+    if (a === "toggle") return save((d) => { const x = d.users.find((y) => y.id === id); x.active = x.active === false; x.ver = (x.ver || 1) + 1; }, u.active === false ? "계정 사용" : "계정 사용 중지", `${u.name}(${u.id})`);
+    if (a === "del" && confirm(`‘${u.name}(${u.id})’ 계정을 삭제할까요? 기록은 남습니다.`)) return save((d) => { d.users = d.users.filter((y) => y.id !== id); }, "계정 삭제", `${u.name}(${u.id})`);
+  };
+  function form(u, pwOnly) {
+    const isNew = !u;
+    u = u || { id: "", name: "", perms: { posts: true, collect: false } };
+    formSlot.innerHTML = "";
+    const f = h(`<div class="card"><div class="card-head"><div><h3>${isNew ? "새 계정" : pwOnly ? `비밀번호 재설정 — ${esc(u.name)}(${esc(u.id)})` : `계정 수정 — ${esc(u.id)}`}</h3><div class="sub">${pwOnly || isNew ? "정한 비밀번호를 본인에게 알려 주세요. ‘첫 로그인 때 바꾸기’를 켜 두면 본인이 새 비밀번호로 바꿉니다." : "아이디는 바꿀 수 없습니다."}</div></div><button class="btn sm" id="x">닫기</button></div>
+      <div class="form-grid">
+        ${pwOnly ? "" : `<label for="uid">아이디</label><input class="input" id="uid" maxlength="20" placeholder="2~20자 (한글·영문·숫자·._-)" value="${esc(u.id)}" ${isNew ? "" : "disabled"}>
+        <label for="unm">이름</label><input class="input" id="unm" maxlength="20" placeholder="예: 김기자" value="${esc(u.name)}">
+        <label>권한</label><div class="row">${Object.entries(PERMS).map(([k, l]) => `<label class="check"><input type="checkbox" data-p="${k}" ${u.perms?.[k] ? "checked" : ""}> ${l}</label>`).join("")}</div>`}
+        ${pwOnly || isNew ? `<label for="upw">비밀번호</label><div class="row"><input class="input" id="upw" type="text" autocomplete="off" placeholder="8자 이상" style="flex:1;min-width:160px"><button class="btn sm" id="gen">자동 생성</button></div>
+        <span></span><label class="check"><input type="checkbox" id="umc" checked> 첫 로그인 때 본인이 비밀번호 바꾸기</label>` : ""}
+        <span></span><div class="row"><button class="btn primary" id="ok">${isNew ? "만들기" : "저장"}</button><span id="fm" class="status-line"></span></div>
+      </div></div>`);
+    formSlot.append(f);
+    f.scrollIntoView({ behavior: "smooth", block: "start" });
+    $("#x", f).addEventListener("click", () => (formSlot.innerHTML = ""));
+    $("#gen", f)?.addEventListener("click", () => {
+      const cs = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      const r = rand(10); let s = ""; r.forEach((b) => (s += cs[b % cs.length]));
+      $("#upw", f).value = s.slice(0, 5) + "-" + s.slice(5);
+    });
+    $("#ok", f).addEventListener("click", async () => {
+      const id = isNew ? $("#uid", f).value.trim() : u.id;
+      const name = pwOnly ? u.name : $("#unm", f).value.trim() || id;
+      const perms = pwOnly ? u.perms : Object.fromEntries($$("input[data-p]", f).map((c) => [c.dataset.p, c.checked]));
+      const pw = $("#upw", f)?.value;
+      let err = "";
+      if (isNew && !ID_RE.test(id)) err = "아이디는 2~20자 (한글·영문·숫자·._-)로 정해 주세요.";
+      else if (isNew && /^(admin|master|root|관리자|마스터)$/i.test(id) && id.toLowerCase() !== "") err = "admin·master 같은 아이디는 쓸 수 없어요.";
+      else if (isNew && (doc.master.id.toLowerCase() === id.toLowerCase() || doc.users.some((x) => x.id.toLowerCase() === id.toLowerCase()))) err = "이미 있는 아이디입니다.";
+      else if (isNew && doc.users.length >= MAX_USERS) err = `계정은 최대 ${MAX_USERS}개까지 만들 수 있어요.`;
+      else if ((isNew || pwOnly) && pwRule(pw)) err = pwRule(pw);
+      if (err) return ($("#fm", f).innerHTML = `<span class="err-box" style="display:inline-block;padding:4px 8px">${esc(err)}</span>`);
+      $("#ok", f).disabled = true;
+      $("#fm", f).textContent = "저장 중…";
+      const cred = isNew || pwOnly ? await makeCred(pw, fromB64(session.k)) : null;
+      const mc = $("#umc", f)?.checked;
+      const ok = await save((d) => {
+        d.users ||= [];
+        if (isNew) {
+          if (d.users.length >= MAX_USERS) throw new Error(`계정은 최대 ${MAX_USERS}개까지입니다.`);
+          if (d.users.some((x) => x.id.toLowerCase() === id.toLowerCase())) throw new Error("이미 있는 아이디입니다.");
+          d.users.push({ id, name, perms, active: true, ...cred, ver: 1, mustChange: mc, created: new Date().toISOString(), createdBy: session.acct.id });
+        } else {
+          const x = d.users.find((y) => y.id === id);
+          if (!x) throw new Error("계정이 없습니다.");
+          if (pwOnly) Object.assign(x, cred, { ver: (x.ver || 1) + 1, mustChange: mc });
+          else Object.assign(x, { name, perms });
+        }
+      }, isNew ? "계정 생성" : pwOnly ? "비밀번호 재설정" : "계정 수정", `${name}(${id})${pwOnly ? "" : " · 권한: " + (Object.entries(perms).filter(([, v]) => v).map(([k]) => PERMS[k]).join(", ") || "없음")}`);
+      if (ok) {
+        formSlot.innerHTML = "";
+        if (isNew || pwOnly) formSlot.append(h(`<div class="ok-box" style="margin-bottom:12px">${esc(name)} 님 계정 정보 — 아이디 <b>${esc(id)}</b> · 비밀번호 <b class="code">${esc(pw)}</b> · 접속 주소 ${esc(location.origin + location.pathname)}#/admin<br><span class="form-hint">이 창을 닫으면 비밀번호는 다시 볼 수 없습니다.</span></div>`));
+      } else { $("#ok", f).disabled = false; $("#fm", f).textContent = ""; }
+    });
+  }
+  $("#new", card).addEventListener("click", () => form(null));
+  draw();
+}
+
+// ── 접속 / 활동 기록 (마스터) ─────────────────────────
+async function logView(pane, kind) {
+  const title = kind === "access" ? "접속 기록" : "활동 기록";
+  const card = h(`<div class="card"><div class="card-head"><div><h3>${title}</h3><div class="sub">${kind === "access" ? "로그인 · 로그인 유지 재접속 · 로그아웃 · 로그인 실패(다음 로그인 때 함께 기록)" : "게시글·배너·공지 등록/수정/삭제, 이미지 업로드, 수집 실행, 계정·비밀번호 변경"}</div></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap"><select class="input" id="ym"></select><select class="input" id="who"><option value="">전체 계정</option></select><select class="input" id="ev"><option value="">전체 구분</option></select><input class="input" id="q" placeholder="내용 검색" style="width:130px"><button class="btn sm" id="csv">엑셀(CSV)</button></div></div>
+    <div id="lb"><div class="loading"></div></div></div>`);
+  pane.append(card);
+  const { owner, repo, branch } = session.R;
+  let months = [];
+  try {
+    const ls = await gh(`/repos/${owner}/${repo}/contents/data/logs/${kind}?ref=${branch}`);
+    months = (ls || []).map((x) => x.name.replace(".json", "")).filter((x) => /^\d{4}-\d{2}$/.test(x)).sort().reverse();
+  } catch {}
+  if (!months.includes(kstYM())) months.unshift(kstYM());
+  $("#ym", card).innerHTML = months.map((m) => `<option value="${m}">${m.replace("-", "년 ")}월</option>`).join("");
+  let items = [];
+  const draw = () => {
+    const w = $("#who", card).value, ev = $("#ev", card).value, q = $("#q", card).value.trim();
+    const rows = items.filter((e) => (!w || e.id === w) && (!ev || e.ev === ev) && (!q || `${e.detail} ${e.name} ${e.id}`.includes(q)));
+    $("#lb", card).innerHTML = rows.length
+      ? `<div class="form-hint" style="margin-bottom:6px">${rows.length}건</div><div class="table-wrap"><table class="t"><thead><tr><th>일시</th><th>아이디</th><th>이름</th><th>구분</th>${kind === "activity" ? "<th>내용</th>" : "<th>메모</th>"}<th>기기</th></tr></thead><tbody>${rows
+          .map((e) => `<tr><td class="num" style="white-space:nowrap">${kstDateTime(e.t)}</td><td>${esc(e.id)}</td><td>${esc(e.name || "")}${e.role === "master" ? ' <span class="tag orange">M</span>' : ""}</td><td><span class="tag ${/실패|삭제|중지/.test(e.ev) ? "new" : /로그아웃/.test(e.ev) ? "gray" : "blue"}">${esc(e.ev)}</span></td><td class="title">${esc(e.detail || "")}</td><td class="form-hint" style="white-space:nowrap">${esc(e.ua || "")}</td></tr>`)
+          .join("")}</tbody></table></div>`
+      : '<div class="empty">기록이 없습니다.</div>';
+  };
+  const load = async () => {
+    $("#lb", card).innerHTML = '<div class="loading"></div>';
+    try {
+      const f = await getFile(`data/logs/${kind}/${$("#ym", card).value}.json`);
+      items = (f.text ? JSON.parse(f.text).items || [] : []).sort((a, b) => String(b.t).localeCompare(String(a.t)));
+    } catch (e) { items = []; $("#lb", card).innerHTML = `<div class="err-box">${esc(e.message)}</div>`; return; }
+    const ids = [...new Set(items.map((e) => e.id))].sort();
+    const evs = [...new Set(items.map((e) => e.ev))].sort();
+    const keepW = $("#who", card).value, keepE = $("#ev", card).value;
+    $("#who", card).innerHTML = `<option value="">전체 계정</option>${ids.map((x) => `<option ${x === keepW ? "selected" : ""}>${esc(x)}</option>`).join("")}`;
+    $("#ev", card).innerHTML = `<option value="">전체 구분</option>${evs.map((x) => `<option ${x === keepE ? "selected" : ""}>${esc(x)}</option>`).join("")}`;
+    draw();
+  };
+  $("#ym", card).addEventListener("change", load);
+  $$("#who,#ev", card).forEach((x) => x.addEventListener("change", draw));
+  $("#q", card).addEventListener("input", draw);
+  $("#csv", card).addEventListener("click", () => {
+    const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = [["일시(KST)", "아이디", "이름", "구분", "내용", "기기"].join(",")].concat(items.map((e) => [kstDateTime(e.t), e.id, e.name, e.ev, e.detail, e.ua].map(cell).join(",")));
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));
+    a.download = `${title}_${$("#ym", card).value}.csv`;
+    a.click();
+    logAct("기록 내려받기", `${title} ${$("#ym", card).value}`);
+  });
+  load();
+}
+
+// ── 내 정보 (비밀번호 변경 · 마스터 아이디/이름 변경 · GitHub 연결 교체) ──
+function meView(pane, body, ctx) {
+  const A = session.acct, isM = A.role === "master";
+  const card = h(`<div class="card admin-login"><div class="card-head"><div><h3>내 정보</h3><div class="sub">${session.mustChange ? '<b style="color:var(--red)">처음 받은 비밀번호입니다. 새 비밀번호로 바꿔 주세요.</b>' : "비밀번호를 바꾸면 다른 기기의 로그인은 끊깁니다."}</div></div></div>
+    <div class="form-grid">
+      <label>아이디</label>${isM ? `<input class="input" id="mid" maxlength="20" value="${esc(A.id)}">` : `<div><b>${esc(A.id)}</b></div>`}
+      <label>이름</label>${isM ? `<input class="input" id="mnm" maxlength="20" value="${esc(A.name)}">` : `<div>${esc(A.name)}</div>`}
+      <label>권한</label><div>${isM ? "마스터 (전체 + 계정 관리 + 기록)" : Object.entries(PERMS).filter(([k]) => A.perms[k]).map(([, l]) => l).join(", ") || "없음"}</div>
+      <label for="cpw">지금 비밀번호</label><input class="input" id="cpw" type="password" autocomplete="current-password">
+      <label for="npw">새 비밀번호</label><input class="input" id="npw" type="password" autocomplete="new-password" placeholder="${isM ? "바꾸지 않으려면 비워 두세요" : "8자 이상"}">
+      <label for="npw2">새 비밀번호 확인</label><input class="input" id="npw2" type="password" autocomplete="new-password">
+      <span></span><div class="row"><button class="btn primary" id="ok">저장</button><span id="fm"></span></div>
+    </div></div>`);
+  pane.append(card);
+  if (isM) {
+    const gc = h(`<div class="card admin-login"><div class="card-head"><div><h3>GitHub 연결</h3><div class="sub">사이트가 저장소에 글·기록을 쓸 때 쓰는 키입니다. 만료되었거나 바꾸고 싶을 때 교체하세요. (다른 계정 비밀번호는 그대로)</div></div><button class="btn sm" id="rc">GitHub 연결 교체</button></div>
+      <div class="form-hint">퇴사 등으로 계정을 완전히 막아야 할 때: 계정을 삭제한 뒤 GitHub에서 기존 키를 삭제하고 여기서 새 키로 교체하세요.</div></div>`);
+    pane.append(gc);
+    $("#rc", gc).addEventListener("click", () => reconnectView(body, ctx, false));
+  }
+  $("#ok", card).addEventListener("click", async () => {
+    const cur = $("#cpw", card).value, np = $("#npw", card).value;
+    const nid = isM ? $("#mid", card).value.trim() : A.id;
+    const nnm = isM ? $("#mnm", card).value.trim() || nid : A.name;
+    const msg = (t, ok) => ($("#fm", card).innerHTML = `<span class="${ok ? "ok-box" : "err-box"}" style="display:inline-block;padding:4px 8px">${esc(t)}</span>`);
+    if (!cur) return msg("지금 비밀번호를 넣어 주세요.");
+    if (session.mustChange && !np) return msg("새 비밀번호를 정해 주세요.");
+    if (np && pwRule(np)) return msg(pwRule(np));
+    if (np && np !== $("#npw2", card).value) return msg("새 비밀번호 확인이 다릅니다.");
+    if (np && np === cur) return msg("지금과 다른 비밀번호로 정해 주세요.");
+    if (isM && !ID_RE.test(nid)) return msg("아이디는 2~20자 (한글·영문·숫자·._-)로 정해 주세요.");
+    $("#ok", card).disabled = true;
+    $("#fm", card).innerHTML = '<span class="status-line">확인 중…</span>';
+    try {
+      const doc = await loadAuth(session.R);
+      const a = findAcct(doc, A.id);
+      if (!a || (await derive(cur, a.salt, a.it || ITER)).vh !== a.vh) throw new Error("지금 비밀번호가 맞지 않습니다.");
+      if (isM && nid.toLowerCase() !== A.id.toLowerCase() && (doc.users || []).some((u) => u.id.toLowerCase() === nid.toLowerCase())) throw new Error("다른 계정이 쓰는 아이디입니다.");
+      const cred = np ? await makeCred(np, fromB64(session.k)) : null;
+      let ver = session.ver;
+      await updateAuth((d) => {
+        const x = isM ? d.master : d.users.find((u) => u.id === A.id);
+        if (!x) throw new Error("계정이 없습니다.");
+        if (cred) { Object.assign(x, cred); x.ver = (x.ver || 1) + 1; x.mustChange = false; }
+        if (isM) { x.id = nid; x.name = nnm; }
+        ver = x.ver || 1;
+      }, np ? "비밀번호 변경" : "내 정보 변경");
+      const changes = [isM && nid !== A.id && `아이디 ${A.id}→${nid}`, isM && nnm !== A.name && `이름 ${A.name}→${nnm}`, np && "비밀번호 변경"].filter(Boolean).join(" · ");
+      logAct(np ? "비밀번호 변경" : "내 정보 변경", changes || "변경 없음");
+      session.ver = ver;
+      session.mustChange = false;
+      session.acct = { ...A, id: nid, name: nnm };
+      let remember = false; try { remember = !!localStorage.getItem(SESS_KEY); } catch {}
+      saveSess(remember);
+      try { localStorage.setItem("nk_last_id", nid); } catch {}
+      toast("저장했습니다");
+      homeView(body, ctx);
+    } catch (e) {
+      msg(e.message);
+      $("#ok", card).disabled = false;
+    }
+  });
 }
 
 async function resizeImage(file, maxW = 1600) {
@@ -128,83 +730,13 @@ async function uploadImage(file) {
   const b64 = dataUrl.split(",")[1];
   if (b64.length > 4_000_000) throw new Error("이미지가 너무 큽니다 (3MB 이하로 줄여 주세요).");
   const name = `data/uploads/${kstToday().replace(/-/g, "")}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  await putFile(name, b64, null, `이미지 업로드 ${name} (@${session.user.login})`);
+  await putFile(name, b64, null, `이미지 업로드 ${name} — ${who()}`);
+  logAct("이미지 업로드", name);
   return { path: name, dataUrl };
 }
 
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 const safeColor = (c) => (/^#[0-9a-f]{3,8}$/i.test(c || "") ? c : "#18335c");
-
-// ═══════════════════════════════════════════════════════
-export async function adminPage(el, ctx) {
-  el.append(h(`<div class="page-head"><div><h1>관리자</h1><p>공지·배너·게시글을 등록하고 데이터 수집을 실행합니다. 저장한 내용은 GitHub 저장소에 기록되며 1~2분 후 모든 사용자에게 반영됩니다.</p></div></div>`));
-  const body = h(`<div class="view"></div>`);
-  el.append(body);
-
-  const R = repoInfo();
-  const tok = getToken();
-  if (tok && !session) {
-    body.innerHTML = '<div class="card"><div class="loading">로그인 확인 중…</div></div>';
-    try { await login(tok); } catch (e) { clearToken(); session = null; }
-  }
-  if (!session) return loginView(body, R, ctx);
-  return dashboardView(body, ctx);
-}
-
-function loginView(body, R, ctx) {
-  body.innerHTML = "";
-  const card = h(`<div class="card admin-login">
-    <div class="card-head"><div><h3>관리자 로그인</h3><div class="sub">저장소: ${R ? `<span class="code">${esc(R.owner)}/${esc(R.repo)}</span>` : '<span class="err-box" style="display:inline-block;padding:2px 6px">config.js에 repo를 설정해 주세요</span>'}</div></div></div>
-    <ol>
-      <li><b>저장소가 조직(Organization) 소유일 때</b>: <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Fine-grained 토큰</a> → Resource owner에 조직 선택 → 이 저장소만 선택 → Permissions <b>Contents: Read and write</b>, <b>Actions: Read and write</b></li>
-      <li><b>개인 계정 저장소에 협업자로 초대된 경우</b>: <a href="https://github.com/settings/tokens/new?scopes=public_repo,workflow&description=news-insight" target="_blank" rel="noopener">Classic 토큰</a> → <b>public_repo</b>(비공개 저장소면 repo), <b>workflow</b> 체크</li>
-      <li>만든 토큰을 아래에 붙여넣기 (토큰은 이 브라우저에만 저장되고 GitHub 외 다른 곳으로 전송되지 않습니다)</li>
-    </ol>
-    <div class="form-grid" style="margin-top:12px">
-      <label for="tk">토큰</label><input class="input" id="tk" type="password" placeholder="github_pat_… 또는 ghp_…" autocomplete="off">
-      <span></span><label class="check"><input type="checkbox" id="rm"> 이 브라우저에 로그인 유지 (공용 PC에서는 체크하지 마세요)</label>
-      <span></span><div class="row"><button class="btn primary" id="go">로그인</button><span id="msg"></span></div>
-    </div></div>`);
-  body.append(card);
-  const go = async () => {
-    const t = $("#tk", card).value.trim();
-    if (!t) return;
-    $("#go", card).disabled = true;
-    $("#msg", card).innerHTML = '<span class="status-line">확인 중…</span>';
-    try {
-      await login(t);
-      setToken(t, $("#rm", card).checked);
-      toast(`@${session.user.login} 님 환영합니다`);
-      dashboardView(body, ctx);
-    } catch (e) {
-      $("#msg", card).innerHTML = `<div class="err-box">${esc(e.message)}</div>`;
-      $("#go", card).disabled = false;
-    }
-  };
-  $("#go", card).addEventListener("click", go);
-  $("#tk", card).addEventListener("keydown", (e) => e.key === "Enter" && go());
-}
-
-async function dashboardView(body, ctx) {
-  body.innerHTML = "";
-  const { user, R } = session;
-  const top = h(`<div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <img src="${esc(user.avatar_url)}" alt="" width="34" height="34" style="border-radius:50%">
-    <div><b>${esc(user.name || user.login)}</b> <span class="status-line">@${esc(user.login)} · ${esc(R.owner)}/${esc(R.repo)} (${esc(R.branch)})</span></div>
-    <div class="seg" id="atab" style="margin-left:auto"><button data-t="posts" class="on">게시글·배너·공지</button><button data-t="collect">데이터 수집</button></div>
-    <button class="btn sm" id="logout">로그아웃</button></div>`);
-  body.append(top);
-  const pane = h(`<div class="view"></div>`);
-  body.append(pane);
-  $("#logout", top).addEventListener("click", () => { clearToken(); session = null; toast("로그아웃했습니다"); loginView(body, R, ctx); });
-  const show = (t) => {
-    $$("#atab button", top).forEach((b) => b.classList.toggle("on", b.dataset.t === t));
-    pane.innerHTML = "";
-    t === "posts" ? postsView(pane, ctx) : collectView(pane);
-  };
-  $$("#atab button", top).forEach((b) => b.addEventListener("click", () => show(b.dataset.t)));
-  show("posts");
-}
 
 // ── 게시글 관리 ─────────────────────────
 async function postsView(pane, ctx) {
@@ -245,6 +777,8 @@ async function postsView(pane, ctx) {
   const commit = async (mutate, msg) => {
     try {
       doc = await updateBoard(mutate, msg);
+      const [ev, ...rest] = msg.split(": ");
+      logAct(ev, rest.join(": "));
       ctx.setBoard(doc);
       drawList();
       toast("저장했습니다. 1~2분 후 사이트 전체에 반영됩니다.");
@@ -340,9 +874,9 @@ async function postsView(pane, ctx) {
       const now = new Date().toISOString();
       x.updated = now;
       x.created ||= now;
-      x.author ||= session.user.login;
-      x.author_name ||= session.user.name || session.user.login;
-      x.editor = session.user.login;
+      x.author ||= session.acct.id;
+      x.author_name ||= session.acct.name;
+      x.editor = session.acct.id;
       $("#save", f).disabled = true;
       $("#fmsg", f).textContent = "저장 중…";
       const ok = await commit((d) => {
@@ -364,7 +898,7 @@ async function collectView(pane) {
   const wf = CFG.collectWorkflow || "collect.yml";
   const M = meta();
   const today = kstToday();
-  const card = h(`<div class="card"><div class="card-head"><div><h3>수집 실행</h3><div class="sub">GitHub Actions에서 수집기가 실행됩니다 (자동 수집은 2시간마다). 과거 기간을 채울 때도 여기서 실행하세요.</div></div></div>
+  const card = h(`<div class="card"><div class="card-head"><div><h3>수집 실행</h3><div class="sub">GitHub Actions에서 수집기가 실행됩니다 (자동 수집은 30분마다). 과거 기간을 채울 때도 여기서 실행하세요.</div></div></div>
     <div class="form-grid">
       <label>기간</label><div class="row"><input class="input" type="date" id="cs" value="${today}"> ~ <input class="input" type="date" id="ce" value="${today}"><span class="form-hint">비우면 어제~오늘. 한 번에 31일 이하 권장</span></div>
       <label>종류</label><div class="row"><select class="input" id="co"><option value="">랭킹 + 발행목록</option><option value="ranking">랭킹만</option><option value="publish">발행목록만</option></select></div>
@@ -378,6 +912,7 @@ async function collectView(pane) {
     $("#run", card).disabled = true;
     try {
       await gh(`/repos/${owner}/${repo}/actions/workflows/${wf}/dispatches`, { method: "POST", body: JSON.stringify({ ref: branch, inputs: { start: s || "", end: e || "", only: $("#co", card).value } }) });
+      logAct("수집 실행", `${s || "어제"} ~ ${e || "오늘"} · ${$("#co", card).selectedOptions[0].textContent}`);
       $("#cmsg", card).innerHTML = '<span class="tag green">요청됨</span> 몇 분 뒤 완료되면 사이트가 자동 갱신됩니다.';
       setTimeout(loadRuns, 3000);
     } catch (err) {

@@ -25,6 +25,34 @@ KST = dt.timezone(dt.timedelta(hours=9))
 CONFIG = json.loads((ROOT / "collector" / "config.json").read_text("utf-8"))
 
 
+def _expand_config(cfg):
+    """data/media_catalog.json(네이버 언론사 전체 목록)이 있으면 매체 이름·수집 대상을 넓힌다.
+    - ranking_all: 랭킹이 있는 매체는 모두 랭킹 수집
+    - count_all: 상세 수집(publish_media) 외 모든 매체는 발행 '건수'만 빠르게 집계
+    view_rank / view_pub = 대시보드 기본 표시 매체 (원래 설정 목록)"""
+    cfg.setdefault("view_rank", list(cfg["ranking_media"]))
+    cfg.setdefault("view_pub", list(cfg["publish_media"]))
+    cfg["count_media"] = []
+    p = ROOT / "data" / "media_catalog.json"
+    if not p.exists():
+        return cfg
+    try:
+        cat = json.loads(p.read_text("utf-8")).get("media", {})
+    except Exception:
+        return cfg
+    names = {o: m["name"] for o, m in cat.items() if m.get("name")}
+    names.update(cfg["media"])
+    cfg["media"] = names
+    if cfg.get("ranking_all"):
+        cfg["ranking_media"] = cfg["ranking_media"] + [o for o in sorted(cat) if cat[o].get("ranking") and o not in cfg["ranking_media"]]
+    if cfg.get("count_all"):
+        cfg["count_media"] = [o for o in sorted(cat) if o not in cfg["publish_media"]]
+    return cfg
+
+
+CONFIG = _expand_config(CONFIG)
+
+
 # ── 날짜 ─────────────────────────────────────────────────────
 def now_kst():
     return dt.datetime.now(KST)
@@ -122,6 +150,21 @@ def merge_articles(day, oid, new_items, collected_at):
     m["n"] = sum(1 for r in doc["items"] if r[0] == oid)
     write_json(path, doc)
     return added
+
+
+def counts_path(day):
+    return DATA / "counts" / f"{day}.json"
+
+
+def save_counts(day, counts, collected_at):
+    """발행 '건수'만 집계한 매체: {oid: n}. 실패(None)한 매체는 기존 값 유지"""
+    path = counts_path(day)
+    doc = read_json(path, {"date": day, "media": {}})
+    for oid, n in counts.items():
+        if n is None:
+            continue
+        doc["media"][oid] = {"n": n, "at": collected_at}
+    write_json(path, doc)
 
 
 def save_ranking(day, per_media, collected_at, final):
@@ -247,7 +290,8 @@ def keywords(title):
 def build_day_summary(day):
     rk = read_json(ranking_path(day))
     ar = read_json(articles_path(day))
-    if not rk and not ar:
+    cn = read_json(counts_path(day))
+    if not rk and not ar and not cn:
         return None
     s = {}
     rh = read_hours(day)
@@ -270,6 +314,13 @@ def build_day_summary(day):
         s["pub"] = dict(pub)
         s["pubH"] = dict(pub_h)
         s["pubMedia"] = sorted(ar.get("media", {}).keys())
+    if cn and cn.get("media"):
+        s.setdefault("pub", {})
+        s.setdefault("pubMedia", [])
+        extra = [o for o in cn["media"] if o not in s["pub"]]
+        for o in extra:
+            s["pub"][o] = cn["media"][o]["n"]
+        s["pubCnt"] = sorted(extra)
 
     if rk:
         rank = {}
@@ -315,7 +366,8 @@ def build_day_summary(day):
 def build_month(ym):
     days = {}
     names = sorted({p.stem for p in (DATA / "ranking").glob(f"{ym}-*.json")} |
-                   {p.stem for p in (DATA / "articles").glob(f"{ym}-*.json")})
+                   {p.stem for p in (DATA / "articles").glob(f"{ym}-*.json")} |
+                   {p.stem for p in (DATA / "counts").glob(f"{ym}-*.json")})
     for d in names:
         s = build_day_summary(d)
         if s:
@@ -334,6 +386,9 @@ def build_meta(status=None):
         "media": CONFIG["media"],
         "ranking_media": CONFIG["ranking_media"],
         "publish_media": CONFIG["publish_media"],
+        "count_media": CONFIG.get("count_media", []),
+        "view_rank": CONFIG.get("view_rank"),
+        "view_pub": CONFIG.get("view_pub"),
         "our_media": CONFIG.get("our_media"),
         "compare_media": CONFIG.get("compare_media", "296"),
         "ranking_size": CONFIG.get("ranking_size", 20),
@@ -350,7 +405,7 @@ def build_meta(status=None):
     if status is not None:
         meta["last_run"] = status
         hist = meta.get("runs", [])
-        hist.insert(0, {k: status[k] for k in ("at", "ok", "ranking", "articles", "errors_n") if k in status})
+        hist.insert(0, {k: status[k] for k in ("at", "ok", "ranking", "articles", "counts", "errors_n") if k in status})
         meta["runs"] = hist[:20]
     write_json(DATA / "meta.json", meta, pretty=True)
     return meta
