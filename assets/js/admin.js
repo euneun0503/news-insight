@@ -1035,6 +1035,12 @@ async function statsView(pane) {
     btn.disabled = true;
     const done = [];
     try {
+      const ix = await getFile(`${STAT_DIR}/index.json`);
+      const prev = ix.text ? JSON.parse(ix.text).uploads || [] : [];
+      const dup = pending.filter((p) => prev.some((u) => u.name === p.f.name && u.size === p.f.size));
+      if (dup.length && !confirm(`이미 올린 파일이 있습니다:\n${dup.map((p) => "· " + p.f.name).join("\n")}\n\n같은 파일은 빼고 올릴까요? (취소 = 업로드 중단)`)) { btn.disabled = false; return; }
+      pending = pending.filter((p) => !dup.includes(p));
+      if (!pending.length) { msg.textContent = "새로 올릴 파일이 없습니다 (모두 이미 올린 파일)."; btn.disabled = false; return; }
       for (const [i, p] of pending.entries()) {
         msg.textContent = `올리는 중… (${i + 1}/${pending.length}) ${p.f.name}`;
         const id = `${kstToday().replace(/-/g, "")}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1078,11 +1084,17 @@ async function statsView(pane) {
       const { owner, repo, branch } = session.R;
       box.innerHTML = `<table class="t"><thead><tr><th>올린 시각</th><th>파일</th><th>종류</th><th>기간</th><th>올린 사람</th><th>반영 결과</th><th></th></tr></thead><tbody>${list.map((u) => {
         const a = app.uploads?.[u.id];
-        const res = a ? `${ST.fill} ${a.filled.length} · ${ST.same} ${a.same} · ${ST.diff} ${a.diff.length}<div class="form-hint">${esc(kstDateTime(a.at))} 반영${a.filled.length ? " · 채움: " + esc(a.filled.slice(0, 6).map((x) => `${x.day.slice(5)} ${mediaName(x.oid)} ${x.type}`).join(", ")) + (a.filled.length > 6 ? " …" : "") : ""}</div>` : '<span class="tag gray" style="white-space:nowrap">반영 대기</span>';
+        const res = a ? `<span class="tag green">반영 완료</span> 채움 ${a.filled.length} · 일치 ${a.same} · 차이 ${a.diff.length}${a.diff.length ? `<div class="form-hint">차이: ${esc(a.diff.slice(0, 4).map((x) => `${x.day.slice(5)} ${mediaName(x.oid)} ${x.type} 사이트 ${x.site ?? "-"} / 파일 ${x.upload ?? "-"}`).join(", "))}</div>` : ""}<div class="form-hint">${esc(kstDateTime(a.at))} 반영${a.filled.length ? " · 채움: " + esc(a.filled.slice(0, 6).map((x) => `${x.day.slice(5)} ${mediaName(x.oid)} ${x.type}`).join(", ")) + (a.filled.length > 6 ? " …" : "") : ""}</div>` : '<span class="tag blue" style="white-space:nowrap">반영 중</span> <button class="btn sm" data-run="1">지금 반영</button>';
         return `<tr><td class="num" style="white-space:nowrap">${esc(kstDateTime(u.at))}</td><td class="title">${esc(u.name)}</td><td style="white-space:nowrap">${KIND[u.kind] || esc(u.kind)}</td><td class="num" style="white-space:nowrap">${esc((u.days || [])[0] || "-")}${u.days?.length > 1 ? " ~ " + esc(u.days[u.days.length - 1]) : ""}</td><td style="white-space:nowrap">${esc(u.by || "")}</td><td style="white-space:nowrap">${res}</td>
           <td class="r" style="white-space:nowrap"><a class="btn sm" href="https://raw.githubusercontent.com/${esc(owner)}/${esc(repo)}/${esc(branch)}/${esc(u.raw)}" download="${esc(u.name)}">원본</a> <button class="btn sm" data-del="${esc(u.id)}">삭제</button></td></tr>`;
       }).join("")}</tbody></table>
       <div class="form-hint" style="margin-top:8px">채움 = 사이트에 없던 데이터를 업로드 값으로 넣음 · 일치 = 사이트 수집값과 같음(검증됨) · 차이 = 값이 달라 사이트 수집값 유지</div>`;
+      $$("[data-run]", box).forEach((b) => b.addEventListener("click", async () => {
+        b.disabled = true;
+        const ok = await runUploadsJob();
+        toast(ok ? "반영 작업을 시작했습니다. 2~3분 뒤 '새로고침'을 눌러 보세요." : "반영 작업을 시작하지 못했습니다. 다음 자동 수집(30분 이내) 때 반영됩니다.", 5000);
+      }));
+      if (list.some((u) => !app.uploads?.[u.id])) setTimeout(() => document.body.contains(box) && loadHist(), 60000); // 반영 중이면 1분마다 자동 새로고침
       $$("[data-del]", box).forEach((b) => b.addEventListener("click", async () => {
         const u = list.find((x) => x.id === b.dataset.del);
         if (!confirm(`"${u.name}" 업로드를 지울까요?\n이 파일로 채웠던 데이터도 사이트에서 빠집니다.`)) return;

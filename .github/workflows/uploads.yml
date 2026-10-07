@@ -3,6 +3,9 @@ name: 통계 업로드 반영
 # 관리자 > 통계 업로드에서 파일을 올리거나 지우면 실행 (수집 워크플로도 매번 함께 반영함)
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "data/uploads/stats/index.json"
 
 permissions:
   contents: write

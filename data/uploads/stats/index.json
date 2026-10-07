@@ -20,78 +20,6 @@
    }
   },
   {
-   "id": "20261007-k2c6t4",
-   "name": "헬스조선_코메디닷컴_조선일보_외_20261005_20261005_20261006_012241.xlsx",
-   "at": "2026-10-07T12:26:33.289Z",
-   "by": "마스터(health)",
-   "kind": "publish",
-   "days": [
-    "2026-10-05"
-   ],
-   "media": 5,
-   "raw": "data/uploads/stats/raw/20261007-k2c6t4.xlsx",
-   "size": 52330,
-   "preview": {
-    "fill": 2,
-    "same": 2,
-    "diff": 1
-   }
-  },
-  {
-   "id": "20261007-doxbql",
-   "name": "네이버_랭킹뉴스_20261005_20261006_012123.xlsx",
-   "at": "2026-10-07T12:26:28.679Z",
-   "by": "마스터(health)",
-   "kind": "ranking",
-   "days": [
-    "2026-10-05"
-   ],
-   "media": 10,
-   "raw": "data/uploads/stats/raw/20261007-doxbql.xlsx",
-   "size": 28604,
-   "preview": {
-    "fill": 0,
-    "same": 10,
-    "diff": 0
-   }
-  },
-  {
-   "id": "20261007-k5pscq",
-   "name": "네이버_랭킹뉴스_20261004_20261004_232124.xlsx",
-   "at": "2026-10-07T12:26:24.091Z",
-   "by": "마스터(health)",
-   "kind": "ranking",
-   "days": [
-    "2026-10-04"
-   ],
-   "media": 10,
-   "raw": "data/uploads/stats/raw/20261007-k5pscq.xlsx",
-   "size": 28687,
-   "preview": {
-    "fill": 0,
-    "same": 10,
-    "diff": 0
-   }
-  },
-  {
-   "id": "20261007-1muvh3",
-   "name": "네이버_랭킹뉴스_20261004_20261004_232124.xlsx",
-   "at": "2026-10-07T12:26:16.676Z",
-   "by": "마스터(health)",
-   "kind": "ranking",
-   "days": [
-    "2026-10-04"
-   ],
-   "media": 10,
-   "raw": "data/uploads/stats/raw/20261007-1muvh3.xlsx",
-   "size": 28687,
-   "preview": {
-    "fill": 0,
-    "same": 10,
-    "diff": 0
-   }
-  },
-  {
    "id": "20261007-z62syt",
    "name": "헬스조선_코메디닷컴_조선일보_외_20261005_20261005_20261006_012241.xlsx",
    "at": "2026-10-07T12:25:51.169Z",
@@ -157,19 +85,6 @@
    "media": 10,
    "raw": "data/uploads/stats/raw/20261007-init2.xlsx",
    "size": 28805
-  },
-  {
-   "id": "20261007-init1",
-   "name": "발행기사_통계_20261006.xlsx",
-   "at": "2026-10-07T21:40:00+09:00",
-   "by": "마스터 (첨부 파일)",
-   "kind": "publish",
-   "days": [
-    "2026-10-06"
-   ],
-   "media": 5,
-   "raw": "data/uploads/stats/raw/20261007-init1.xlsx",
-   "size": 92200
   }
  ]
 }
