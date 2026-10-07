@@ -999,28 +999,34 @@ async function searchKeywords(el, R, ctx) {
     const rep = h(`<div class="card search-report"><div class="card-head"><div><h3>검색 키워드 요약 보고서 ${info("searchNaver")}</h3>
       <div class="sub">네이버 검색량 ${hasN ? `${dotDate(S.volumeDay)} 조회(최근 30일)` : "키 등록 후 수집"} · 구글 관심도 ${hasG ? `${dotDate(S.gvolDay)} 조회(‘${esc(S.gvolAnchor)}’=100)` : "수집 전"} · 급상승 검색어 ${S.days.map(mmdd).join(", ")} 누적 · 발행 수는 선택 기간 기준</div></div>
       <div class="seg" id="srScope"><button data-s="seed" class="${scope === "seed" ? "on" : ""}">관심 키워드 (건강)</button><button data-s="all" class="${scope === "all" ? "on" : ""}">전체 (기사 제목 키워드 포함)</button></div></div>
-      <div class="grid g-4">
-        <div class="card kpi"><div class="label">네이버 검색량 1위</div>${nTop[0] ? `<div class="value blue" style="font-size:22px">${esc(nTop[0].word)}</div><div class="meta">월 ${fmt(nTop[0].total)}회 · 키워드 ${fmt(Object.keys(S.volume).length)}개 + 연관 ${fmt(S.related.length)}개 조회</div>` : '<div class="meta">아직 없음</div>'}</div>
-        <div class="card kpi"><div class="label">구글 관심도 1위</div>${gTop[0] ? `<div class="value orange" style="font-size:22px">${esc(gTop[0].word)}</div><div class="meta">${fmt1(gTop[0].g)} (‘${esc(S.gvolAnchor)}’=100) · ${fmt(gTop.length)}개 키워드</div>` : '<div class="meta">아직 없음</div>'}</div>
-        <div class="card kpi"><div class="label">구글 급상승 검색어</div><div class="value num">${fmt(S.google.length)}개</div><div class="meta">${S.google[0] ? `1위 ${esc(S.google[0].title)} ${S.google[0].traffic ? fmt(S.google[0].traffic) + "+" : ""} · ` : ""}TOP 30 중 우리가 쓴 주제 ${ourHit}개</div></div>
-        <div class="card kpi"><div class="label">기사 부족 1위 (네이버)</div>${gapTop[0] ? `<div class="value green" style="font-size:22px">${esc(gapTop[0].word)}</div><div class="meta">월 ${fmt(gapTop[0].total)}회 검색 · 기간 발행 ${fmt(gapTop[0].pub)}건</div>` : '<div class="meta">네이버 검색량 수집 후 표시</div>'}</div>
-      </div>
-      <div class="grid g-2">
-        <div><h4 class="kw-h">네이버 월간 검색수 TOP 15 <span class="form-hint">PC + 모바일</span></h4><div class="chart-box lg"><canvas id="srN"></canvas></div></div>
-        <div><h4 class="kw-h">구글 관심도 TOP 15 <span class="form-hint">‘${esc(S.gvolAnchor)}’ = 100</span></h4><div class="chart-box lg"><canvas id="srG"></canvas></div></div>
-      </div>
-      <div class="grid g-2">
-        <div><h4 class="kw-h">검색은 많은데 기사가 적은 주제 <span class="form-hint">월 검색 1,000회 이상 · 기사 부족 = 검색수 ÷ (발행+1)</span></h4>
-          ${gapTop.length ? `<table class="t"><thead><tr><th>키워드</th><th class="r">월간 검색</th><th class="r">기간 발행</th><th class="r">기사 부족</th></tr></thead><tbody>${gapTop.map((r) => `<tr><td><a href="${ctx.link("keywords", { k: r.word })}"><b>${esc(r.word)}</b></a></td><td class="r num">${fmt(r.total)}</td><td class="r num">${fmt(r.pub)}</td><td class="r num">${short(r.gap)}</td></tr>`).join("")}</tbody></table>` : emptyBox("네이버 검색량 수집 후 표시됩니다.")}</div>
-        <div><h4 class="kw-h">급상승 중인데 우리 기간 기사가 없는 검색어 <span class="form-hint">구글 급상승 · 선택 기간 발행 0건</span></h4>
-          ${trendNo.length ? `<table class="t"><thead><tr><th>검색어</th><th class="r">검색량</th><th>관련 뉴스</th></tr></thead><tbody>${trendNo.map((x) => `<tr><td><a href="${ctx.link("keywords", { k: x.title })}"><b>${esc(x.title)}</b></a></td><td class="r num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</td><td class="title">${x.news[0] && /^https?:/.test(x.news[0][1]) ? `<a href="${esc(x.news[0][1])}" target="_blank" rel="noopener">${esc(x.news[0][0])}</a>` : "-"}</td></tr>`).join("")}</tbody></table>` : emptyBox("없음")}</div>
+      <div class="grid g-2 sr-split">
+        <section class="sr-panel naver">
+          <div class="sr-head"><span class="sr-logo n">N</span><b>네이버 키워드 랭킹</b><span class="form-hint">실제 월간 검색 횟수 (검색광고 API)</span></div>
+          <div class="grid g-2">
+            <div class="card kpi"><div class="label">검색량 1위</div>${nTop[0] ? `<div class="value" style="font-size:22px;color:#03a94d">${esc(nTop[0].word)}</div><div class="meta">월 ${fmt(nTop[0].total)}회 · 키워드 ${fmt(Object.keys(S.volume).length)}개 + 연관 ${fmt(S.related.length)}개</div>` : '<div class="meta">아직 없음</div>'}</div>
+            <div class="card kpi"><div class="label">기사 부족 1위</div>${gapTop[0] ? `<div class="value" style="font-size:22px;color:#03a94d">${esc(gapTop[0].word)}</div><div class="meta">월 ${fmt(gapTop[0].total)}회 검색 · 기간 발행 ${fmt(gapTop[0].pub)}건</div>` : '<div class="meta">수집 후 표시</div>'}</div>
+          </div>
+          <h4 class="kw-h">월간 검색수 TOP 15 <span class="form-hint">PC + 모바일</span></h4><div class="chart-box lg"><canvas id="srN"></canvas></div>
+          <h4 class="kw-h">검색은 많은데 기사가 적은 주제 <span class="form-hint">월 1,000회 이상 · 기사 부족 = 검색수 ÷ (발행+1)</span></h4>
+          ${gapTop.length ? `<table class="t"><thead><tr><th>키워드</th><th class="r">월간 검색</th><th class="r">기간 발행</th><th class="r">기사 부족</th></tr></thead><tbody>${gapTop.map((r) => `<tr><td><a href="${ctx.link("keywords", { k: r.word })}"><b>${esc(r.word)}</b></a></td><td class="r num">${fmt(r.total)}</td><td class="r num">${fmt(r.pub)}</td><td class="r num">${short(r.gap)}</td></tr>`).join("")}</tbody></table>` : emptyBox("네이버 검색량 수집 후 표시됩니다.")}
+        </section>
+        <section class="sr-panel google">
+          <div class="sr-head"><span class="sr-logo g">G</span><b>구글 키워드 랭킹</b><span class="form-hint">상대 관심도 (‘${esc(S.gvolAnchor)}’=100) · 급상승 검색어</span></div>
+          <div class="grid g-2">
+            <div class="card kpi"><div class="label">관심도 1위</div>${gTop[0] ? `<div class="value" style="font-size:22px;color:#1a73e8">${esc(gTop[0].word)}</div><div class="meta">${fmt1(gTop[0].g)} · ${fmt(gTop.length)}개 키워드</div>` : '<div class="meta">아직 없음</div>'}</div>
+            <div class="card kpi"><div class="label">급상승 검색어</div><div class="value num" style="color:#1a73e8">${fmt(S.google.length)}개</div><div class="meta">${S.google[0] ? `1위 ${esc(S.google[0].title)} ${S.google[0].traffic ? fmt(S.google[0].traffic) + "+" : ""} · ` : ""}TOP 30 중 우리가 쓴 주제 ${ourHit}개</div></div>
+          </div>
+          <h4 class="kw-h">관심도 TOP 15 <span class="form-hint">‘${esc(S.gvolAnchor)}’ = 100</span></h4><div class="chart-box lg"><canvas id="srG"></canvas></div>
+          <h4 class="kw-h">급상승 중인데 우리 기간 기사가 없는 검색어 <span class="form-hint">선택 기간 발행 0건</span></h4>
+          ${trendNo.length ? `<table class="t"><thead><tr><th>검색어</th><th class="r">검색량</th><th>관련 뉴스</th></tr></thead><tbody>${trendNo.map((x) => `<tr><td><a href="${ctx.link("keywords", { k: x.title })}"><b>${esc(x.title)}</b></a></td><td class="r num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</td><td class="title">${x.news[0] && /^https?:/.test(x.news[0][1]) ? `<a href="${esc(x.news[0][1])}" target="_blank" rel="noopener">${esc(x.news[0][0])}</a>` : "-"}</td></tr>`).join("")}</tbody></table>` : emptyBox("없음")}
+        </section>
       </div></div>`);
     if (repEl) repEl.replaceWith(rep); else el.append(rep);
     repEl = rep;
     $$("#srScope button", rep).forEach((b) => b.addEventListener("click", () => drawReport(b.dataset.s)));
     const hbar = (id, rows, val, color, f) => rows.length && barChart($(id, rep), rows.map((r) => r.word), [{ label: "", data: rows.map(val), backgroundColor: color }], { horizontal: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => " " + f(c.raw) } } } });
-    hbar("#srN", nTop.slice(0, 15), (r) => r.total, "#2563eb", (v) => `월 ${fmt(v)}회`);
-    hbar("#srG", gTop.slice(0, 15), (r) => r.g, "#f97316", (v) => `관심도 ${fmt1(v)}`);
+    hbar("#srN", nTop.slice(0, 15), (r) => r.total, "#03a94d", (v) => `월 ${fmt(v)}회`);
+    hbar("#srG", gTop.slice(0, 15), (r) => r.g, "#1a73e8", (v) => `관심도 ${fmt1(v)}`);
     if (!nTop.length) $("#srN", rep).parentElement.innerHTML = emptyBox("네이버 검색량이 아직 없습니다.");
     if (!gTop.length) $("#srG", rep).parentElement.innerHTML = emptyBox("구글 관심도가 아직 없습니다.");
   };
@@ -1029,7 +1035,7 @@ async function searchKeywords(el, R, ctx) {
 
   const st = { vt: ctx.q.vt === "google" ? "google" : "naver", sort: "", src: "", q: "" };
   const card = h(`<div class="card">
-    <div class="board-tabs" id="vtab" style="margin:-4px 0 14px"><button data-v="naver">네이버 검색량</button><button data-v="google">구글 검색량</button></div>
+    <div class="board-tabs" id="vtab" style="margin:-4px 0 14px"><button data-v="naver">🟢 네이버 검색량 전체 표</button><button data-v="google">🔵 구글 관심도 전체 표</button></div>
     <div class="card-head"><div><h3 id="vTitle"></h3><div class="sub" id="vSub"></div></div>
       <div class="tools"><input class="input" id="sq" placeholder="검색어 찾기" style="width:130px">
         <select class="input" id="ssrc"></select><div class="seg" id="ssort"></div></div></div>

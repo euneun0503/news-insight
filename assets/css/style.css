@@ -404,3 +404,14 @@ body.gated .topbar, body.gated .layout { display: none; }
 .ms-row { background: #fff; border: 1px solid #e6e9ef; }
 .ms-row:hover { background: #fff; border-color: #c7d2fe; }
 .ms-row.fixed { background: #fff7ed; border-color: #fed7aa; }
+
+.sr-split { align-items: start; }
+.sr-panel { border-radius: 12px; padding: 14px; border: 1px solid var(--line); }
+.sr-panel.naver { background: #f2fbf5; border-color: #bfe8cd; }
+.sr-panel.google { background: #f3f7fe; border-color: #c6d9fb; }
+.sr-panel .card { background: #fff; }
+.sr-panel table.t { background: #fff; border-radius: 8px; }
+.sr-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: 15px; }
+.sr-logo { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 14px; }
+.sr-logo.n { background: #03c75a; }
+.sr-logo.g { background: #1a73e8; }
