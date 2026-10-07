@@ -966,9 +966,9 @@ export async function reporters(el, R, ctx) {
       <div class="meta">${short(ourByViews.views)} · 랭킹 ${fmt(ourByViews.rank)}건${ourByViews.top1 ? ` · 1위 ${fmt(ourByViews.top1)}회` : ""}${ourByViews.best ? ` · 최고 ${fmt(ourByViews.best.views)}` : ""}</div>` : '<div class="meta">이 기간 데이터 없음</div>'}</div>
     <div class="card kpi ours-kpi gray"><div class="label">${esc(ourN)} 발행 1위 기자</div>${ourByPub ? `<div class="value green" style="font-size:22px">${esc(ourByPub.name)}</div>
       <div class="meta">${fmt(ourByPub.pub)}건 · 하루 ${fmt1(ourByPub.pubDay)}건 · 랭킹 진입 ${fmt(ourByPub.rank)}건</div>` : '<div class="meta">이 기간 데이터 없음</div>'}</div>
-    <div class="card kpi ours-kpi"><div class="label">${esc(ourN)} 랭킹 진입률 1위 기자 ${info("repRate")}</div>${ourByRate ? `<div class="value blue" style="font-size:22px">${esc(ourByRate.name)}</div>
+    <div class="card kpi ours-kpi gray"><div class="label">${esc(ourN)} 랭킹 진입률 1위 기자 ${info("repRate")}</div>${ourByRate ? `<div class="value blue" style="font-size:22px">${esc(ourByRate.name)}</div>
       <div class="meta">진입률 ${pct(ourByRate.rate, 0)} · 발행 ${fmt(ourByRate.pub)}건 중 ${fmt(ourByRate.enter)}건 20위 진입</div>` : '<div class="meta">발행 5건 이상 기자가 없거나 발행 자료가 없는 기간</div>'}</div>
-    <div class="card kpi ours-kpi"><div class="label">${esc(ourN)} 기사당 조회수 1위 기자 ${info("repAvg")}</div>${ourByAvg ? `<div class="value orange" style="font-size:22px">${esc(ourByAvg.name)}</div>
+    <div class="card kpi ours-kpi gray"><div class="label">${esc(ourN)} 기사당 조회수 1위 기자 ${info("repAvg")}</div>${ourByAvg ? `<div class="value orange" style="font-size:22px">${esc(ourByAvg.name)}</div>
       <div class="meta">랭킹 1건당 평균 ${fmt(ourByAvg.avg)}회 · 랭킹 ${fmt(ourByAvg.viewN)}건</div>` : '<div class="meta">랭킹 3건 이상 기자가 없는 기간</div>'}</div>
   </div></div>`));
 
