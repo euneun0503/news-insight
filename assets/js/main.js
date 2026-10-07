@@ -31,7 +31,7 @@ function buildHash(page, q) {
 function currentRange(q) {
   let s = q.s, e = q.e;
   const ok = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d || "");
-  if (!ok(s) || !ok(e) || s > e) [s, e] = presetRange("7", lastFinal);
+  if (!ok(s) || !ok(e) || s > e) [s, e] = presetRange("yesterday", lastFinal); // 기본: 어제
   return { s, e };
 }
 

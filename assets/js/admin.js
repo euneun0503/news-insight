@@ -354,8 +354,9 @@ function loginView(body, R, ctx, note = "") {
 function setupView(body, R, ctx, mode) {
   body.innerHTML = "";
   const rec = mode === "recover";
-  const card = h(`<div class="card admin-login">
-    <div class="card-head"><div><h3>${rec ? "마스터 비밀번호 재설정" : "처음 설정 — 마스터 계정 만들기"}</h3><div class="sub">저장소 <span class="code">${esc(R.owner)}/${esc(R.repo)}</span></div></div>${rec ? '<button class="btn sm" id="back">로그인으로</button>' : ""}</div>
+  const card = h(`<div class="card auth-card auth-wide">
+    <div class="auth-brand"><div class="auth-logo">N</div><div><b>${esc(CFG.siteName || "뉴스 인사이트")} 관리자</b><div class="form-hint">${rec ? "마스터 비밀번호 재설정" : "처음 한 번만 하는 설정 — 마스터 계정 만들기"}</div></div>${rec ? '<button class="btn sm" id="back" style="margin-left:auto">로그인으로</button>' : ""}</div>
+    ${rec ? "" : `<div class="auth-steps"><div><b>1</b> 지금 한 번: 마스터 아이디·비밀번호 + GitHub 키 등록</div><div><b>2</b> 마스터가 관리자 아이디(최대 ${MAX_USERS}개) 만들기</div><div><b>3</b> 이후 모두 <b>아이디·비밀번호로만</b> 로그인</div></div>`}
     ${rec ? `<div class="form-hint" style="margin-bottom:10px">저장소 주인만 할 수 있도록 GitHub 키로 본인을 확인합니다. 재설정하면 보안 키가 새로 바뀌어 <b>다른 계정들은 비밀번호를 다시 정해야</b> 합니다(계정·권한은 그대로).</div>` : `<div class="form-hint" style="margin-bottom:10px">이 화면은 한 번만 나옵니다. GitHub 키는 이번에 한 번만 넣으면 되고, 이후 모든 관리자는 아이디·비밀번호로만 로그인합니다.</div>`}
     <ol>
       <li><a href="https://github.com/settings/personal-access-tokens/new?name=news-insight-admin&description=news-insight%20admin%20site&target_name=${encodeURIComponent(R.owner)}&contents=write&actions=write&expires_in=none" target="_blank" rel="noopener">GitHub 키 만들기</a> (${esc(R.owner)} 계정으로 로그인한 상태)</li>

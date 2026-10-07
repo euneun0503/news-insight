@@ -344,3 +344,7 @@ table.t { overflow-wrap: normal; }
 .rep-chip b { color: var(--blue); font-weight: 650; }
 .rep-chip.ours { background: var(--orange-soft); }
 .kpi .meta.warn { color: #b45309; margin-top: 4px; }
+
+.auth-wide { max-width: 560px; }
+.auth-steps { display: grid; gap: 6px; background: var(--line-2); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px; }
+.auth-steps b:first-child { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #18335c; color: #fff; font-size: 11px; margin-right: 6px; }
