@@ -72,6 +72,24 @@ function sortableTable(el, cols, rows, { sort, desc = true, limit, rowClass, pag
   render();
 }
 
+// 급상승 검색어 목록: 10개씩 번호 탭 + 검색
+function trendPager(box, list, row, { per = 10 } = {}) {
+  let page = 1, q = "";
+  box.innerHTML = `<div class="tr-tools"><input class="input" placeholder="검색어 찾기" style="width:150px"><span class="form-hint"></span></div><div class="tr-body"></div><div class="tr-pager"></div>`;
+  const body = $(".tr-body", box), pager = $(".tr-pager", box), hint = $(".tr-tools .form-hint", box);
+  const draw = () => {
+    const f = list.map((x, i) => [x, i]).filter(([x]) => !q || x.title.includes(q));
+    const pages = Math.max(1, Math.ceil(f.length / per));
+    page = Math.min(page, pages);
+    hint.textContent = q ? `${f.length}개 찾음` : `전체 ${list.length}개`;
+    body.innerHTML = f.length ? row(f.slice((page - 1) * per, page * per)) : emptyBox(q ? "찾는 검색어가 없습니다." : "수집된 급상승 검색어가 없습니다.");
+    pager.innerHTML = pages > 1 ? Array.from({ length: pages }, (_, i) => `<button class="pg-num ${i + 1 === page ? "on" : ""}" data-p="${i + 1}">${i * per + 1}~${Math.min((i + 1) * per, f.length)}</button>`).join("") : "";
+    $$("button", pager).forEach((b) => b.addEventListener("click", () => { page = +b.dataset.p; draw(); }));
+  };
+  $("input", box).addEventListener("input", debounce((e) => { q = e.target.value.trim(); page = 1; draw(); }, 150));
+  draw();
+}
+
 const nameList = (oids, max = 12) => esc(oids.slice(0, max).map(mediaName).join(" · ")) + (oids.length > max ? ` <span title="${esc(oids.slice(max).map(mediaName).join(", "))}">외 ${oids.length - max}곳</span>` : "");
 
 function mediaListFor(A, kind) {
@@ -257,7 +275,7 @@ export async function dashboard(el, R, ctx) {
   // 랭킹 상위 기사
   const topRow = h(`<div class="grid g-21">
     <div class="card"><div class="card-head"><div><h3>랭킹 상위 기사 ${info("topArticles")}</h3><div class="sub">선택 기간 전체 매체 중 조회수 높은 순</div></div><a href="${ctx.link("articles")}">전체 보기</a></div><div id="topTable"></div></div>
-    <div class="card"><div class="card-head"><div><h3>급상승 검색어 TOP 30 ${info("googleTrends")}</h3><div class="sub" id="trSub">구글 트렌드 한국</div></div><a href="${ctx.link("keywords", { tab: "search" })}">더 보기</a></div><div class="kw-list" id="trList" style="max-height:470px;overflow-y:auto"><div class="loading"></div></div></div>
+    <div class="card"><div class="card-head"><div><h3>급상승 검색어 TOP 30 ${info("googleTrends")}</h3><div class="sub" id="trSub">구글 트렌드 한국</div></div><a href="${ctx.link("keywords", { tab: "search" })}">더 보기</a></div><div id="trList"><div class="loading"></div></div></div>
   </div>`);
   el.append(topRow);
   const topCard = topRow;
@@ -265,7 +283,7 @@ export async function dashboard(el, R, ctx) {
     const list = S.google.slice(0, 30);
     $("#trSub", topRow).textContent = S.days.length ? `구글 트렌드 한국 · ${S.fallback ? "가장 최근 수집 " : ""}${S.days.map(mmdd).join(", ").slice(0, 40)}${S.fallback ? " (선택 기간 밖)" : ""}` : "구글 트렌드 한국";
     const maxT = Math.max(...list.map((x) => x.traffic), 1);
-    $("#trList", topRow).innerHTML = list.map((x, i) => `<a class="kw-row" href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.news[0]?.[0] || "")}"><span class="n">${i + 1}</span><span class="w">${esc(x.title)}</span><div class="bar orange"><span style="width:${(x.traffic / maxT) * 100}%"></span></div><span class="v num">${fmt(x.traffic)}+</span></a>`).join("") || emptyBox("수집된 급상승 검색어가 없습니다.");
+    trendPager($("#trList", topRow), list, (rows) => `<div class="kw-list">${rows.map(([x, i]) => `<a class="kw-row" href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.news[0]?.[0] || "")}"><span class="n">${i + 1}</span><span class="w">${esc(x.title)}</span><div class="bar orange"><span style="width:${(x.traffic / maxT) * 100}%"></span></div><span class="v num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</span></a>`).join("")}</div>`);
   });
   articleTable($("#topTable", topCard), A.top.slice(0, 10), { showDay: R.n > 1 });
 
@@ -1031,15 +1049,16 @@ async function searchKeywords(el, R, ctx) {
   // ② 구글 급상승 검색어
   const g = S.google;
   const gcard = h(`<div class="card"><div class="card-head"><div><h3>급상승 검색어 TOP 30 · 구글 ${info("googleTrends")}</h3><div class="sub">구글 트렌드 한국 급상승 검색어 · ${S.days.length}일 누적 · 현재 ${Math.min(30, g.length)}개 · 여러 날 오른 검색어가 위에 옵니다</div></div></div>
-    ${g.length ? `<div class="table-wrap" style="max-height:520px;overflow-y:auto"><table class="t"><thead><tr><th class="c">#</th><th>검색어</th><th class="r">최대 검색량</th><th class="c">등장일</th><th>최근</th><th>관련 뉴스</th><th class="r">우리 기간 발행</th></tr></thead><tbody>
-    ${g.slice(0, 30).map((x, i) => {
+    <div id="gTrend"></div>
+    <div class="form-hint" style="margin-top:8px">검색량은 구글이 제공하는 대략치(예: 2,000+)입니다. 네이버는 2021년 실시간 검색어를 종료해 급상승 목록을 공식 제공하지 않습니다. 네이버 쪽 흐름은 위 표의 월간 검색수로 확인하세요.</div></div>`);
+  el.append(gcard);
+  trendPager($("#gTrend", gcard), g.slice(0, 30), (rows) => `<div class="table-wrap"><table class="t"><thead><tr><th class="c">#</th><th>검색어</th><th class="r">최대 검색량</th><th class="c">등장일</th><th>최근</th><th>관련 뉴스</th><th class="r">우리 기간 발행</th></tr></thead><tbody>
+    ${rows.map(([x, i]) => {
       const sp = supply(x.title);
       const n = x.news[0];
       return `<tr><td class="c num">${i + 1}</td><td><a href="${ctx.link("keywords", { k: x.title })}"><b>${esc(x.title)}</b></a></td>
-        <td class="r num">${fmt(x.traffic)}+</td><td class="c num">${x.days.length}일</td><td class="num">${mmdd(x.days[x.days.length - 1])}</td>
+        <td class="r num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</td><td class="c num">${x.days.length}일</td><td class="num">${mmdd(x.days[x.days.length - 1])}</td>
         <td class="title">${n && /^https?:/.test(n[1]) ? `<a href="${esc(n[1])}" target="_blank" rel="noopener">${esc(n[0])}</a> <span class="form-hint">${esc(n[2])}</span>` : "-"}</td>
         <td class="r num">${sp.pub ? fmt(sp.pub) : '<span class="tag gray">0</span>'}</td></tr>`;
-    }).join("")}</tbody></table></div>` : emptyBox("수집된 급상승 검색어가 없습니다.")}
-    <div class="form-hint" style="margin-top:8px">검색량은 구글이 제공하는 대략치(예: 2,000+)입니다. 네이버는 2021년 실시간 검색어를 종료해 급상승 목록을 공식 제공하지 않습니다. 네이버 쪽 흐름은 위 표의 월간 검색수로 확인하세요.</div></div>`);
-  el.append(gcard);
+    }).join("")}</tbody></table></div>`);
 }

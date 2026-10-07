@@ -85,7 +85,46 @@ def parse_google_rss(xml_text):
 def fetch_google():
     r = requests.get("https://trends.google.com/trending/rss?geo=KR", headers=UA, timeout=20)
     r.raise_for_status()
-    return parse_google_rss(r.text)
+    rows = parse_google_rss(r.text)
+    # RSS는 10개 정도만 주므로, '지금 뜨는 검색어' 화면이 쓰는 데이터(최근 24시간 전체)를 함께 받아 30개 이상 채움
+    try:
+        have = {x["title"] for x in rows}
+        for x in fetch_google_trending_now():
+            if x["title"] not in have:
+                rows.append(x)
+                have.add(x["title"])
+    except Exception as e:
+        print("  ⚠️ 구글 '지금 뜨는 검색어' 추가 수집 실패 (RSS 10개만 사용):", e)
+    return rows
+
+
+def fetch_google_trending_now(hours=24):
+    """trends.google.com/trending 화면의 내부 데이터(batchexecute i0OFE) → [{title, traffic, news:[]}]"""
+    req = json.dumps([[["i0OFE", json.dumps([None, None, "KR", 0, "ko", hours, 1]), None, "generic"]]])
+    r = requests.post("https://trends.google.com/_/TrendsUi/data/batchexecute",
+                      headers={**UA, "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"},
+                      data={"f.req": req}, timeout=25)
+    r.raise_for_status()
+    out = []
+    for line in r.text.splitlines():
+        if "i0OFE" not in line:
+            continue
+        outer = json.loads(line)
+        for part in outer:
+            if not (isinstance(part, list) and len(part) > 2 and part[1] == "i0OFE" and part[2]):
+                continue
+            data = json.loads(part[2])
+            items = data[1] if isinstance(data, list) and len(data) > 1 and isinstance(data[1], list) else []
+            for t in items:
+                if not (isinstance(t, list) and t and isinstance(t[0], str)):
+                    continue
+                vol = 0
+                for v in t[5:8]:
+                    if isinstance(v, int) and v > 0:
+                        vol = v
+                        break
+                out.append({"title": clean_text(t[0]), "traffic": vol, "news": []})
+    return out
 
 
 # ── 구글 트렌드 키워드별 검색 관심도 ─────────────
