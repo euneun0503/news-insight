@@ -117,7 +117,10 @@ async function render() {
       if (seq !== renderSeq) return;
       view.innerHTML = "";
       const missing = R.n - Math.max(R.agg.rankDayCount, R.agg.pubDayCount);
-      $("#rangeNote").innerHTML = `조회 기간: <b>${rangeLabel(R)}</b>${missing > 0 ? ` · <span class="warn">수집되지 않은 날 ${missing}일 포함</span>` : ""}${R.n > LIMITS.articleDays ? ` · 기사 단위 목록은 ${LIMITS.articleDays}일(랭킹은 ${LIMITS.rankingDays}일) 이하에서 전체 제공` : ""}`;
+      const M2 = meta();
+      const lastRank = (M2.ranking_days || []).filter((d) => d <= R.e).pop();
+      const endMissing = !(M2.ranking_days || []).includes(R.e);
+      $("#rangeNote").innerHTML = `조회 기간: <b>${rangeLabel(R)}</b>${missing > 0 ? ` · <span class="warn">수집되지 않은 날 ${missing}일 포함</span>` : ""}${endMissing ? ` · <span class="warn">${R.e.replace(/-/g, ".")} 랭킹은 아직 수집 전${lastRank ? ` (가장 최근 수집: ${lastRank.replace(/-/g, ".")})` : ""}</span>` : ""}${R.n > LIMITS.articleDays ? ` · 기사 단위 목록은 ${LIMITS.articleDays}일(랭킹은 ${LIMITS.rankingDays}일) 이하에서 전체 제공` : ""}`;
       await DATA_PAGES[page](view, R, ctx);
     } else if (page === "board") {
       if (param) boardPost(view, BOARD, param);
@@ -238,7 +241,8 @@ async function boot() {
   setMediaColors(M);
   const today = kstToday();
   const finals = (M.ranking_days || []).filter((d) => d < today);
-  lastFinal = finals[finals.length - 1] || M.last || addDays(today, -1);
+  // 기간 버튼은 항상 '실제 어제'(한국시간) 기준. 수집이 늦어진 날은 화면에 경고로 표시
+  lastFinal = addDays(today, -1);
   renderStatus();
   renderTicker(BOARD);
   setupFilter();

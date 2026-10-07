@@ -126,44 +126,67 @@ def _clean_name(t):
     return t if 1 < len(t) <= 20 and re.search(r"[가-힣A-Za-z]", t) and not re.search(r"구독|응원|기사|뉴스", t) else ""
 
 
+_MEDIA_WORDS = set(CONFIG["media"].values()) | {"뉴스", "연합", "기자", "사진", "영상", "그래픽", "편집", "온라인", "디지털", "헬스", "닷컴"}
+_NAME = r"[가-힣]{2,4}"
+_ROLE_RE = r"(?:기자|특파원|객원기자|선임기자|전문기자|수습기자|기상캐스터)"
+
+
+def _ok_name(n):
+    return n and n not in _MEDIA_WORDS and not any(w in n for w in ("뉴스", "일보", "신문", "닷컴", "조선", "기자"))
+
+
 def parse_reporter(soup, html=""):
+    """
+    네이버 기사 상단 기자 이름표는 화면에서 따로 불러와 원본 HTML에는 없다.
+    그래서 본문에 적힌 바이라인에서 찾는다.
+      ① (서울=뉴스1) 홍길동 기자 =   ② 홍길동 기자 (email)   ③ 본문 끝 '홍길동 기자'
+    매체 이름이 잡히지 않도록 걸러낸다.
+    """
     names = []
-    for tag in soup.select(_BYLINE_SEL):
-        n = _clean_name(tag.get_text(" ", strip=True))
-        if n and n not in names:
+    def add(n):
+        n = n.strip()
+        if _ok_name(n) and n not in names:
             names.append(n)
-        if len(names) >= 3:
-            break
-    if not names:
-        # 메타 태그 / 본문 끝 "홍길동 기자 (email)" 형태
-        for sel in ['meta[property="dable:author"]', 'meta[name="author"]', 'meta[property="article:author"]', 'meta[name="twitter:creator"]']:
-            m = soup.select_one(sel)
-            n = _clean_name(m.get("content", "")) if m else ""
-            if n and not n.startswith("http"):
-                names.append(n)
-                break
-    if not names:
-        body = soup.select_one("#dic_area, #newsct_article, article") or soup
-        txt = body.get_text(" ", strip=True)[-600:]
-        m = re.findall(r"([가-힣]{2,4})\s?" + _ROLE + r"\s*[\(\[]?\s*[\w.+-]+@[\w.-]+", txt) or re.findall(r"([가-힣]{2,4})\s" + _ROLE + r"\s*$", txt)
+    # 0) 정적 HTML에 이름표가 있는 경우 (구형 템플릿)
+    for tag in soup.select("em.media_end_head_journalist_name, span.byline_s, .byline .byline_s, p.byline_p span"):
+        m = re.match(r"\s*(" + _NAME + r")\s*" + _ROLE_RE, tag.get_text(" ", strip=True))
         if m:
-            names.append(m[-1])
+            add(m.group(1))
+    body = soup.select_one("#dic_area, #newsct_article, #articeBody, #articleBody, article")
+    txt = re.sub(r"\s+", " ", body.get_text(" ", strip=True)) if body else ""
+    if not names and txt:
+        # ① 통신사형 리드: (서울=뉴스1) 홍길동 김철수 기자 =
+        m = re.search(r"\([^()]{1,15}=[^()]{1,15}\)\s*((?:" + _NAME + r"[\s·ㆍ,]*){1,3})\s*" + _ROLE_RE, txt[:400])
+        if m:
+            for n in re.split(r"[\s·ㆍ,]+", m.group(1)):
+                add(n)
+    if not names and txt:
+        # ② 이메일 바이라인: 홍길동 기자 hong@...  (본문 어디든, 마지막 것 우선)
+        for m in re.finditer(r"(" + _NAME + r")\s?(?:[가-힣]{2,6}\s)?" + _ROLE_RE + r"\s*[\(\[<]?\s*[\w.+-]+@[\w.-]+", txt):
+            add(m.group(1))
+    if not names and txt:
+        # ③ 리드/끝부분의 '홍길동 기자'
+        for seg in (txt[:200], txt[-250:]):
+            for m in re.finditer(r"(?:^|[\s\]\)=])(" + _NAME + r")\s(?:[가-힣]{2,6}\s)?" + _ROLE_RE + r"(?=[\s=\(\[]|$)", seg):
+                add(m.group(1))
+            if names:
+                break
     return "·".join(names[:3])
+
+
+def _debug_sample(oid, aid, soup, html, rep):
+    """매체마다 첫 기사 1건의 바이라인 주변을 저장 (추출이 맞는지 점검용)"""
+    with _dbg_lock:
+        if any(d["oid"] == oid for d in _dbg) or len(_dbg) >= 30:
+            return
+        body = soup.select_one("#dic_area, #newsct_article, article")
+        txt = re.sub(r"\s+", " ", body.get_text(" ", strip=True)) if body else ""
+        _dbg.append({"oid": oid, "aid": aid, "found": rep, "head": txt[:250], "tail": txt[-250:]})
+        store.write_json(DATA / "cache" / "byline_debug.json", _dbg, pretty=True)
 
 
 _dbg_lock = threading.Lock()
 _dbg = []
-
-
-def _debug_byline(oid, aid, soup, html):
-    """기자명을 못 찾은 기사 몇 건의 관련 부분을 저장 (선택자 점검용)"""
-    with _dbg_lock:
-        if len(_dbg) >= 6:
-            return
-        idx = [m.start() for m in re.finditer("기자|journalist|byline", html)][:6]
-        snippets = [html[max(0, i - 300): i + 200] for i in idx]
-        _dbg.append({"oid": oid, "aid": aid, "len": len(html), "snippets": snippets})
-        store.write_json(DATA / "cache" / "byline_debug.json", _dbg, pretty=True)
 
 
 def fetch_article_meta(session, oid, aid):
@@ -184,15 +207,14 @@ def fetch_article_meta(session, oid, aid):
         if tag:
             pub = _norm_dt(tag.get_text(" ", strip=True).replace(".", "-"))
     reporter = parse_reporter(soup, r.text)
-    if not reporter:
-        _debug_byline(oid, aid, soup, r.text)
+    _debug_sample(oid, aid, soup, r.text, reporter)
     return pub, reporter
 
 
 def resolve_meta(session, keys, cache, workers):
     """keys: [(oid, aid)] → 캐시에 없는 것만 병렬 조회해서 cache 갱신"""
     # 캐시에 없거나, 예전 방식으로 기자명을 못 찾은 항목(버전 표시 없음)은 다시 조회
-    todo = [k for k in keys if len(cache.get(f"{k[0]}_{k[1]}") or []) < 3 and not (cache.get(f"{k[0]}_{k[1]}") or ["", ""])[1]]
+    todo = [k for k in keys if (cache.get(f"{k[0]}_{k[1]}") or [None, None, 0])[-1] != 3]
     if not todo:
         return 0
     fails = 0
@@ -204,7 +226,7 @@ def resolve_meta(session, keys, cache, workers):
                 pub, rep = f.result()
                 if pub:
                     with _cache_lock:
-                        cache[f"{oid}_{aid}"] = [pub, rep, 2]
+                        cache[f"{oid}_{aid}"] = [pub, rep, 3]
                 else:
                     fails += 1
             except Exception:
