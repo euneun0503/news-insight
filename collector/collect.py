@@ -18,6 +18,7 @@
   5) 랭킹 기사도 기자명/발행시각을 함께 저장 → 기자 통계, 시간대 분석 가능
 """
 import argparse
+import os
 import re
 import sys
 import time
@@ -208,13 +209,18 @@ def fetch_article_meta(session, oid, aid):
             pub = _norm_dt(tag.get_text(" ", strip=True).replace(".", "-"))
     reporter = parse_reporter(soup, r.text)
     _debug_sample(oid, aid, soup, r.text, reporter)
+    if not reporter and os.environ.get("DEBUG_RAW"):
+        with _dbg_lock:
+            fp = DATA / "cache" / f"raw_{oid}.html"
+            if not fp.exists():
+                fp.write_text(r.text, "utf-8")
     return pub, reporter
 
 
 def resolve_meta(session, keys, cache, workers):
     """keys: [(oid, aid)] → 캐시에 없는 것만 병렬 조회해서 cache 갱신"""
     # 캐시에 없거나, 예전 방식으로 기자명을 못 찾은 항목(버전 표시 없음)은 다시 조회
-    todo = [k for k in keys if (cache.get(f"{k[0]}_{k[1]}") or [None, None, 0])[-1] != 3]
+    todo = [k for k in keys if (cache.get(f"{k[0]}_{k[1]}") or [None, None, 0])[-1] != 4]
     if not todo:
         return 0
     fails = 0
@@ -226,7 +232,7 @@ def resolve_meta(session, keys, cache, workers):
                 pub, rep = f.result()
                 if pub:
                     with _cache_lock:
-                        cache[f"{oid}_{aid}"] = [pub, rep, 3]
+                        cache[f"{oid}_{aid}"] = [pub, rep, 4]
                 else:
                     fails += 1
             except Exception:

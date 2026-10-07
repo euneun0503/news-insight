@@ -48,6 +48,7 @@ jobs:
           IN_START: ${{ github.event.inputs.start }}
           IN_END: ${{ github.event.inputs.end }}
           IN_ONLY: ${{ github.event.inputs.only }}
+          DEBUG_RAW: "1"   # 임시: 기자명 위치 점검용 원본 저장 (점검 후 제거)
         run: |
           ARGS=""
           H=$(TZ=Asia/Seoul date +%-H)

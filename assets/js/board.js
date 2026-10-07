@@ -75,11 +75,11 @@ export function boardList(el, board, ctx) {
       .filter((p) => p.visible !== false && (t === "all" || p.type === t) && (!qq || (p.title + " " + (p.body || "") + " " + (p.summary || "")).toLowerCase().includes(qq)))
       .sort(byPinnedDate);
     $("#bl", card).innerHTML = list.length
-      ? `<table class="t"><thead><tr><th style="width:70px">구분</th><th>제목</th><th style="width:100px">작성자</th><th style="width:100px">등록일</th></tr></thead><tbody>${list
+      ? `<div class="table-wrap"><table class="t"><thead><tr><th style="width:70px">구분</th><th>제목</th><th style="width:100px">작성자</th><th style="width:100px">등록일</th></tr></thead><tbody>${list
           .map((p) => `<tr><td>${p.pinned ? '<span class="tag orange">필독</span>' : `<span class="tag ${p.type === "notice" ? "blue" : p.type === "banner" ? "green" : "gray"}">${boardTypeLabel(p.type)}</span>`}</td>
           <td class="title"><a href="#/board/${encodeURIComponent(p.id)}"><b>${esc(p.title)}</b></a>${!isActive(p) ? ' <span class="tag gray">게시 종료</span>' : ""}${p.summary ? `<div class="form-hint">${esc(p.summary)}</div>` : ""}</td>
           <td>${esc(p.author_name || p.author || "")}</td><td class="num">${dotDate(p.created)}</td></tr>`)
-          .join("")}</tbody></table>`
+          .join("")}</tbody></table></div>`
       : `<div class="empty">게시글이 없습니다.</div>`;
   };
   $$(".board-tabs button", card).forEach((b) => b.addEventListener("click", () => { $$(".board-tabs button", card).forEach((x) => x.classList.toggle("on", x === b)); ctx.setQuery({ type: b.dataset.t }); draw(); }));

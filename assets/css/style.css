@@ -281,3 +281,23 @@ h1 .info-btn { width: 19px; height: 19px; font-size: 12px; vertical-align: 3px; 
 
 .page-head p.cov-line { margin-top: 2px; font-size: 12.5px; color: var(--muted); }
 .card-head > a { white-space: nowrap; flex-shrink: 0; }
+
+/* ── 좁은 화면 넘침 방지 ───────────────── */
+.card-head { flex-wrap: wrap; }
+.card-head > div:first-child { min-width: 0; flex: 1 1 220px; }
+.seg button, .presets button, .board-tabs button, .btn { white-space: nowrap; }
+.kw-row { grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1.4fr) auto; }
+.kw-row .bar, .kw-row svg { min-width: 0; max-width: 100%; }
+.kw-row .w { min-width: 0; }
+#heat, .heat-wrap { overflow-x: auto; }
+.post-view, .card { min-width: 0; overflow-wrap: anywhere; }
+table.t { overflow-wrap: normal; }
+@media (max-width: 640px) {
+  table.t td.title { min-width: 200px; }
+  .page-head h1 { font-size: 19px; }
+  .kpi .value { font-size: 24px; }
+  .card { padding: 14px; }
+  .filterbar .dates { flex-wrap: wrap; }
+  .dates input { width: 132px; }
+  .status-pill { max-width: 40vw; overflow: hidden; }
+}
