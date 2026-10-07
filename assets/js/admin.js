@@ -935,3 +935,16 @@ async function collectView(pane) {
   loadRuns();
   if (M.last_run?.errors?.length) runs.append(h(`<div class="err-box" style="margin-top:12px"><b>최근 수집 경고</b><br>${M.last_run.errors.map(esc).join("<br>")}</div>`));
 }
+
+// ── 다른 화면에서 쓰는 관리자 기능 (시장 현황 > 매체 설정) ──
+export async function adminForSettings() {
+  const R = repoInfo();
+  if (!R) return null;
+  if (!session) await resume(R);
+  return session?.token && (session.acct.role === "master" || session.acct.perms.collect) ? session.acct : null;
+}
+export async function saveSiteSettings(view) {
+  if (!session?.token) throw new Error("관리자 로그인이 필요합니다.");
+  await updateJSON("data/settings.json", () => ({}), (d) => { d.view = view; d.by = session.acct.id; }, `표시 매체 기본값 변경 — ${who()}`);
+  logAct("표시 매체 기본값 변경", `랭킹 ${view.rank.length}곳 · 발행 ${view.pub.length}곳`);
+}

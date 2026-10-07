@@ -1,6 +1,6 @@
 // 앱 진입점: 라우팅, 기간 필터, 보고서 내보내기
 import { $, $$, esc, h, toast, kstToday, addDays, mmdd, weekday, kstDateTime, relTime, loadScript, setMediaColors, dateList, articleUrl } from "./util.js";
-import { loadMeta, loadBoard, meta, mediaName, naverCoverage, Range, presetRange, rangeLabel, keywordTable, LIMITS } from "./data.js";
+import { loadMeta, loadBoard, loadSettings, meta, mediaName, naverCoverage, Range, presetRange, rangeLabel, keywordTable, LIMITS } from "./data.js";
 import { destroyCharts } from "./charts.js";
 import * as V from "./views.js";
 import { renderBanners, renderTicker, boardList, boardPost } from "./board.js";
@@ -236,7 +236,7 @@ async function boot() {
   $("#brandName").textContent = CFG.siteName || "뉴스 인사이트";
   $("#brandTag").textContent = CFG.siteTagline || "";
   $("#menuBtn").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
-  const [M, B] = await Promise.all([loadMeta(), loadBoard()]);
+  const [M, B] = await Promise.all([loadMeta(), loadBoard(), loadSettings()]);
   BOARD = B;
   setMediaColors(M);
   const today = kstToday();

@@ -1,7 +1,8 @@
 // 분석 화면들
 import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR } from "./util.js";
-import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage } from "./data.js";
-import { lineChart, barChart, comboChart } from "./charts.js";
+import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel } from "./data.js";
+import { openMediaSettings } from "./mediasel.js";
+import { lineChart, barChart, comboChart, dayLabels } from "./charts.js";
 import { boardTypeLabel, activeNotices } from "./board.js";
 import { info } from "./info.js";
 
@@ -70,6 +71,8 @@ function sortableTable(el, cols, rows, { sort, desc = true, limit, rowClass, pag
   render();
 }
 
+const nameList = (oids, max = 12) => esc(oids.slice(0, max).map(mediaName).join(" · ")) + (oids.length > max ? ` <span title="${esc(oids.slice(max).map(mediaName).join(", "))}">외 ${oids.length - max}곳</span>` : "");
+
 function mediaListFor(A, kind) {
   const M = meta();
   const base = kind === "rank" ? M.ranking_media : M.publish_media;
@@ -95,8 +98,12 @@ export async function dashboard(el, R, ctx) {
   const our = M.our_media;
   const P = (await R.previous()).agg;
 
-  const head = h(`<div class="page-head"><div><h1>시장 현황</h1><p>네이버 언론사 랭킹과 매체별 발행량을 한눈에 봅니다. · ${coverageNote(R)}</p><p class="cov-line">${esc(naverCoverage().short)} ${info("coverage")}</p></div></div>`);
-  el.append(head);
+  const SEL = mediaSel();
+  const head = h(`<div class="page-head"><div><h1>시장 현황</h1><p>네이버 언론사 랭킹과 매체별 발행량을 한눈에 봅니다. · ${coverageNote(R)}</p><p class="cov-line">${esc(naverCoverage().short)} ${info("coverage")}</p></div>
+    <button class="btn" id="msBtn">⚙ 매체 설정 <span class="tag ${SEL.custom ? "orange" : "gray"}">랭킹 ${[...SEL.rank].filter((o) => (M.ranking_media || []).includes(o)).length} · 발행 ${[...SEL.pub].filter((o) => (M.publish_media || []).includes(o) || (M.count_media || []).includes(o)).length}${SEL.custom ? " · 내 설정" : ""}</span></button></div>`);
+  const msSlot = h(`<div></div>`);
+  el.append(head, msSlot);
+  $("#msBtn", head).addEventListener("click", () => openMediaSettings(msSlot));
 
   // 공지
   const notices = activeNotices(ctx.board).slice(0, 4);
@@ -130,7 +137,7 @@ export async function dashboard(el, R, ctx) {
     <div class="card kpi"><div class="label">랭킹 조회수 합 ${info("rankViews")}</div>
       <div class="value num">${short(A.rankViews)}<span title="${prevLabel}">${delta(A.rankViews / (A.rankDayCount || 1), P.rankDayCount ? P.rankViews / P.rankDayCount : null)}</span></div>
       <div class="meta">조회수 공개 ${rankMedia.length}개 매체 × 상위 ${M.ranking_size || 20}건 합계</div>
-      <div class="meta" style="margin-top:4px;line-height:1.5">포함: ${rankMedia.map((o) => esc(mediaName(o))).join(" · ")}${A.noView.size ? `<br>제외(조회수 미공개): ${[...A.noView].map((o) => esc(mediaName(o))).join(" · ")}` : ""}</div></div>
+      <div class="meta" style="margin-top:4px;line-height:1.5">포함: ${nameList(rankMedia)}${A.noView.size ? `<br>제외(조회수 미공개): ${nameList([...A.noView])}` : ""}</div></div>
     <div class="card kpi"><div class="label">${esc(mediaName(our))} 랭킹 조회수 ${info("ourViews")}</div>
       <div class="value orange num">${ourRank ? short(ourRank.views) : "-"}<span title="${prevLabel}">${delta(ourRank ? ourRank.views / ourRank.days : null, P.rank[our] ? P.rank[our].views / P.rank[our].days : null)}</span></div>
       <div class="meta">${ourRank ? `점유율 ${pct(ourRank.views / A.rankViews)} · ${rankMedia.length}개 중 <b>${ourPos}위</b>` : "랭킹 데이터 없음"}</div></div>
@@ -143,7 +150,8 @@ export async function dashboard(el, R, ctx) {
   const row = h(`<div class="grid g-21">
     <div class="card" style="display:flex;flex-direction:column"><div class="card-head"><div><h3>일별 추이 ${info("trend")}</h3><div class="sub" id="trendSub"></div></div>
       <div class="tools"><select class="input" id="trendMedia"></select><div class="seg" id="trendSeg"><button data-m="both" class="on">발행 + 조회수</button><button data-m="pub">발행 기사수</button><button data-m="views">랭킹 조회수</button></div></div></div>
-      <div class="chart-box lg" style="flex:1;min-height:340px"><canvas></canvas></div></div>
+      <div class="chart-box lg" style="flex:1;min-height:340px"><canvas></canvas></div>
+      <div class="form-hint" style="margin-top:6px">날짜 아래 요일 표시 · <b style="color:#dc2626">빨강</b> 일요일·공휴일(대체공휴일 포함, ‘휴’) · <b style="color:#2563eb">파랑</b> 토요일</div></div>
     <div class="card"><div class="card-head"><div><h3>매체별 랭킹 조회수 ${info("mediaRank")}</h3><div class="sub">상위 20건 조회수 합 · 증감은 직전 동일기간 대비 하루 평균 기준</div></div></div>
       <div id="mediaRank"></div></div>
   </div>`);
@@ -163,9 +171,9 @@ export async function dashboard(el, R, ctx) {
     if (tMode === "both") {
       const oid = tSel.value;
       sub.textContent = `${mediaName(oid)} · 막대: 발행 기사수(왼쪽) · 선: 랭킹 조회수(오른쪽)${A.pubDay && !Object.values(A.pubDay).some((x) => x[oid] != null) ? " · 이 매체는 발행목록을 수집하지 않습니다" : ""}`;
-      trendChart = comboChart(trendCanvas, R.days.map(mmdd),
+      trendChart = comboChart(trendCanvas, dayLabels(R.days),
         { label: "발행 기사수", data: R.days.map((d) => A.pubDay[d]?.[oid] ?? null), backgroundColor: mediaColor(oid) + "99" },
-        { label: "랭킹 조회수", data: R.days.map((d) => A.rankDay[d]?.[oid] ?? null), borderColor: "#0f2341", backgroundColor: "#0f2341", spanGaps: false });
+        { label: "랭킹 조회수", data: R.days.map((d) => A.rankDay[d]?.[oid] ?? null), borderColor: "#0f2341", backgroundColor: "#0f2341", spanGaps: false }, { days: R.days });
       return;
     }
     sub.textContent = R.n === 1 ? "하루만 선택됨 (기간을 넓히면 추이가 보입니다)" : "매체별 · 범례를 눌러 매체를 숨길 수 있습니다";
@@ -180,7 +188,7 @@ export async function dashboard(el, R, ctx) {
     }));
     trendChart = R.n === 1
       ? barChart(trendCanvas, media.map(mediaName), [{ label: tMode === "views" ? "조회수" : "발행", data: media.map((o) => src[R.days[0]]?.[o] || 0), backgroundColor: media.map(mediaColor) }])
-      : lineChart(trendCanvas, R.days.map(mmdd), ds, { spanGaps: false });
+      : lineChart(trendCanvas, dayLabels(R.days), ds, { spanGaps: false, days: R.days });
   };
   drawTrend();
   tSel.addEventListener("change", drawTrend);
@@ -391,9 +399,9 @@ export async function keywords(el, R, ctx) {
     detail.append(box);
     $("#kwClose", box).addEventListener("click", () => { detail.innerHTML = ""; state.k = ""; ctx.setQuery({ k: "" }); render(); });
     if (R.n > 1) {
-      comboChart($("canvas", box), R.days.map(mmdd),
+      comboChart($("canvas", box), dayLabels(R.days),
         { label: "발행 기사수", data: R.days.map((d) => (arHits ? dayPub[d] || 0 : row.daily[d] || 0)), backgroundColor: "#bfd3fb" },
-        { label: "랭킹 조회수", data: R.days.map((d) => dayViews[d] || 0), borderColor: OUR_COLOR, backgroundColor: OUR_COLOR });
+        { label: "랭킹 조회수", data: R.days.map((d) => dayViews[d] || 0), borderColor: OUR_COLOR, backgroundColor: OUR_COLOR }, { days: R.days });
     }
     const mm = Object.entries(byMedia).sort((a, b) => b[1].views - a[1].views || b[1].pub - a[1].pub);
     $("#kwMedia", box).innerHTML = mm.length

@@ -1,5 +1,5 @@
 // Chart.js 래퍼 (페이지 이동 시 이전 차트 정리)
-import { short, fmt } from "./util.js";
+import { short, fmt, dayLabel, dayTitle, dayKind, DAY_COLOR } from "./util.js";
 
 const live = new Set();
 
@@ -8,7 +8,18 @@ export function destroyCharts() {
   live.clear();
 }
 
+// opts.days = ["YYYY-MM-DD", …] 를 넘기면 x축에 요일·공휴일 표시 (주말·공휴일 색 구분)
 function base(extra = {}) {
+  const { days, ...rest } = extra;
+  const o = baseOpts(rest);
+  if (days) {
+    o.scales.x.ticks.color = (c) => DAY_COLOR[dayKind(days[c.tick?.value ?? c.index] || "")] || "#8592a6";
+    o.plugins.tooltip.callbacks.title = (items) => (items[0] ? dayTitle(days[items[0].dataIndex]) : "");
+  }
+  return o;
+}
+
+function baseOpts(extra = {}) {
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -90,3 +101,5 @@ export function comboChart(canvas, labels, bar, line, opts = {}) {
     options: o,
   });
 }
+
+export const dayLabels = (days) => days.map(dayLabel);

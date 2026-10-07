@@ -30,10 +30,43 @@ export async function loadMeta() {
   return META;
 }
 export const meta = () => META;
+
+// ── 표시 매체 선택 ─────────────────────────
+// 우선순위: 내 설정(이 브라우저) → 사이트 기본값(data/settings.json, 관리자가 저장) → 수집 설정 기본(meta.view_rank / view_pub)
+const SEL_KEY = "nk_media_sel";
+let SITE = null;
+export async function loadSettings() {
+  SITE = (await getJSON("data/settings.json", { fresh: true })) || {};
+  return SITE;
+}
+export const siteSettings = () => SITE || {};
+export function defaultSel() {
+  const v = SITE?.view;
+  return {
+    rank: v?.rank || META?.view_rank || META?.ranking_media || [],
+    pub: v?.pub || META?.view_pub || META?.publish_media || [],
+  };
+}
+export function personalSel() {
+  try { const o = JSON.parse(localStorage.getItem(SEL_KEY) || "null"); return o && Array.isArray(o.rank) && Array.isArray(o.pub) ? o : null; } catch { return null; }
+}
+export function setPersonalSel(sel) {
+  try { sel ? localStorage.setItem(SEL_KEY, JSON.stringify(sel)) : localStorage.removeItem(SEL_KEY); } catch {}
+}
+export function mediaSel() {
+  const base = personalSel() || defaultSel();
+  const fixed = [META?.our_media, META?.compare_media].filter(Boolean);
+  return { rank: new Set([...base.rank, ...fixed]), pub: new Set([...base.pub, ...fixed]), custom: !!personalSel() };
+}
+export async function loadCatalog() {
+  return (await getJSON("data/media_catalog.json", { fresh: true })) || null;
+}
+
 // 네이버 전체 언론사 중 몇 곳을 수집하는지
 export function naverCoverage() {
-  const T = META?.naver_total;
-  const r = META?.ranking_media?.length || 0, p = META?.publish_media?.length || 0;
+  const C = META?.naver_catalog;
+  const T = C?.total ? { count: C.total, basis: "네이버 뉴스 언론사 목록(카테고리별)에 있는 언론사", as_of: (C.updated_at || "").slice(0, 10), source: "네이버 뉴스 언론사 목록 · 매체별 랭킹 페이지 직접 확인", url: "https://news.naver.com/main/officeList.naver" } : META?.naver_total;
+  const r = META?.ranking_media?.length || 0, p = (META?.publish_media?.length || 0) + (META?.count_media?.length || 0);
   if (!T?.count) return { short: `랭킹 ${r}곳 · 발행목록 ${p}곳 수집`, T: null, r, p };
   const pc = (n) => Math.round((n / T.count) * 100) + "%";
   return { short: `네이버 언론사 ${T.count}곳 중 랭킹 ${r}곳(${pc(r)}) · 발행목록 ${p}곳(${pc(p)}) 수집`, T, r, p, pc };
@@ -54,23 +87,25 @@ async function loadSummaries(s, e) {
 }
 
 export async function loadRankingDays(days) {
+  const sel = mediaSel().rank;
   const list = days.filter((d) => META.rankingSet.has(d));
   const docs = await Promise.all(list.map((d) => getJSON(`data/ranking/${d}.json`)));
   const items = [];
   docs.forEach((doc, i) => {
     if (!doc) return;
-    for (const r of doc.items) items.push({ day: list[i], oid: r[0], aid: r[1], rank: r[2], views: r[3], title: r[4], reporter: r[5], pub: r[6] });
+    for (const r of doc.items) if (sel.has(r[0])) items.push({ day: list[i], oid: r[0], aid: r[1], rank: r[2], views: r[3], title: r[4], reporter: r[5], pub: r[6] });
   });
   return items;
 }
 
 export async function loadArticleDays(days) {
+  const sel = mediaSel().pub;
   const list = days.filter((d) => META.articleSet.has(d));
   const docs = await Promise.all(list.map((d) => getJSON(`data/articles/${d}.json`)));
   const items = [];
   docs.forEach((doc, i) => {
     if (!doc) return;
-    for (const r of doc.items) items.push({ day: list[i], oid: r[0], aid: r[1], time: r[2], title: r[3], reporter: r[4] });
+    for (const r of doc.items) if (sel.has(r[0])) items.push({ day: list[i], oid: r[0], aid: r[1], time: r[2], title: r[3], reporter: r[4] });
   });
   return items;
 }
@@ -166,6 +201,8 @@ export function aggregate(days, sum) {
     rep: new Map(),
     top: [],
   };
+  const sel = mediaSel();
+  const anySel = new Set([...sel.rank, ...sel.pub]);
   for (const d of days) {
     const s = sum[d];
     a.pubDay[d] = {};
@@ -176,12 +213,14 @@ export function aggregate(days, sum) {
       a.covered.pub.push(d);
       a.wd.pubDays[wi]++;
       for (const [oid, n] of Object.entries(s.pub)) {
+        if (!sel.pub.has(oid)) continue;
         a.pub[oid] = (a.pub[oid] || 0) + n;
         a.pubDay[d][oid] = n;
         a.pubTotal += n;
         a.wd.pub[wi] += n;
       }
       for (const [oid, arr] of Object.entries(s.pubH || {})) {
+        if (!sel.pub.has(oid)) continue;
         const t = (a.pubH[oid] ||= Array(24).fill(0));
         arr.forEach((v, i) => (t[i] += v));
       }
@@ -191,6 +230,7 @@ export function aggregate(days, sum) {
       if (!s.rankFinal) a.partialDays.push(d);
       a.wd.rankDays[wi]++;
       for (const [oid, [n, v, top1, has]] of Object.entries(s.rank)) {
+        if (!sel.rank.has(oid)) continue;
         // has === 0 : 네이버가 이 매체 조회수를 공개하지 않음 → 조회수 통계에서 제외
         if (has === 0) { a.noView.add(oid); (a.rankNV ||= {})[oid] = ((a.rankNV || {})[oid] || 0) + n; continue; }
         const r = (a.rank[oid] ||= { n: 0, views: 0, top1: 0, top1Days: 0, days: 0 });
@@ -203,11 +243,12 @@ export function aggregate(days, sum) {
       }
       s.rankH?.[0]?.forEach((v, i) => (a.rankH[0][i] += v));
       s.rankH?.[1]?.forEach((v, i) => (a.rankH[1][i] += v));
-      for (const r of s.top || []) a.top.push({ day: d, oid: r[0], aid: r[1], rank: r[2], views: r[3], title: r[4], reporter: r[5], pub: r[6] });
+      for (const r of s.top || []) if (sel.rank.has(r[0])) a.top.push({ day: d, oid: r[0], aid: r[1], rank: r[2], views: r[3], title: r[4], reporter: r[5], pub: r[6] });
     }
     if (s.readH && s.readH.cov >= 1200) { // 하루의 20시간 이상 기록된 날만
       a.readDays++;
       for (const [oid, arr] of Object.entries(s.readH.h)) {
+        if (!sel.rank.has(oid)) continue;
         const t = (a.readH[oid] ||= Array(24).fill(0));
         arr.forEach((v, i) => (t[i] += v));
       }
@@ -221,6 +262,7 @@ export function aggregate(days, sum) {
       a.kw.set(w, k);
     }
     for (const [name, oid, p, rk, v] of s.rep || []) {
+      if (!anySel.has(oid)) continue;
       const key = name + "|" + oid;
       const r = a.rep.get(key) || { name, oid, pub: 0, rank: 0, views: 0 };
       r.pub += p; r.rank += rk; r.views += v;

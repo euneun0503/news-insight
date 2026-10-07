@@ -381,6 +381,9 @@ def build_meta(status=None):
     ar_days = sorted(p.stem for p in (DATA / "articles").glob("*.json"))
     months = sorted(p.stem for p in (DATA / "summary").glob("*.json"))
     meta = read_json(DATA / "meta.json", {}) or {}
+    cat = read_json(DATA / "media_catalog.json")
+    if cat:
+        meta["naver_catalog"] = dict(cat.get("counts", {}), updated_at=cat.get("updated_at"))
     meta.update({
         "updated_at": now_kst().isoformat(timespec="seconds"),
         "media": CONFIG["media"],

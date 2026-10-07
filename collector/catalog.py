@@ -24,15 +24,16 @@ import store  # noqa: E402
 from store import DATA, today_kst  # noqa: E402
 import collect  # noqa: E402
 
-CATS = ["종합", "방송/통신", "경제", "인터넷/IT", "매거진", "전문지", "지역", "외신", "포토", "기타"]
-CAT_RE = re.compile(r"^\s*(종합|방송\s*[/·]?\s*통신|경제|인터넷\s*[/·]?\s*IT|IT|매거진|전문지|지역|외신|포토)\s*$")
+CATS = ["종합", "방송/통신", "경제", "인터넷", "IT", "매거진", "전문지", "지역", "스포츠·연예", "외신", "포토", "기타"]
+CAT_RE = re.compile(r"^\s*(종합|방송\s*[/·]?\s*통신|경제|인터넷\s*[/·]\s*IT|인터넷|IT|매거진|전문지|지역|외신|포토)\s*$")
 
 # 페이지에서 카테고리를 못 읽을 때 쓰는 기본 분류 (네이버 언론사 편집판 분류 기준)
 DEFAULT_CAT = {
     "종합": "032 005 020 021 081 022 023 025 028 469",
     "방송/통신": "421 003 001 422 449 215 437 056 214 057 055 374 448 052",
     "경제": "009 008 648 011 277 018 366 123 014 015 016",
-    "인터넷/IT": "079 629 119 417 006 031 047 002 138 029 293 030 092",
+    "인터넷": "079 629 119 417 006 031 047 002",
+    "IT": "138 029 293 030 092",
     "매거진": "145 024 308 586 262 094 243 033 037 053 353 036 050",
     "전문지": "127 662 607 640 044 296 346 584 310",
     "지역": "087 654 082 088 656 666 658 657 659 660 655 661",
@@ -47,7 +48,7 @@ LIST_PAGES = [
 
 def norm_cat(t):
     t = re.sub(r"\s+", "", t).replace("·", "/")
-    if t in ("IT", "인터넷IT"):
+    if t == "인터넷IT":
         return "인터넷/IT"
     if t == "방송통신":
         return "방송/통신"
@@ -157,9 +158,9 @@ def main():
         name = (pg or {}).get("name") or (p or {}).get("name") or oid
         if p and p.get("name") and p["name"] != oid and len(p["name"]) <= 20:
             name = p["name"]
-        cat = (pg or {}).get("cat") or DEFAULT_CAT.get(oid) or "기타"
+        cat = (pg or {}).get("cat") or DEFAULT_CAT.get(oid) or ("스포츠·연예" if p and p["ranking"] else "기타")
         media[oid] = {
-            "name": name,
+            "name": re.sub(r"\s*언론사\s*홈\s*$", "", name).strip(),
             "cat": cat,
             "ranking": bool(p and p["ranking"]),
             "views": bool(p and p["views"]),
