@@ -131,7 +131,7 @@ async function render() {
       const M2 = meta();
       const lastRank = (M2.ranking_days || []).filter((d) => d <= R.e).pop();
       const endMissing = !(M2.ranking_days || []).includes(R.e);
-      $("#rangeNote").innerHTML = `조회 기간: <b>${rangeLabel(R)}</b>${missing > 0 ? ` · <span class="warn">수집되지 않은 날 ${missing}일 포함</span>` : ""}${endMissing ? ` · <span class="warn">${R.e.replace(/-/g, ".")} 랭킹은 아직 수집 전${lastRank ? ` (가장 최근 수집: ${lastRank.replace(/-/g, ".")})` : ""}</span>` : ""}${R.n > LIMITS.articleDays ? ` · 기사 단위 목록은 ${LIMITS.articleDays}일(랭킹은 ${LIMITS.rankingDays}일) 이하에서 전체 제공` : ""}`;
+      $("#rangeNote").innerHTML = `조회 기간: <b>${rangeLabel(R)}</b>${missing > 0 ? ` · <span class="warn">수집되지 않은 날 ${missing}일 포함</span>` : ""}${endMissing ? ` · <span class="warn">${R.e.replace(/-/g, ".")} 랭킹은 아직 수집 전${lastRank ? ` (가장 최근 수집: ${lastRank.replace(/-/g, ".")})` : ""}</span>` : ""}${R.agg.kwAllDays ? ` · <span class="warn">${LIMITS.articleDays}일 넘는 기간의 키워드·기자 통계는 매체 설정과 관계없이 수집 매체 전체 기준</span>` : ""}${R.n > LIMITS.articleDays ? ` · 기사 단위 목록은 ${LIMITS.articleDays}일(랭킹은 ${LIMITS.rankingDays}일) 이하에서 전체 제공` : ""}`;
       await DATA_PAGES[page](view, R, ctx);
     } else if (page === "board") {
       if (param) boardPost(view, BOARD, param);

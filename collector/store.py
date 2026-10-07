@@ -319,6 +319,8 @@ def build_day_summary(day):
     if rh:
         s["readH"] = rh
     kw = defaultdict(lambda: [0, 0, 0, 0])  # word -> [발행 기사수, 랭킹 기사수, 랭킹 조회수, 조회수 있는 랭킹 기사수]
+    kwm = defaultdict(lambda: defaultdict(lambda: [0, 0, 0, 0]))  # 매체별 같은 값 → data/kw/{day}.json (매체 설정에 따라 다시 합산)
+    rank_hm = defaultdict(dict)  # 매체별 발행시각 → [랭킹 기사수, 조회수]
     rep = defaultdict(lambda: [0, 0, 0])  # (name, oid) -> [발행수, 랭킹수, 랭킹조회수]
 
     if ar:
@@ -330,6 +332,7 @@ def build_day_summary(day):
                 pub_h[oid][int(hm[:2])] += 1
             for w in keywords(title):
                 kw[w][0] += 1
+                kwm[oid][w][0] += 1
             if reporter:
                 rep[(reporter, oid)][0] += 1
         s["pub"] = dict(pub)
@@ -361,17 +364,25 @@ def build_day_summary(day):
                 h = int(pub_dt[11:13])
                 rank_h[0][h] += 1
                 rank_h[1][h] += v
+                x = rank_hm[oid].setdefault(str(h), [0, 0])
+                x[0] += 1
+                x[1] += v
             for w in keywords(title):
                 kw[w][1] += 1
+                km = kwm[oid][w]
+                km[1] += 1
                 if has:
                     kw[w][2] += v
                     kw[w][3] += 1
+                    km[2] += v
+                    km[3] += 1
             if reporter:
                 x = rep[(reporter, oid)]
                 x[1] += 1
                 x[2] += v
         s["rank"] = rank
         s["rankH"] = rank_h
+        s["rankHm"] = dict(rank_hm)
         s["rankFinal"] = bool(rk.get("final"))
         s["top"] = sorted(rk["items"], key=lambda r: -(r[3] if r[3] is not None else -1))[:30]
 
@@ -379,6 +390,15 @@ def build_day_summary(day):
     scored = [(w, v) for w, v in kw.items() if v[0] + v[1] >= 2 or v[1] >= 1]
     scored.sort(key=lambda x: -(x[1][0] + x[1][1] * 3))
     s["kw"] = [[w] + v for w, v in scored[:250]]
+    # 매체별 키워드 (화면에서 매체 설정에 맞춰 합산) — 매체마다 점수 상위 80개
+    if kwm:
+        m = {}
+        for oid, words in kwm.items():
+            lst = sorted(words.items(), key=lambda x: -(x[1][0] + x[1][1] * 3))[:80]
+            m[oid] = [[w] + v for w, v in lst]
+        # 기자: 요약에는 상위 80명만 들어가므로 전체 기자는 여기에 (매체 설정에 맞춰 화면에서 합산)
+        r_all = [[name, oid] + v for (name, oid), v in sorted(rep.items(), key=lambda x: -(x[1][2] * 10 + x[1][0]))]
+        write_json(DATA / "kw" / f"{day}.json", {"date": day, "m": m, "r": r_all})
     reps = sorted(rep.items(), key=lambda x: -(x[1][2] * 10 + x[1][0]))[:80]
     s["rep"] = [[name, oid] + v for (name, oid), v in reps]
     return s
@@ -458,7 +478,7 @@ def prune(months=None):
     cutoff = dt.date(y, m, min(t.day, calendar.monthrange(y, m)[1])).isoformat()  # 이 날짜부터 보관
     cut_ym = cutoff[:7]
     removed = 0
-    for sub in ("ranking", "articles", "counts", "snap", "search"):
+    for sub in ("ranking", "articles", "counts", "snap", "search", "kw"):
         for p in (DATA / sub).glob("*.json"):
             if re.fullmatch(r"\d{4}-\d{2}-\d{2}", p.stem) and p.stem < cutoff:
                 p.unlink()

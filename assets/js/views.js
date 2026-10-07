@@ -62,7 +62,8 @@ function sortableTable(el, cols, rows, { sort, desc = true, limit, rowClass, pag
       .join("") || `<tr><td colspan="${cols2.length}">${emptyBox("데이터가 없습니다.")}</td></tr>`}</tbody></table></div>${pages > 1 ? pagerHtml(page, pages, sorted.length) : ""}`;
     $$(".pg-num", el).forEach((b) => b.addEventListener("click", () => { page = +b.dataset.p; render(); el.scrollIntoView({ block: "start", behavior: "smooth" }); }));
     $$("th.sortable", el).forEach((th) =>
-      th.addEventListener("click", () => {
+      th.addEventListener("click", (e) => {
+        if (e.target.closest(".info-btn")) return; // ⓘ 누르면 정렬하지 않고 설명만
         if (key === th.dataset.k) dir *= -1;
         else { key = th.dataset.k; dir = -1; }
         page = 1;
@@ -935,6 +936,9 @@ export async function reporters(el, R, ctx) {
   const ourByViews = [...ourRows].filter((r) => r.views > 0).sort((a, b) => b.views - a.views)[0];
   const ourByPub = [...ourRows].filter((r) => r.pub > 0).sort((a, b) => b.pub - a.pub)[0];
   const ourN = mediaName(M.our_media);
+  // 추가 지표: 진입률 1위(발행 5건 이상) · 기사당 평균 조회수 1위(랭킹 3건 이상)
+  const ourByRate = ourRows.filter((r) => r.rate != null && r.pub >= 5).sort((a, b) => b.rate - a.rate || b.pub - a.pub)[0];
+  const ourByAvg = ourRows.filter((r) => r.viewN >= 3).sort((a, b) => b.avg - a.avg)[0];
   el.append(h(`<div class="rep-kpis"><div class="grid g-4">
     <div class="card kpi"><div class="label">확인된 기자</div><div class="value blue num">${fmt(rows.length)}명</div>
       <div class="meta">${esc(mediaName(M.our_media))} ${fmt(ourRows.length)}명 · ${fmt(new Set(rows.map((r) => r.oid)).size)}개 매체</div></div>
@@ -945,11 +949,15 @@ export async function reporters(el, R, ctx) {
     <div class="card kpi"><div class="label">전체 발행 1위 기자</div><div class="value green" style="font-size:22px">${esc(byPub.name)}</div>
       <div class="meta">${esc(byPub.mname)} · ${fmt(byPub.pub)}건 · 하루 ${fmt1(byPub.pubDay)}건</div></div>
   </div>
-  <div class="grid g-2">
-    <div class="card kpi ours-kpi"><div class="label">${esc(ourN)} 랭킹 조회수 1위 기자</div>${ourByViews ? `<div class="value orange" style="font-size:22px">${esc(ourByViews.name)}</div>
+  <div class="grid g-4">
+    <div class="card kpi ours-kpi gray"><div class="label">${esc(ourN)} 랭킹 조회수 1위 기자</div>${ourByViews ? `<div class="value orange" style="font-size:22px">${esc(ourByViews.name)}</div>
       <div class="meta">${short(ourByViews.views)} · 랭킹 ${fmt(ourByViews.rank)}건${ourByViews.top1 ? ` · 1위 ${fmt(ourByViews.top1)}회` : ""}${ourByViews.best ? ` · 최고 ${fmt(ourByViews.best.views)}` : ""}</div>` : '<div class="meta">이 기간 데이터 없음</div>'}</div>
-    <div class="card kpi ours-kpi"><div class="label">${esc(ourN)} 발행 1위 기자</div>${ourByPub ? `<div class="value green" style="font-size:22px">${esc(ourByPub.name)}</div>
+    <div class="card kpi ours-kpi gray"><div class="label">${esc(ourN)} 발행 1위 기자</div>${ourByPub ? `<div class="value green" style="font-size:22px">${esc(ourByPub.name)}</div>
       <div class="meta">${fmt(ourByPub.pub)}건 · 하루 ${fmt1(ourByPub.pubDay)}건 · 랭킹 진입 ${fmt(ourByPub.rank)}건</div>` : '<div class="meta">이 기간 데이터 없음</div>'}</div>
+    <div class="card kpi ours-kpi"><div class="label">${esc(ourN)} 랭킹 진입률 1위 기자 ${info("repRate")}</div>${ourByRate ? `<div class="value blue" style="font-size:22px">${esc(ourByRate.name)}</div>
+      <div class="meta">진입률 ${pct(ourByRate.rate, 0)} · 발행 ${fmt(ourByRate.pub)}건 중 ${fmt(ourByRate.enter)}건 20위 진입</div>` : '<div class="meta">발행 5건 이상 기자가 없거나 발행 자료가 없는 기간</div>'}</div>
+    <div class="card kpi ours-kpi"><div class="label">${esc(ourN)} 기사당 조회수 1위 기자 ${info("repAvg")}</div>${ourByAvg ? `<div class="value orange" style="font-size:22px">${esc(ourByAvg.name)}</div>
+      <div class="meta">랭킹 1건당 평균 ${fmt(ourByAvg.avg)}회 · 랭킹 ${fmt(ourByAvg.viewN)}건</div>` : '<div class="meta">랭킹 3건 이상 기자가 없는 기간</div>'}</div>
   </div></div>`));
 
   const medias = [...new Set(rows.map((r) => r.oid))].sort((a, b) => (a === M.our_media ? -1 : b === M.our_media ? 1 : mediaName(a).localeCompare(mediaName(b), "ko")));
@@ -972,7 +980,7 @@ export async function reporters(el, R, ctx) {
       { key: "rank", label: "랭킹 진입", cls: "r num", html: (r) => fmt(r.rank) },
       { key: "enter", label: "발행 중 20위 진입", cls: "r num", html: (r) => (r.enter == null ? "-" : fmt(r.enter)) },
       { key: "top1", label: "1위", cls: "r num", html: (r) => (r.top1 ? `<span class="tag orange">${r.top1}</span>` : "-") },
-      { key: "views", label: "취합 조회수 합계", cls: "r num", val: (r) => (r.viewN ? r.views : -1), html: (r) => (r.viewN ? fmt(r.views) : '<span class="form-hint" title="네이버가 이 매체의 조회수를 공개하지 않습니다">미공개</span>') },
+      { key: "views", label: `취합 조회수 합계 ${info("repViews")}`, cls: "r num", val: (r) => (r.viewN ? r.views : -1), html: (r) => (r.viewN ? fmt(r.views) : '<span class="form-hint" title="네이버가 이 매체의 조회수를 공개하지 않습니다">미공개</span>') },
       { key: "bestViews", label: "최고 조회수", cls: "r num", html: (r) => (r.best ? fmt(r.best.views) : "-") },
       { key: "rate", label: "진입률", cls: "r num", html: (r) => (r.rate == null ? "-" : pct(r.rate)) },
       { key: "best", label: "최고 조회 기사", sort: false, html: (r) => (r.best ? `<a href="${articleUrl(r.best.oid, r.best.aid)}" target="_blank" rel="noopener">${esc(r.best.title.slice(0, 34))}${r.best.title.length > 34 ? "…" : ""}</a> <span class="form-hint num">${short(r.best.views)}</span>` : "-") },

@@ -190,7 +190,14 @@ export class Range {
   }
   async init() {
     this.sum = await loadSummaries(this.s, this.e);
-    this.agg = aggregate(this.days, this.sum);
+    // 31일 이하: 매체별 키워드·기자 파일(data/kw)로 매체 설정에 맞춰 다시 합산
+    this.kwDocs = {};
+    if (this.n <= LIMITS.articleDays) {
+      const ds = this.days.filter((d) => this.sum[d]);
+      const docs = await Promise.all(ds.map((d) => getJSON(`data/kw/${d}.json`)));
+      ds.forEach((d, i) => docs[i] && (this.kwDocs[d] = docs[i]));
+    }
+    this.agg = aggregate(this.days, this.sum, this.kwDocs);
     return this;
   }
   get canRanking() { return this.n <= LIMITS.rankingDays; }
@@ -218,7 +225,7 @@ export class Range {
   }
 }
 
-export function aggregate(days, sum) {
+export function aggregate(days, sum, kwDocs = {}) {
   const a = {
     days,
     covered: { pub: [], rank: [] },
@@ -274,8 +281,15 @@ export function aggregate(days, sum) {
         a.rankCount += n;
         a.wd.views[wi] += v;
       }
-      s.rankH?.[0]?.forEach((v, i) => (a.rankH[0][i] += v));
-      s.rankH?.[1]?.forEach((v, i) => (a.rankH[1][i] += v));
+      if (s.rankHm) { // 매체별 → 선택 매체만
+        for (const [oid, hh] of Object.entries(s.rankHm)) {
+          if (!sel.rank.has(oid) || a.noView.has(oid)) continue;
+          for (const [hr, [n, v]] of Object.entries(hh)) { a.rankH[0][hr] += n; a.rankH[1][hr] += v; }
+        }
+      } else {
+        s.rankH?.[0]?.forEach((v, i) => (a.rankH[0][i] += v));
+        s.rankH?.[1]?.forEach((v, i) => (a.rankH[1][i] += v));
+      }
       for (const r of s.top || []) if (sel.rank.has(r[0])) a.top.push({ day: d, oid: r[0], aid: r[1], rank: r[2], views: r[3], title: r[4], reporter: r[5], pub: r[6] });
     }
     if (s.readH && s.readH.cov >= 1200) { // 하루의 20시간 이상 기록된 날만
@@ -286,7 +300,24 @@ export function aggregate(days, sum) {
         arr.forEach((v, i) => (t[i] += v));
       }
     }
-    for (const [w, p, rk, v, rkv] of s.kw || []) {
+    const kd = kwDocs[d];
+    let kwList = s.kw || [];
+    if (kd?.m) { // 선택 매체만 합산: 발행 단어는 발행 선택 매체, 랭킹 단어는 랭킹 선택 매체
+      const t = new Map();
+      for (const [oid, list] of Object.entries(kd.m)) {
+        const P = sel.pub.has(oid), Rk = sel.rank.has(oid);
+        if (!P && !Rk) continue;
+        for (const [w, p, rk, v, rkv] of list) {
+          const x = t.get(w) || [w, 0, 0, 0, 0];
+          if (P) x[1] += p;
+          if (Rk) { x[2] += rk; x[3] += v; x[4] += rkv; }
+          t.set(w, x);
+        }
+      }
+      kwList = [...t.values()].filter((x) => x[1] + x[2] >= 2 || x[2] >= 1).sort((x, y) => y[1] + y[2] * 3 - (x[1] + x[2] * 3)).slice(0, 250);
+      a.kwSelDays = (a.kwSelDays || 0) + 1;
+    } else if (s.kw) a.kwAllDays = (a.kwAllDays || 0) + 1;
+    for (const [w, p, rk, v, rkv] of kwList) {
       const k = a.kw.get(w) || { word: w, pub: 0, rank: 0, views: 0, rankV: 0, daily: {} };
       k.pub += p; k.rank += rk; k.views += v; k.rankV += rkv ?? rk;
       k.daily[d] = (k.daily[d] || 0) + p + rk;
@@ -294,7 +325,7 @@ export function aggregate(days, sum) {
       (k.dR ||= {})[d] = ((k.dR || {})[d] || 0) + rk;
       a.kw.set(w, k);
     }
-    for (const [name, oid, p, rk, v] of s.rep || []) {
+    for (const [name, oid, p, rk, v] of kd?.r || s.rep || []) {
       if (!anySel.has(oid)) continue;
       const key = name + "|" + oid;
       const r = a.rep.get(key) || { name, oid, pub: 0, rank: 0, views: 0 };
