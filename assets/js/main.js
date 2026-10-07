@@ -4,12 +4,12 @@ import { loadMeta, loadBoard, loadSettings, meta, mediaName, naverCoverage, Rang
 import { destroyCharts } from "./charts.js";
 import * as V from "./views.js";
 import { renderBanners, renderTicker, boardList, boardPost } from "./board.js";
-import { adminPage } from "./admin.js";
+import { adminPage, authState, can, loginGate, currentAcct, signOut, PAGE_PERMS } from "./admin.js";
 import { setupInfo } from "./info.js";
 
 const CFG = window.SITE_CONFIG || {};
 const DATA_PAGES = { dashboard: V.dashboard, keywords: V.keywords, media: V.media, articles: V.articles, insights: V.insights, reporters: V.reporters };
-const TITLES = { dashboard: "시장 현황", keywords: "키워드 랭킹", media: "매체 비교", articles: "기사 목록", insights: "작성 인사이트", reporters: "기자 통계", board: "공지·게시판", admin: "관리자" };
+const TITLES = { dashboard: "뉴스통계 (N)", keywords: "키워드 랭킹", media: "매체 비교", articles: "기사 목록", insights: "작성 인사이트", reporters: "기자 통계", board: "공지·게시판", admin: "관리자" };
 
 let BOARD = { posts: [] };
 let lastFinal = kstToday();
@@ -89,6 +89,12 @@ async function render() {
   $$(".sidebar a").forEach((a) => a.classList.toggle("active", a.dataset.page === page));
   document.title = `${TITLES[page] || "뉴스 인사이트"} · ${CFG.siteName || "뉴스 인사이트"}`;
 
+  // 계정별 접속 권한: 허용되지 않은 메뉴는 첫 허용 메뉴로
+  if (PAGE_PERMS[page] && !can(page)) {
+    const first = Object.keys(PAGE_PERMS).find((k) => can(k));
+    if (first && first !== page) { location.hash = `#/${first}`; return; }
+    if (!first) { view.innerHTML = '<div class="card"><div class="empty">볼 수 있는 메뉴가 없습니다. 마스터에게 권한을 요청하세요.</div></div>'; $("#filterbar").hidden = true; return; }
+  }
   const isData = !!DATA_PAGES[page];
   $("#filterbar").hidden = !isData;
   renderBanners($("#bannerSlot"), BOARD, page === "dashboard" || (page === "board" && !param));
@@ -139,6 +145,7 @@ async function render() {
 
 // ── 엑셀 ────────────────────────────────
 async function exportSheets(filename, sheets) {
+  if (!can("download")) return toast("엑셀 다운로드 권한이 없습니다. 마스터에게 요청하세요.", 4000);
   try {
     toast("엑셀 만드는 중…");
     await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
@@ -158,6 +165,7 @@ async function exportSheets(filename, sheets) {
 }
 
 async function exportReport() {
+  if (!can("download")) return toast("엑셀 다운로드 권한이 없습니다. 마스터에게 요청하세요.", 4000);
   const { q } = parseHash();
   const r = currentRange(q);
   const R = await getRange(r.s, r.e);
@@ -231,11 +239,31 @@ function renderStatus() {
   $("#foot").innerHTML = `* 조회수는 네이버 언론사별 랭킹(상위 ${M.ranking_size || 20}건)에 표시된 값이며, 오늘 날짜는 하루가 끝날 때까지 바뀝니다. 발행 기사는 기사 상세페이지의 입력시각(한국시간) 기준으로 날짜를 확정합니다. 키워드는 제목에서 자동 추출한 단어 빈도로, 검색량과는 다른 지표입니다.`;
 }
 
+// 계정 권한을 화면에 반영: 메뉴 숨김, 다운로드 버튼 숨김, 상단에 이름·로그아웃
+function applyAccount(acct) {
+  $$(".sidebar a[data-page]").forEach((a) => { if (PAGE_PERMS[a.dataset.page]) a.hidden = !can(a.dataset.page); });
+  document.body.classList.toggle("no-dl", !can("download"));
+  const chip = $("#userChip");
+  if (!acct) { chip.hidden = true; return; }
+  chip.hidden = false;
+  chip.innerHTML = `<a href="#/admin" title="내 정보·관리">${esc(acct.name)}${acct.role === "master" && acct.name !== "마스터" ? " · 마스터" : ""}</a><button type="button" id="signOut">로그아웃</button>`;
+  $("#signOut", chip).addEventListener("click", signOut);
+  const adm = $('.sidebar a[data-page="admin"]');
+  if (adm && acct.role !== "master" && !can("posts") && !can("collect")) adm.lastChild.textContent = "내 계정";
+}
+
 // ── 시작 ────────────────────────────────
 async function boot() {
   $("#brandName").textContent = CFG.siteName || "뉴스 인사이트";
   $("#brandTag").textContent = CFG.siteTagline || "";
   $("#menuBtn").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
+  // 계정 확인: 마스터 계정이 만들어진 뒤에는 로그인한 사람만 볼 수 있음
+  const auth = await authState();
+  if (auth.configured && !auth.acct) {
+    document.body.classList.add("gated");
+    return loginGate($("#gate"), () => location.reload());
+  }
+  applyAccount(auth.acct);
   const [M, B] = await Promise.all([loadMeta(), loadBoard(), loadSettings()]);
   BOARD = B;
   setMediaColors(M);

@@ -1,4 +1,4 @@
-// 시장 현황 > 매체 설정: 랭킹 조회수·발행 수에 넣을 매체를 카테고리별로 고른다
+// 뉴스통계 (N) > 매체 설정: 랭킹 조회수·발행 수에 넣을 매체를 카테고리별로 고른다
 import { esc, h, $, $$, toast } from "./util.js";
 import { meta, mediaName, loadCatalog, mediaSel, defaultSel, setPersonalSel, personalSel } from "./data.js";
 import { adminForSettings, saveSiteSettings } from "./admin.js";

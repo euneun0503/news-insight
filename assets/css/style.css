@@ -348,3 +348,20 @@ table.t { overflow-wrap: normal; }
 .auth-wide { max-width: 560px; }
 .auth-steps { display: grid; gap: 6px; background: var(--line-2); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px; }
 .auth-steps b:first-child { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #18335c; color: #fff; font-size: 11px; margin-right: 6px; }
+
+/* 계정 권한 · 로그인 화면 */
+body.no-dl .dl { display: none !important; }
+body.gated .topbar, body.gated .layout { display: none; }
+#gate:empty { display: none; }
+.gate { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; background: linear-gradient(135deg, #0f2341 0%, #18335c 60%, #1e3a8a 100%); }
+.gate-intro { color: #fff; padding: 12vh 8vw; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+.gate-intro h1 { font-size: 34px; font-weight: 800; margin: 0; }
+.gate-intro p { color: #c7d2fe; line-height: 1.7; margin: 0; }
+.auth-logo.big { width: 64px; height: 64px; font-size: 30px; background: #f59e0b; color: #0f2341; border-radius: 16px; }
+#gateBox { display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg, #f4f6fa); }
+#gateBox .auth-card { width: 100%; margin: 0; }
+@media (max-width: 760px) { .gate { grid-template-columns: 1fr; } .gate-intro { padding: 40px 24px 24px; } .gate-intro h1 { font-size: 26px; } }
+.user-chip { display: flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 12.5px; }
+.user-chip a { color: #fff; text-decoration: none; font-weight: 600; white-space: nowrap; }
+.user-chip button { background: rgba(255,255,255,.12); color: #fff; border: 0; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 12px; white-space: nowrap; }
+@media (max-width: 640px) { .user-chip a { max-width: 70px; overflow: hidden; text-overflow: ellipsis; } }

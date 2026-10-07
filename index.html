@@ -21,12 +21,13 @@
     </a>
     <a class="notice-ticker" id="noticeTicker" href="#/board" hidden></a>
     <div class="status-pill" id="statusPill"><span class="dot"></span><span>불러오는 중…</span></div>
+    <div class="user-chip" id="userChip" hidden></div>
   </header>
 
   <div class="layout">
     <nav class="sidebar" id="sidebar">
       <div class="nav-label">분석</div>
-      <a href="#/dashboard" data-page="dashboard"><i>▦</i>시장 현황</a>
+      <a href="#/dashboard" data-page="dashboard"><i>▦</i>뉴스통계 (N)</a>
       <a href="#/keywords" data-page="keywords"><i>#</i>키워드 랭킹</a>
       <a href="#/media" data-page="media"><i>◫</i>매체 비교</a>
       <a href="#/articles" data-page="articles"><i>≡</i>기사 목록</a>
@@ -57,7 +58,7 @@
           <button class="btn primary" id="btnApply">조회</button>
         </div>
         <div class="filter-actions">
-          <button class="btn" id="btnReport" title="현재 기간 통계를 엑셀로 저장">보고서 엑셀</button>
+          <button class="btn dl" id="btnReport" title="현재 기간 통계를 엑셀로 저장">보고서 엑셀</button>
         </div>
         <div class="range-note" id="rangeNote"></div>
       </section>
@@ -65,6 +66,7 @@
       <footer class="foot" id="foot"></footer>
     </main>
   </div>
+  <div id="gate"></div>
   <div class="toast" id="toast" hidden></div>
 </body>
 </html>

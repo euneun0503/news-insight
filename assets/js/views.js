@@ -90,7 +90,7 @@ function coverageNote(R) {
 }
 
 // ═══════════════════════════════════════════════════════
-// 1. 시장 현황
+// 1. 뉴스통계 (N)
 // ═══════════════════════════════════════════════════════
 export async function dashboard(el, R, ctx) {
   const A = R.agg;
@@ -99,7 +99,7 @@ export async function dashboard(el, R, ctx) {
   const P = (await R.previous()).agg;
 
   const SEL = mediaSel();
-  const head = h(`<div class="page-head"><div><h1>시장 현황</h1><p>네이버 언론사 랭킹과 매체별 발행량을 한눈에 봅니다. · ${coverageNote(R)}</p><p class="cov-line">${esc(naverCoverage().short)} ${info("coverage")}</p></div>
+  const head = h(`<div class="page-head"><div><h1>뉴스통계 (N)</h1><p>네이버 언론사 랭킹과 매체별 발행량을 한눈에 봅니다. · ${coverageNote(R)}</p><p class="cov-line">${esc(naverCoverage().short)} ${info("coverage")}</p></div>
     <button class="btn" id="msBtn">⚙ 매체 설정 <span class="tag ${SEL.custom ? "orange" : "gray"}">랭킹 ${[...SEL.rank].filter((o) => (M.ranking_media || []).includes(o)).length} · 발행 ${[...SEL.pub].filter((o) => (M.publish_media || []).includes(o) || (M.count_media || []).includes(o)).length}${SEL.custom ? " · 내 설정" : ""}</span></button></div>`);
   const msSlot = h(`<div></div>`);
   el.append(head, msSlot);
@@ -532,7 +532,7 @@ export async function articles(el, R, ctx) {
         <input class="input" id="q" placeholder="제목·기자 검색 (공백=AND)" style="width:220px" value="${esc(state.q)}">
         <select class="input" id="sort"></select>
       </div>
-      <div class="tools"><span class="status-line" id="count"></span><button class="btn sm" id="xls">엑셀 저장</button></div>
+      <div class="tools"><span class="status-line" id="count"></span><button class="btn sm dl" id="xls">엑셀 저장</button></div>
     </div>
     <div id="list"><div class="loading">불러오는 중…</div></div></div>`);
   el.append(card);
@@ -756,7 +756,7 @@ export async function reporters(el, R, ctx) {
     $("#repMedia", head).innerHTML = `<div><span class="rep-lab">랭킹 기사 (기자·조회수) ${rankOn.length}곳</span>${rankOn.map((o) => chip(o, rc[o])).join("")}</div>
       <div><span class="rep-lab">전체 발행 기사 (기자) ${pubOn.length}곳</span>${pubOn.map((o) => chip(o, pc[o])).join("") || '<span class="form-hint">없음</span>'}</div>
       ${cntOnly.length ? `<div class="form-hint">발행 건수만 집계하는 ${cntOnly.length}곳(${esc(cntOnly.slice(0, 6).map(mediaName).join(", "))}${cntOnly.length > 6 ? " 등" : ""})은 기자명을 확인하지 않아 랭킹 기사로만 반영됩니다.</div>` : ""}
-      <div class="form-hint">% = 기자명 확인 비율 · ‘매체 추가·삭제’나 시장 현황의 매체 설정을 바꾸면 이 목록과 기자 통계가 자동으로 바뀝니다.${SEL.custom ? " (지금 내 설정 사용 중)" : ""}</div>`;
+      <div class="form-hint">% = 기자명 확인 비율 · ‘매체 추가·삭제’나 뉴스통계 (N)의 매체 설정을 바꾸면 이 목록과 기자 통계가 자동으로 바뀝니다.${SEL.custom ? " (지금 내 설정 사용 중)" : ""}</div>`;
   }
 
   const map = new Map();
@@ -818,7 +818,7 @@ export async function reporters(el, R, ctx) {
   const medias = [...new Set(rows.map((r) => r.oid))].sort((a, b) => (a === M.our_media ? -1 : b === M.our_media ? 1 : mediaName(a).localeCompare(mediaName(b), "ko")));
   const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 랭킹 진입 ÷ 발행 기사 (발행목록을 수집하는 매체만) · 공동 바이라인은 각 기자에게 모두 반영 · 취합 조회수 합계 = 랭킹(매체별 상위 20건)에 오른 기사 조회수의 합</div></div>
     <div class="tools"><select class="input" id="rm"><option value="">전체 매체</option>${medias.map((o) => `<option value="${o}">${esc(mediaName(o))}</option>`).join("")}</select>
-    <input class="input" id="rq" placeholder="기자명 검색" style="width:130px"><div class="seg" id="rsize"><button data-n="30" class="on">30명씩</button><button data-n="100">100명씩</button></div><button class="btn sm" id="rx">엑셀 저장</button></div></div><div id="rt"></div></div>`);
+    <input class="input" id="rq" placeholder="기자명 검색" style="width:130px"><div class="seg" id="rsize"><button data-n="30" class="on">30명씩</button><button data-n="100">100명씩</button></div><button class="btn sm dl" id="rx">엑셀 저장</button></div></div><div id="rt"></div></div>`);
   el.append(card);
   const detail = h(`<div id="repDetail"></div>`);
   el.append(detail);
