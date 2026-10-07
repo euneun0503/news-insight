@@ -3,9 +3,10 @@
 // - 마스터가 처음 한 번 GitHub 키(토큰)를 등록하면, 그 키는 '금고 키'로 암호화되어 data/auth/users.json 에 저장됩니다.
 // - 각 계정은 자기 비밀번호로만 금고 키를 열 수 있습니다(PBKDF2 31만 회 + AES-GCM). 비밀번호 원문·GitHub 키 원문은 어디에도 저장되지 않습니다.
 // - 접속 기록: data/logs/access/YYYY-MM.json · 활동 기록: data/logs/activity/YYYY-MM.json
-import { esc, h, $, $$, markdown, toast, kstToday, dotDate, kstDateTime, relTime } from "./util.js";
+import { esc, h, $, $$, markdown, toast, kstToday, dotDate, kstDateTime, relTime, loadScript } from "./util.js";
+import { convert, compare } from "./statparse.js";
 import { TYPES, isActive } from "./board.js";
-import { meta } from "./data.js";
+import { meta, mediaName } from "./data.js";
 
 const API = "https://api.github.com";
 const CFG = window.SITE_CONFIG || {};
@@ -473,6 +474,7 @@ function homeView(body, ctx) {
   const tabs = [
     A.perms.posts && ["posts", "게시글·배너·공지"],
     A.perms.collect && ["collect", "데이터 수집"],
+    isM && ["stats", "통계 업로드"],
     isM && ["accounts", "계정 관리"],
     isM && ["access", "접속 기록"],
     isM && ["activity", "활동 기록"],
@@ -489,7 +491,7 @@ function homeView(body, ctx) {
   const show = (t) => {
     $$("#atab button", top).forEach((b) => b.classList.toggle("on", b.dataset.t === t));
     pane.innerHTML = "";
-    ({ posts: () => postsView(pane, ctx), collect: () => collectView(pane), accounts: () => accountsView(pane), access: () => logView(pane, "access"), activity: () => logView(pane, "activity"), me: () => meView(pane, body, ctx) })[t]();
+    ({ posts: () => postsView(pane, ctx), collect: () => collectView(pane), stats: () => statsView(pane), accounts: () => accountsView(pane), access: () => logView(pane, "access"), activity: () => logView(pane, "activity"), me: () => meView(pane, body, ctx) })[t]();
   };
   $$("#atab button", top).forEach((b) => b.addEventListener("click", () => show(b.dataset.t)));
   if (session.mustChange) {
@@ -956,6 +958,149 @@ async function collectView(pane) {
   }
   loadRuns();
   if (M.last_run?.errors?.length) runs.append(h(`<div class="err-box" style="margin-top:12px"><b>최근 수집 경고</b><br>${M.last_run.errors.map(esc).join("<br>")}</div>`));
+}
+
+// ── 통계 업로드 (마스터 전용) ─────────────────────
+// 엑셀을 브라우저에서 읽어 사이트 형식(JSON)으로 바꾼 뒤 저장소에 올리고, 반영 작업(uploads.yml)을 실행합니다.
+// 사이트가 직접 수집한 데이터가 우선이고, 업로드 파일은 수집이 비어 있는 곳만 채웁니다.
+const STAT_DIR = "data/uploads/stats";
+const KIND = { ranking: "랭킹", publish: "발행", mixed: "랭킹+발행", other: "기타 표" };
+const ST = { fill: '<span class="tag green">채움</span>', same: '<span class="tag blue">일치</span>', diff: '<span class="tag orange">차이</span>' };
+const bufB64 = (buf) => { const u = new Uint8Array(buf); let s = ""; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
+async function siteData(days) {
+  const get = (p) => fetch(`${p}?t=${Date.now()}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const site = { ranking: {}, counts: {}, articles: {} };
+  await Promise.all(days.flatMap((d) => ["ranking", "counts", "articles"].map(async (k) => (site[k][d] = await get(`data/${k}/${d}.json`)))));
+  return site;
+}
+async function deleteFile(path, message) {
+  const { owner, repo, branch } = session.R;
+  const { sha } = await getFile(path);
+  if (!sha) return;
+  await gh(`/repos/${owner}/${repo}/contents/${path}`, { method: "DELETE", body: JSON.stringify({ message, sha, branch }) });
+}
+async function runUploadsJob() {
+  const { owner, repo, branch } = session.R;
+  try { await gh(`/repos/${owner}/${repo}/actions/workflows/uploads.yml/dispatches`, { method: "POST", body: JSON.stringify({ ref: branch }) }); return true; } catch (e) { console.warn(e); return false; }
+}
+
+async function statsView(pane) {
+  if (session.acct.role !== "master") { pane.innerHTML = '<div class="empty">마스터 계정만 쓸 수 있습니다.</div>'; return; }
+  const M = meta();
+  const nameToOid = Object.fromEntries(Object.entries(M.media || {}).map(([o, n]) => [String(n).replace(/\s+/g, ""), o]));
+  const card = h(`<div class="card"><div class="card-head"><div><h3>통계 업로드 <span class="tag orange">마스터 전용</span></h3>
+      <div class="sub">따로 모은 통계 엑셀(랭킹·발행 기사 등)을 올리면 사이트 데이터에 보완합니다. 사이트가 매일 직접 수집한 값이 우선이고, <b>수집이 비어 있는 날짜·매체만</b> 업로드 값으로 채웁니다. 값이 다르면 바꾸지 않고 '차이'로 보여 줍니다.</div></div></div>
+    <label class="up-drop" id="drop"><input type="file" id="uf" accept=".xlsx,.xls,.csv" multiple hidden>
+      <b>📄 엑셀 파일을 끌어다 놓거나 눌러서 고르세요</b><span class="form-hint">여러 개 한 번에 가능 · .xlsx / .xls / .csv · 파일 1개 10MB 이하</span></label>
+    <div class="form-hint" style="margin-top:8px">읽을 수 있는 형식 — <b>랭킹</b>: 날짜·제목·조회수·링크 열이 있는 시트 · <b>발행</b>: 발행일·발행시각·제목·링크 열이 있는 시트, 매체_요약 시트의 발행건수 · 매체는 네이버 기사 링크의 언론사 코드로 알아냅니다. 그 밖의 표는 원본 그대로 보관만 합니다.</div>
+    <div id="prev"></div></div>`);
+  const hist = h(`<div class="card"><div class="card-head"><div><h3>업로드 기록</h3><div class="sub">올린 파일과 반영 결과 · 기록을 지우면 그 파일로 채웠던 데이터도 되돌립니다(직접 수집한 데이터는 그대로)</div></div><button class="btn sm" id="hr">새로고침</button></div><div id="hl"><div class="loading"></div></div></div>`);
+  pane.append(card, hist);
+  let pending = [];
+
+  const preview = async (files) => {
+    const box = $("#prev", card);
+    box.innerHTML = '<div class="loading">파일 읽는 중…</div>';
+    try { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"); } catch (e) { box.innerHTML = `<div class="err-box">${esc(e.message)}</div>`; return; }
+    const X = window.XLSX;
+    pending = [];
+    for (const f of files) {
+      if (f.size > 10 * 1024 * 1024) { toast(`${f.name}: 10MB를 넘어 건너뜁니다`, 4000); continue; }
+      try {
+        const buf = await f.arrayBuffer();
+        const wb = X.read(buf, { cellDates: true });
+        const sheets = wb.SheetNames.map((n) => ({ name: n, rows: X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: null }) }));
+        const doc = convert(sheets, { fileName: f.name, nameToOid });
+        const cmp = doc.days.length ? compare(doc, await siteData(doc.days)) : [];
+        pending.push({ f, buf, doc, cmp });
+      } catch (e) { toast(`${f.name}: 읽지 못했습니다 (${e.message})`, 5000); }
+    }
+    if (!pending.length) { box.innerHTML = ""; return; }
+    const cnt = (c, s) => c.filter((x) => x.status === s).length;
+    box.innerHTML = pending.map(({ f, doc, cmp }, i) => `<div class="up-file">
+        <div class="up-head"><b>${esc(f.name)}</b> <span class="tag blue">${KIND[doc.kind]}</span>
+          <span class="form-hint">${doc.days.length ? `${esc(doc.days[0])}${doc.days.length > 1 ? " ~ " + esc(doc.days[doc.days.length - 1]) : ""} (${doc.days.length}일)` : "날짜 없음"} · 매체 ${Object.keys(doc.media).length}곳 · 읽은 시트 ${doc.sheets_used.length}개${doc.other.length ? ` · 보관만 하는 표 ${doc.other.length}개` : ""}</span>
+          ${cmp.length ? `<span class="up-sum">채움 ${cnt(cmp, "fill")} · 일치 ${cnt(cmp, "same")} · 차이 ${cnt(cmp, "diff")}</span>` : ""}</div>
+        ${cmp.length ? `<div class="tbl-wrap" style="max-height:320px;overflow:auto"><table class="t"><thead><tr><th>날짜</th><th>구분</th><th>매체</th><th class="r">업로드</th><th class="r">사이트 수집</th><th>결과</th><th>설명</th></tr></thead><tbody>
+          ${cmp.map((x) => `<tr><td class="num">${esc(x.day)}</td><td>${x.type}</td><td>${esc(doc.media[x.oid] || mediaName(x.oid))}</td><td class="r num">${esc(x.upload)}</td><td class="r num">${esc(x.site)}</td><td>${ST[x.status]}</td><td class="form-hint">${x.status === "fill" ? "사이트에 없음 → 업로드 값으로 채움" : esc(x.note || "")}</td></tr>`).join("")}
+          </tbody></table></div>` : `<div class="form-hint">사이트 데이터와 연결할 표를 찾지 못했습니다. 올리면 원본과 표 미리보기만 보관됩니다.</div>`}
+        <button class="btn sm" data-x="${i}" style="margin-top:6px">이 파일 빼기</button></div>`).join("") +
+      `<div class="row" style="margin-top:12px"><button class="btn primary" id="go">⬆ ${pending.length}개 파일 업로드하고 반영</button><span class="status-line" id="gmsg"></span></div>`;
+    $$("[data-x]", box).forEach((b) => b.addEventListener("click", () => { pending.splice(+b.dataset.x, 1); pending.length ? preview(pending.map((p) => p.f)) : (box.innerHTML = ""); }));
+    $("#go", box).addEventListener("click", upload);
+  };
+
+  const upload = async () => {
+    const btn = $("#go", card), msg = $("#gmsg", card);
+    btn.disabled = true;
+    const done = [];
+    try {
+      for (const [i, p] of pending.entries()) {
+        msg.textContent = `올리는 중… (${i + 1}/${pending.length}) ${p.f.name}`;
+        const id = `${kstToday().replace(/-/g, "")}-${Math.random().toString(36).slice(2, 8)}`;
+        const ext = (p.f.name.match(/\.(xlsx|xls|csv)$/i)?.[1] || "xlsx").toLowerCase();
+        const raw = `${STAT_DIR}/raw/${id}.${ext}`;
+        const at = new Date().toISOString();
+        const doc = { ...p.doc, id, at, by: `${session.acct.name}(${session.acct.id})`, raw };
+        await putFile(raw, bufB64(p.buf), null, `통계 업로드 원본: ${p.f.name} — ${who()}`);
+        await putFile(`${STAT_DIR}/${id}.json`, b64encode(JSON.stringify(doc)), null, `통계 업로드: ${p.f.name} — ${who()}`);
+        const c = p.cmp;
+        await updateJSON(`${STAT_DIR}/index.json`, () => ({ uploads: [] }), (d) => {
+          d.uploads ||= [];
+          d.uploads.unshift({ id, name: p.f.name, at, by: doc.by, kind: doc.kind, days: doc.days, media: Object.keys(doc.media).length, raw, size: p.f.size, preview: { fill: c.filter((x) => x.status === "fill").length, same: c.filter((x) => x.status === "same").length, diff: c.filter((x) => x.status === "diff").length } });
+        }, `통계 업로드 기록 — ${who()}`);
+        logAct("통계 업로드", `${p.f.name} · ${KIND[doc.kind]} · ${doc.days[0] || ""}${doc.days.length > 1 ? "~" + doc.days[doc.days.length - 1] : ""}`);
+        done.push(p.f.name);
+      }
+      const ok = await runUploadsJob();
+      msg.innerHTML = `<span class="tag green">완료</span> ${done.length}개 올림 · ${ok ? "반영 작업을 시작했습니다. 2~3분 뒤 사이트에 보입니다." : "다음 자동 수집 때 반영됩니다 (반영 작업 실행 권한 없음)."}`;
+      pending = [];
+      setTimeout(loadHist, 1500);
+    } catch (e) {
+      msg.innerHTML = `<span class="err-box" style="display:inline-block;padding:4px 8px">업로드 실패: ${esc(e.message)}${done.length ? ` (먼저 올린 ${done.length}개는 저장됨)` : ""}</span>`;
+    } finally { btn.disabled = false; }
+  };
+
+  const drop = $("#drop", card), inp = $("#uf", card);
+  inp.addEventListener("change", () => inp.files.length && preview([...inp.files]));
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("on"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("on"));
+  drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("on"); const fs = [...e.dataTransfer.files].filter((f) => /\.(xlsx|xls|csv)$/i.test(f.name)); fs.length ? preview(fs) : toast("엑셀(.xlsx/.xls/.csv) 파일만 올릴 수 있어요"); });
+
+  async function loadHist() {
+    const box = $("#hl", hist);
+    box.innerHTML = '<div class="loading"></div>';
+    try {
+      const [ix, ap] = await Promise.all([getFile(`${STAT_DIR}/index.json`), getFile(`${STAT_DIR}/applied.json`)]);
+      const list = ix.text ? JSON.parse(ix.text).uploads || [] : [];
+      const app = ap.text ? JSON.parse(ap.text) : { uploads: {} };
+      if (!list.length) { box.innerHTML = '<div class="empty">아직 올린 파일이 없습니다.</div>'; return; }
+      const { owner, repo, branch } = session.R;
+      box.innerHTML = `<table class="t"><thead><tr><th>올린 시각</th><th>파일</th><th>종류</th><th>기간</th><th>올린 사람</th><th>반영 결과</th><th></th></tr></thead><tbody>${list.map((u) => {
+        const a = app.uploads?.[u.id];
+        const res = a ? `${ST.fill} ${a.filled.length} · ${ST.same} ${a.same} · ${ST.diff} ${a.diff.length}<div class="form-hint">${esc(kstDateTime(a.at))} 반영${a.filled.length ? " · 채움: " + esc(a.filled.slice(0, 6).map((x) => `${x.day.slice(5)} ${mediaName(x.oid)} ${x.type}`).join(", ")) + (a.filled.length > 6 ? " …" : "") : ""}</div>` : '<span class="tag gray" style="white-space:nowrap">반영 대기</span>';
+        return `<tr><td class="num" style="white-space:nowrap">${esc(kstDateTime(u.at))}</td><td class="title">${esc(u.name)}</td><td style="white-space:nowrap">${KIND[u.kind] || esc(u.kind)}</td><td class="num" style="white-space:nowrap">${esc((u.days || [])[0] || "-")}${u.days?.length > 1 ? " ~ " + esc(u.days[u.days.length - 1]) : ""}</td><td style="white-space:nowrap">${esc(u.by || "")}</td><td style="white-space:nowrap">${res}</td>
+          <td class="r" style="white-space:nowrap"><a class="btn sm" href="https://raw.githubusercontent.com/${esc(owner)}/${esc(repo)}/${esc(branch)}/${esc(u.raw)}" download="${esc(u.name)}">원본</a> <button class="btn sm" data-del="${esc(u.id)}">삭제</button></td></tr>`;
+      }).join("")}</tbody></table>
+      <div class="form-hint" style="margin-top:8px">채움 = 사이트에 없던 데이터를 업로드 값으로 넣음 · 일치 = 사이트 수집값과 같음(검증됨) · 차이 = 값이 달라 사이트 수집값 유지</div>`;
+      $$("[data-del]", box).forEach((b) => b.addEventListener("click", async () => {
+        const u = list.find((x) => x.id === b.dataset.del);
+        if (!confirm(`"${u.name}" 업로드를 지울까요?\n이 파일로 채웠던 데이터도 사이트에서 빠집니다.`)) return;
+        b.disabled = true;
+        try {
+          await deleteFile(`${STAT_DIR}/${u.id}.json`, `통계 업로드 삭제: ${u.name} — ${who()}`);
+          if (u.raw) await deleteFile(u.raw, `통계 업로드 원본 삭제: ${u.name} — ${who()}`);
+          await updateJSON(`${STAT_DIR}/index.json`, () => ({ uploads: [] }), (d) => { d.uploads = (d.uploads || []).filter((x) => x.id !== u.id); }, `통계 업로드 기록 삭제 — ${who()}`);
+          logAct("통계 업로드 삭제", u.name);
+          await runUploadsJob();
+          toast("지웠습니다. 2~3분 뒤 사이트에 반영됩니다.", 4000);
+          loadHist();
+        } catch (e) { toast("삭제 실패: " + e.message, 5000); b.disabled = false; }
+      }));
+    } catch (e) { box.innerHTML = `<div class="err-box">${esc(e.message)}</div>`; }
+  }
+  $("#hr", hist).addEventListener("click", loadHist);
+  loadHist();
 }
 
 // ── 다른 화면에서 쓰는 관리자 기능 (뉴스통계 (N) > 매체 설정) ──

@@ -326,7 +326,11 @@ def collect_ranking(session, days, media, cache, workers):
                     items = f.result()
                     per_media[oid] = items
                     if not items:
-                        err(f"랭킹 {day} {CONFIG['media'].get(oid, oid)}: 0건 (페이지 구조 변경 또는 데이터 없음)")
+                        # 소형 매체는 그날 랭킹이 비어 있는 일이 흔함 → 기본 표시 매체(헬스조선·주요 매체)만 경고
+                        if oid in CONFIG.get("view_rank", []):
+                            err(f"랭킹 {day} {CONFIG['media'].get(oid, oid)}: 0건 (페이지 구조 변경 또는 데이터 없음)")
+                        else:
+                            log(f"   · {CONFIG['media'].get(oid, oid)}: 그날 랭킹 없음")
                 except Exception as e:
                     per_media[oid] = None
                     err(f"랭킹 {day} {CONFIG['media'].get(oid, oid)}: {e}")

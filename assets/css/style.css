@@ -437,3 +437,10 @@ body.gated .topbar, body.gated .layout { display: none; }
 
 .kw-all { background: #fff; border: 1px solid #bfe8cd; border-radius: 10px; padding: 10px; margin: 12px 0; }
 .kw-all-link { color: #03a94d; font-weight: 600; }
+
+/* 통계 업로드 (마스터) */
+.up-drop{display:flex;flex-direction:column;align-items:center;gap:6px;padding:28px 16px;border:2px dashed var(--line-2);border-radius:var(--radius);background:var(--bg);cursor:pointer;text-align:center;transition:.15s}
+.up-drop:hover,.up-drop.on{border-color:var(--blue);background:var(--blue-soft)}
+.up-file{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--card)}
+.up-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
+.up-sum{margin-left:auto;font-weight:600;color:var(--text-2)}

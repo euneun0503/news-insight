@@ -124,7 +124,7 @@ def article_key(href):
 
 
 # ── 병합 ─────────────────────────────────────────────────────
-def merge_articles(day, oid, new_items, collected_at):
+def merge_articles(day, oid, new_items, collected_at, src=None):
     """
     day 파일에 한 매체의 기사들을 병합.
     new_items: [(oid, aid, "HH:MM", title, reporter)]  (모두 실제 발행일 == day 인 것만)
@@ -147,6 +147,11 @@ def merge_articles(day, oid, new_items, collected_at):
             added += 1
     doc["items"].sort(key=lambda r: (r[0], r[2] or "99:99", r[1]))
     m = doc["media"].setdefault(oid, {})
+    if src:                    # 업로드 파일로 채운 것 (collector/uploads.py)
+        m["src"], m["upload"] = "upload", src
+    elif m.get("src") == "upload" and any(it[4] for it in new_items):
+        m.pop("src", None)     # 직접 수집(기자명 포함)이 들어오면 수집 데이터로 전환
+        m.pop("upload", None)
     m["collected_at"] = collected_at
     m["n"] = sum(1 for r in doc["items"] if r[0] == oid)
     write_json(path, doc)
