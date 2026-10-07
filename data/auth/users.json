@@ -1,0 +1,24 @@
+{
+ "v": 1,
+ "created_at": "2026-10-07T03:21:59.397Z",
+ "vault": {
+  "iv": "rrUsQT8g7RTGoMuC",
+  "ct": "FQWvB6KWoFsemIAKv5pWdeESwOGBV76hVr7fAvlV2yf6hkKLO75g1n1v4b3SlLrttRN8tUGGWfmp2GePfU+yu+o1mOYV45N83q3JvoGlbgXmDzQ8FVW/ZKviBS7xalrR50ud95h6cJi5yj9hMA=="
+ },
+ "kver": 1,
+ "master": {
+  "id": "health",
+  "name": "마스터",
+  "salt": "7rfOmXHlJLGWD4yYzGT8zQ==",
+  "it": 310000,
+  "vh": "c7680f32a80c54bdeed51ef502bdd23f82b641575d02ae0e0808d90254b65128",
+  "wk": {
+   "iv": "s+9eVCyFwgmbBnwF",
+   "ct": "QyRBVXvPze6q0/OwlWiMCo7TiSBFgv+vooAJGeYIDe1xGFc7nAXvu9WT54kgnZdA"
+  },
+  "ver": 1,
+  "created": "2026-10-07T03:21:59.397Z"
+ },
+ "users": [],
+ "updated_at": "2026-10-07T03:21:59.820Z"
+}
