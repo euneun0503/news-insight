@@ -994,3 +994,14 @@ export function loginGate(el, onDone) {
   el.append(wrap);
   loginView($("#gateBox", wrap), R, null, "", onDone);
 }
+
+// 검색 키워드 관심 분야 저장 → 검색 키워드 수집 바로 실행
+export async function saveSeedGroups(groups) {
+  if (!session?.token) throw new Error("관리자 로그인이 필요합니다.");
+  if (session.acct.role !== "master" && !session.acct.perms.collect) throw new Error("데이터 수집 권한이 필요합니다.");
+  const seeds = [...new Set(Object.values(groups).flat())];
+  await updateJSON("collector/config.json", () => ({}), (d) => { d.search_seed_groups = groups; d.search_seeds = seeds; }, `관심 분야 키워드 변경 — ${who()}`);
+  logAct("관심 분야 키워드 변경", `${Object.keys(groups).length}개 분야 · 키워드 ${seeds.length}개`);
+  const { owner, repo, branch } = session.R;
+  try { await gh(`/repos/${owner}/${repo}/actions/workflows/search.yml/dispatches`, { method: "POST", body: JSON.stringify({ ref: branch, inputs: { force: "yes" } }) }); } catch (e) { console.warn(e); }
+}
