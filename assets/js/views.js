@@ -407,17 +407,27 @@ export async function keywords(el, R, ctx) {
     const related = [...co.entries()].sort((a, b) => b[1] - a[1]).slice(0, 18);
 
     detail.innerHTML = "";
+    const arMedia = new Set((ar || []).map((a) => a.oid)); // 이 기간 발행목록(제목)을 수집한 매체
+    const rkViews = rkHits.reduce((t, a) => t + (a.views || 0), 0);
+    const pubN = arHits ? arHits.length : row.pub;
     const box = h(`<div class="card kw-detail">
-      <div class="card-head"><div><h3>‘${esc(word)}’ 상세 ${info("kwDetail")}</h3><div class="sub">${sv ? `<b>네이버 월간 검색 ${fmt(sv[0] + sv[1])}회</b> (모바일 ${pct(sv[1] / Math.max(1, sv[0] + sv[1]), 0)}) · ` : ""}${SR.gvol[word] != null ? `<b>구글 관심도 ${fmt1(SR.gvol[word])}</b> (‘${esc(SR.gvolAnchor)}’=100) · ` : ""}발행 ${fmt(row.pub)}건 · 랭킹 진입 ${fmt(row.rank)}건 · 랭킹 조회수 ${fmt(row.views)}${!ar ? ` · 발행 상세는 ${LIMITS.articleDays}일 이하 기간에서 제공` : ""}${!rk ? ` · 랭킹 상세는 ${LIMITS.rankingDays}일 이하 기간에서 제공(현재는 일별 상위 30건 기준)` : ""}</div></div>
+      <div class="card-head"><div><h3>‘${esc(word)}’ 키워드 분석 ${info("kwDetail")}</h3><div class="sub">${esc(R.s.replace(/-/g, "."))}${R.n > 1 ? ` ~ ${esc(R.e.replace(/-/g, "."))}` : ""} · 기사 제목에 ‘${esc(word)}’가 들어간 기사 기준</div></div>
         <button class="btn sm" id="kwClose">닫기</button></div>
-      <div class="grid g-21">
-        <div>${R.n > 1 ? canvas() : ""}</div>
-        <div><h4 style="font-size:13px;margin-bottom:8px">매체별</h4><div id="kwMedia"></div></div>
+      <div class="kw-stats">
+        <div><span>제목에 쓴 발행 기사</span><b>${fmt(pubN)}건</b><em>기자·제목까지 수집한 ${fmt(arMedia.size)}개 매체 기준</em></div>
+        <div><span>랭킹 20위 안에 든 기사</span><b>${fmt(rkHits.length)}건</b><em>${fmt(new Set(rkHits.map((a) => a.oid)).size)}개 매체 랭킹</em></div>
+        <div><span>그 기사들의 랭킹 조회수 합</span><b>${fmt(rkViews)}</b><em>조회수 미공개 매체 제외</em></div>
+        ${sv ? `<div><span>네이버 월간 검색</span><b>${fmt(sv[0] + sv[1])}회</b><em>모바일 ${pct(sv[1] / Math.max(1, sv[0] + sv[1]), 0)}</em></div>` : SR.gvol[word] != null ? `<div><span>구글 관심도</span><b>${fmt1(SR.gvol[word])}</b><em>‘${esc(SR.gvolAnchor)}’ = 100</em></div>` : ""}
       </div>
-      <h4 style="font-size:13px;margin:16px 0 8px">함께 쓰인 키워드</h4>
+      ${!ar ? `<div class="form-hint">발행 기사 목록은 ${LIMITS.articleDays}일 이하 기간에서 제공합니다.</div>` : ""}
+      <div class="${R.n > 1 ? "grid g-21" : ""}">
+        ${R.n > 1 ? `<div><h4 class="kw-h">날짜별 추이 <span class="form-hint">막대: 제목에 쓴 발행 기사 · 선: 랭킹 조회수</span></h4>${canvas()}</div>` : ""}
+        <div><h4 class="kw-h">매체별</h4><div id="kwMedia"></div></div>
+      </div>
+      <h4 class="kw-h">랭킹에 오른 기사 <span class="form-hint">조회수 순 · 순위 = 그날 그 매체 랭킹 순위</span></h4><div id="kwTop"></div>
+      ${arHits ? `<h4 class="kw-h">제목에 ‘${esc(word)}’가 들어간 발행 기사 <span class="form-hint">${fmt(arHits.length)}건${arHits.length > 20 ? " 중 최근 20건" : ""}</span></h4><div id="kwRecent"></div>` : ""}
+      <h4 class="kw-h">함께 쓰인 키워드 <span class="form-hint">같은 제목에 함께 나온 단어 · 누르면 그 키워드 분석</span></h4>
       <div class="kw-cloud">${related.map(([w]) => `<a href="${ctx.link("keywords", { k: w })}">${esc(w)}</a>`).join("") || '<span class="form-hint">없음</span>'}</div>
-      <h4 style="font-size:13px;margin:16px 0 8px">많이 읽힌 기사</h4><div id="kwTop"></div>
-      ${arHits ? `<h4 style="font-size:13px;margin:16px 0 8px">최근 발행 기사 (${fmt(arHits.length)}건 중 20건)</h4><div id="kwRecent"></div>` : ""}
     </div>`);
     detail.append(box);
     $("#kwClose", box).addEventListener("click", () => { detail.innerHTML = ""; state.k = ""; ctx.setQuery({ k: "" }); render(); });
@@ -428,7 +438,7 @@ export async function keywords(el, R, ctx) {
     }
     const mm = Object.entries(byMedia).sort((a, b) => b[1].views - a[1].views || b[1].pub - a[1].pub);
     $("#kwMedia", box).innerHTML = mm.length
-      ? `<table class="t"><thead><tr><th>매체</th><th class="r">발행</th><th class="r">랭킹</th><th class="r">조회수</th></tr></thead><tbody>${mm.map(([oid, m]) => `<tr class="${isOur(oid) ? "ours" : ""}"><td>${chip(oid)}</td><td class="r num">${arHits ? fmt(m.pub) : "-"}</td><td class="r num">${fmt(m.rank)}</td><td class="r num">${m.hasV ? fmt(m.views) : '<span class="form-hint">미공개</span>'}</td></tr>`).join("")}</tbody></table>`
+      ? `<table class="t"><thead><tr><th>매체</th><th class="r">제목에 쓴 발행 기사</th><th class="r">랭킹 20위 진입</th><th class="r">랭킹 조회수</th></tr></thead><tbody>${mm.map(([oid, m]) => `<tr class="${isOur(oid) ? "ours" : ""}"><td>${chip(oid)}</td><td class="r num">${arHits && arMedia.has(oid) ? fmt(m.pub) + "건" : '<span class="form-hint" title="이 매체는 아직 기사 제목 목록을 수집하지 않았습니다">미수집</span>'}</td><td class="r num">${fmt(m.rank)}건</td><td class="r num">${m.hasV ? fmt(m.views) : '<span class="form-hint">미공개</span>'}</td></tr>`).join("")}</tbody></table>`
       : emptyBox("데이터 없음");
     articleTable($("#kwTop", box), [...rkHits].sort((a, b) => (b.views ?? -1) - (a.views ?? -1)).slice(0, 15), { showDay: R.n > 1 });
     if (arHits) articleTable($("#kwRecent", box), [...arHits].sort((a, b) => (b.day + b.time).localeCompare(a.day + a.time)).slice(0, 20), { showRank: false, showViews: false, showTime: true });

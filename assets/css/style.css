@@ -387,3 +387,10 @@ body.gated .topbar, body.gated .layout { display: none; }
 .wk-nav { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: -4px 0 10px; }
 .wk-nav b { font-size: 13.5px; margin-left: 6px; }
 .wk-nav .input { padding: 4px 8px; }
+
+.kw-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.kw-stats > div { background: var(--line-2); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
+.kw-stats span { font-size: 12px; color: var(--text-2); }
+.kw-stats b { font-size: 20px; font-weight: 750; }
+.kw-stats em { font-style: normal; font-size: 11.5px; color: var(--muted); }
+.kw-h { font-size: 13px; margin: 18px 0 8px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
