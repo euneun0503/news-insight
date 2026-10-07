@@ -415,3 +415,7 @@ body.gated .topbar, body.gated .layout { display: none; }
 .sr-logo { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 14px; }
 .sr-logo.n { background: #03c75a; }
 .sr-logo.g { background: #1a73e8; }
+
+.sr-scope { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; }
+.sr-scope button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; cursor: pointer; }
+.sr-scope button.on { background: #0f2341; color: #fff; border-color: #0f2341; }

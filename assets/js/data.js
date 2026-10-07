@@ -153,6 +153,7 @@ export async function loadSearch(days) {
     volume: volDoc?.volume || {},
     related: volDoc?.related || [],
     seeds: new Set(volDoc?.seeds || []),
+    seedGroups: volDoc?.seed_groups || meta()?.search_seed_groups || null,
     volumeDay: volDoc?.day || null,
     gvol: gDoc?.gvol || {},
     gvolAnchor: gDoc?.gvol_anchor || meta()?.google_anchor || "날씨",

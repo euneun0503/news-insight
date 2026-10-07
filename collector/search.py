@@ -223,7 +223,7 @@ def fetch_naver_volumes(words):
             elif pc + mo >= 100 and nk not in related:
                 related[nk] = [k, pc, mo, comp, hints[0]]
         time.sleep(0.35)
-    rel = sorted(related.values(), key=lambda x: -(x[1] + x[2]))[:400]
+    rel = sorted(related.values(), key=lambda x: -(x[1] + x[2]))[:200]
     return volume, rel
 
 
@@ -280,9 +280,22 @@ def main():
             print("네이버 검색량: 오늘 이미 조회함 (건너뜀)")
         else:
             seeds = CONFIG.get("search_seeds", [])
-            words = list(dict.fromkeys(seeds + title_keywords(day)))
-            vol, rel = fetch_naver_volumes(words)
-            doc["volume"], doc["related"], doc["seeds"] = vol, rel, seeds
+            groups = CONFIG.get("search_seed_groups") or {"관심": seeds}
+            vol, rel_all, seen_rel = {}, [], set()
+            # 분야별로 따로 조회 → 연관검색어가 어느 분야에서 나왔는지 표시
+            for gname, gwords in groups.items():
+                v, rel = fetch_naver_volumes(gwords)
+                vol.update(v)
+                for r in rel:
+                    if r[0] not in seen_rel and r[0] not in vol:
+                        seen_rel.add(r[0])
+                        rel_all.append(r + [gname])
+            v, rel = fetch_naver_volumes(title_keywords(day))   # 오늘 기사 제목 키워드
+            for k, x in v.items():
+                vol.setdefault(k, x)
+            rel_all.sort(key=lambda x: -(x[1] + x[2]))
+            doc["volume"], doc["related"], doc["seeds"] = vol, rel_all[:800], seeds
+            doc["seed_groups"] = groups
             doc["volume_at"] = ts
             print(f"네이버 검색량 {len(vol)}개 키워드, 연관검색어 {len(rel)}개")
     else:
@@ -295,7 +308,7 @@ def main():
         print("구글 관심도: 오늘 이미 조회함 (건너뜀)")
     else:
         anchor = CONFIG.get("google_anchor", "날씨")
-        words = list(dict.fromkeys(CONFIG.get("search_seeds", []) + title_keywords(day, 20)))
+        words = list(dict.fromkeys(CONFIG.get("search_seeds", []) + title_keywords(day, 10)))
         gv = google_interest(words, anchor)
         if gv:
             # 같은 날 여러 번 조회하면 합침 (구글이 일부 묶음을 막아도 앞서 받은 값 유지). 기준어가 바뀌면 새로 시작

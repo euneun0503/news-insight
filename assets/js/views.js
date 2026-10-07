@@ -982,15 +982,17 @@ async function searchKeywords(el, R, ctx) {
   const hasN = Object.keys(S.volume).length > 0;
   const hasG = Object.keys(S.gvol).length > 0;
   const nRows = [];
-  for (const [w, [pc, mo, comp]] of Object.entries(S.volume)) nRows.push({ word: w, src: S.seeds.has(w) ? "관심" : "제목", pc, mo, comp });
-  for (const [w, pc, mo, comp, seed] of S.related.slice(0, 300)) if (!S.volume[w]) nRows.push({ word: w, src: "연관", seed, pc, mo, comp });
+  const groupOf = {};
+  for (const [g, ws] of Object.entries(S.seedGroups || {})) for (const w of ws) groupOf[w] ||= g;
+  for (const [w, [pc, mo, comp]] of Object.entries(S.volume)) nRows.push({ word: w, src: S.seeds.has(w) ? "관심" : "제목", group: groupOf[w] || "", pc, mo, comp });
+  for (const [w, pc, mo, comp, seed, grp] of S.related.slice(0, 800)) if (!S.volume[w]) nRows.push({ word: w, src: "연관", seed, group: grp || groupOf[seed] || "", pc, mo, comp });
   for (const r of nRows) { r.total = r.pc + r.mo; Object.assign(r, supply(r.word)); r.gap = r.total / (r.pub + 1); r.mobile = r.total ? r.mo / r.total : 0; }
-  const gRows = Object.entries(S.gvol).map(([w, g]) => ({ word: w, src: S.seeds.has(w) ? "관심" : "제목", g, ...supply(w) }));
+  const gRows = Object.entries(S.gvol).map(([w, g]) => ({ word: w, src: S.seeds.has(w) ? "관심" : "제목", group: groupOf[w] || "", g, ...supply(w) }));
   for (const r of gRows) r.gap = r.g / (r.pub + 1);
 
   // ⓪ 검색 키워드 요약 보고서 (그래프)
   const drawReport = (scope) => {
-    const inScope = (r) => scope === "all" || r.src === "관심" || (r.src === "연관" && S.seeds.has(r.seed));
+    const inScope = (r) => scope === "all" ? true : scope === "seed" ? !!r.group : r.group === scope;
     const nTop = nRows.filter(inScope).sort((a, b) => b.total - a.total);
     const gTop = gRows.filter(inScope).sort((a, b) => b.g - a.g);
     const gapTop = nRows.filter(inScope).filter((r) => r.total >= 1000).sort((a, b) => b.gap - a.gap).slice(0, 10);
@@ -998,7 +1000,8 @@ async function searchKeywords(el, R, ctx) {
     const ourHit = S.google.slice(0, 30).filter((x) => supply(x.title).pub).length;
     const rep = h(`<div class="card search-report"><div class="card-head"><div><h3>검색 키워드 요약 보고서 ${info("searchNaver")}</h3>
       <div class="sub">네이버 검색량 ${hasN ? `${dotDate(S.volumeDay)} 조회(최근 30일)` : "키 등록 후 수집"} · 구글 관심도 ${hasG ? `${dotDate(S.gvolDay)} 조회(‘${esc(S.gvolAnchor)}’=100)` : "수집 전"} · 급상승 검색어 ${S.days.map(mmdd).join(", ")} 누적 · 발행 수는 선택 기간 기준</div></div>
-      <div class="seg" id="srScope"><button data-s="seed" class="${scope === "seed" ? "on" : ""}">관심 키워드 (건강)</button><button data-s="all" class="${scope === "all" ? "on" : ""}">전체 (기사 제목 키워드 포함)</button></div></div>
+      </div>
+      <div class="sr-scope" id="srScope"><button data-s="seed" class="${scope === "seed" ? "on" : ""}">관심 분야 전체</button>${Object.keys(S.seedGroups || {}).map((g) => `<button data-s="${esc(g)}" class="${scope === g ? "on" : ""}">${esc(g)}</button>`).join("")}<button data-s="all" class="${scope === "all" ? "on" : ""}">전체 (기사 제목 키워드 포함)</button></div>
       <div class="grid g-2 sr-split">
         <section class="sr-panel naver">
           <div class="sr-head"><span class="sr-logo n">N</span><b>네이버 키워드 랭킹</b><span class="form-hint">실제 월간 검색 횟수 (검색광고 API)</span></div>
