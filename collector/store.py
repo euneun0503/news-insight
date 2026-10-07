@@ -157,6 +157,18 @@ def counts_path(day):
     return DATA / "counts" / f"{day}.json"
 
 
+def save_titles(oid, by_day):
+    """발행 건수만 세는 매체의 기사 제목 (기사 목록 화면용): data/titles/YYYY-MM/{oid}.json = {day: [[aid, title]]}"""
+    months = {}
+    for day, items in by_day.items():
+        months.setdefault(day[:7], {})[day] = items
+    for ym, days in months.items():
+        path = DATA / "titles" / ym / f"{oid}.json"
+        doc = read_json(path, {}) or {}
+        doc.update(days)
+        write_json(path, doc)
+
+
 def save_counts(day, counts, collected_at):
     """발행 '건수'만 집계한 매체: {oid: n}. 실패(None)한 매체는 기존 값 유지"""
     path = counts_path(day)
@@ -446,6 +458,11 @@ def prune(months=None):
             if re.fullmatch(r"\d{4}-\d{2}-\d{2}", p.stem) and p.stem < cutoff:
                 p.unlink()
                 removed += 1
+    import shutil
+    for p in (DATA / "titles").glob("*"):
+        if p.is_dir() and re.fullmatch(r"\d{4}-\d{2}", p.name) and p.name < cut_ym:
+            shutil.rmtree(p)
+            removed += 1
     for sub in ("summary", "logs/access", "logs/activity"):
         for p in (DATA / sub).glob("*.json"):
             if re.fullmatch(r"\d{4}-\d{2}", p.stem) and p.stem < cut_ym:

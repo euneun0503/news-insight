@@ -1,6 +1,6 @@
 // 분석 화면들
 import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, dayKind, DAY_COLOR, holiday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR } from "./util.js";
-import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel, Range, loadRankingDays } from "./data.js";
+import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel, Range, loadRankingDays, loadTitles } from "./data.js";
 import { openMediaSettings } from "./mediasel.js";
 import { adminForSettings, saveSeedGroups } from "./admin.js";
 import { lineChart, barChart, comboChart, dayLabels } from "./charts.js";
@@ -640,6 +640,12 @@ export async function articles(el, R, ctx) {
         $("#count", card).textContent = "";
         return;
       }
+      // 매체 설정에서 고른 매체 중 상세 수집(기자·시각)이 없는 날은 네이버 목록에서 받은 제목으로 채움
+      const M = meta();
+      const have = new Set(data.map((a) => a.oid + "|" + a.day));
+      const want = [...mediaSel().pub].filter((o) => (M.count_media || []).includes(o));
+      const extra = (await loadTitles(R.days, want)).filter((a) => !have.has(a.oid + "|" + a.day));
+      data = [...data, ...extra];
     }
     const medias = [...new Set(data.map((a) => a.oid))];
     const mSel = $("#mSel", card);
@@ -665,7 +671,8 @@ export async function articles(el, R, ctx) {
     const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
     const items = filtered.slice((state.page - 1) * PAGE, state.page * PAGE);
     const rankNote = state.src === "rank" && !R.canRanking ? ` · ${LIMITS.rankingDays}일 초과 기간이라 일별 상위 30건만 표시` : "";
-    $("#count", card).textContent = `${fmt(filtered.length)}건${rankNote}`;
+    const listOnly = state.src === "pub" && filtered.some((a) => a.listOnly) ? " · 발행 시각·기자명은 상세 수집 매체(헬스조선·코메디닷컴 등)만 표시, 나머지는 네이버 목록 기준" : "";
+    $("#count", card).textContent = `${fmt(filtered.length)}건${rankNote}${listOnly}`;
     const box = $("#list", card);
     articleTable(box, items, { showDay: true, showRank: state.src === "rank", showViews: state.src === "rank", showTime: true });
     if (pages > 1) {

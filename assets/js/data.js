@@ -111,6 +111,19 @@ export async function loadArticleDays(days) {
   return items;
 }
 
+// 발행 '건수'만 세는 매체의 기사 제목 (발행 시각·기자 없음)
+export async function loadTitles(days, oids) {
+  const months = [...new Set(days.map((d) => d.slice(0, 7)))];
+  const want = new Set(days);
+  const docs = await Promise.all(months.flatMap((m) => oids.map((o) => getJSON(`data/titles/${m}/${o}.json`).then((doc) => [o, doc]))));
+  const items = [];
+  for (const [oid, doc] of docs) {
+    if (!doc) continue;
+    for (const [day, list] of Object.entries(doc)) if (want.has(day)) for (const [aid, title] of list) items.push({ day, oid, aid, time: "", title, reporter: "", listOnly: true });
+  }
+  return items;
+}
+
 // 검색 키워드: 구글 급상승(기간 내 누적) + 네이버 검색량(기간 내 가장 최근 조회분)
 export async function loadSearch(days) {
   // 검색 키워드는 '지금' 지표라, 어제·오늘을 보고 있으면 오늘 수집분까지 포함 (메타에 아직 없어도 파일을 직접 확인)

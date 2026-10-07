@@ -429,7 +429,7 @@ def list_day_exact(session, oid, day, max_pages=150):
     최근 며칠 기사는 목록에 '3일전'처럼 상대 표기라 날짜를 확정할 수 없으므로,
     그날 근처에 상대 표기 기사가 섞여 있으면 (건수, False)를 돌려 '아직 확정 못 함'으로 처리한다.
     → 며칠 지나 정확한 날짜가 표시되면 정기 수집(최근 8일 재집계)에서 확정된다."""
-    out, prev_keys, stale = set(), None, 0
+    out, prev_keys, stale = {}, None, 0
     seen = set()
     today = today_kst()
     d0 = dt.date.fromisoformat(day)
@@ -460,7 +460,7 @@ def list_day_exact(session, oid, day, max_pages=150):
                 continue
             d = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
             if d == day:
-                out.add(key)
+                out[key] = clean_text(a.get_text())
             elif d < day:
                 older += 1
         if not page_keys or page_keys == prev_keys or new_n == 0:
@@ -480,12 +480,15 @@ def collect_counts(session, days, media, workers):
         return {}
     log(f"\n🔢 발행 건수 {len(media)}개 매체 ({days[0]} ~ {days[-1]})")
     res = {d: {} for d in days}
+    titles = {}   # 기사 목록 화면용 제목 (oid → {day: [[aid, title]]})
 
     def one(oid):
         for d in days:
             try:
                 keys, sure = list_day_exact(session, oid, d)
                 res[d][oid] = len(keys) if sure else "unsure"   # 확정 못 한 날은 저장하지 않음(기존 값도 지움)
+                if sure:
+                    titles.setdefault(oid, {})[d] = [[k[1], t] for k, t in keys.items()]
             except Exception as e:
                 res[d][oid] = None
                 err(f"발행 건수 {d} {CONFIG['media'].get(oid, oid)}: {e}")
@@ -495,6 +498,8 @@ def collect_counts(session, days, media, workers):
     ts = now_kst().isoformat(timespec="seconds")
     for d in days:
         store.save_counts(d, res[d], ts)
+    for oid, by_day in titles.items():
+        store.save_titles(oid, by_day)
     log("   " + ", ".join(f"{d[5:]} {sum(v for v in res[d].values() if isinstance(v, int))}건 (미확정 {sum(1 for v in res[d].values() if v == 'unsure')}곳)" for d in days))
     return {d: {o: ("error" if n is None else n) for o, n in res[d].items()} for d in days}
 
@@ -571,8 +576,14 @@ def main():
             touched |= set(days)
         if a.only not in ("ranking", "counts"):
             media = [m for m in CONFIG["publish_media"] if not media_filter or m in media_filter]
-            status["articles"], t = collect_publish(session, days, media, cache, workers, a.fast)
-            touched |= t
+            # 7일씩 나눠 수집·저장 → 오래 걸려 중간에 멈춰도 끝난 구간은 남음
+            status["articles"] = {}
+            for i in range(0, len(days), 7):
+                chunk = days[i:i + 7]
+                st, t = collect_publish(session, chunk, media, cache, workers, a.fast)
+                status["articles"].update(st)
+                touched |= t
+                save_cache(cache)
         if a.only != "ranking":
             cmedia = [m for m in CONFIG.get("count_media", []) if not media_filter or m in media_filter]
             if cmedia and not a.no_counts:
