@@ -172,7 +172,7 @@ export async function dashboard(el, R, ctx) {
   // 일별 추이 + 매체 순위
   const row = h(`<div class="grid g-21">
     <div class="card" style="display:flex;flex-direction:column"><div class="card-head"><div><h3>일별 추이 ${info("trend")}</h3><div class="sub" id="trendSub"></div></div>
-      <div class="tools"><select class="input" id="trendMedia"></select><div class="seg" id="trendSeg"><button data-m="both" class="on">발행 + 조회수</button><button data-m="pub">발행 기사수</button><button data-m="cmp">${esc(mediaName(our))}·${esc(mediaName(M.compare_media || "296"))} 비교</button><button data-m="views">랭킹 조회수</button></div></div></div>
+      <div class="tools"><select class="input" id="trendMedia"></select><div class="seg" id="trendSeg"><button data-m="pub" class="on">발행 기사수</button><button data-m="views">랭킹 조회수</button><button data-m="both">발행 + 조회수 (매체별)</button><button data-m="cmp">${esc(mediaName(our))}·${esc(mediaName(M.compare_media || "296"))} 비교</button></div></div></div>
       <div class="chart-box lg" style="flex:1;min-height:340px"><canvas></canvas></div>
       <div id="trendTbl"></div>
       <div class="form-hint" style="margin-top:6px">날짜 아래 요일 표시 · <b style="color:#dc2626">빨강</b> 일요일·공휴일(대체공휴일 포함, ‘휴’) · <b style="color:#2563eb">파랑</b> 토요일</div></div>
@@ -187,7 +187,7 @@ export async function dashboard(el, R, ctx) {
   const tMedia = [...new Set([...pubMedia, ...rankMedia])];
   const tSel = $("#trendMedia", row);
   tSel.innerHTML = tMedia.map((o) => `<option value="${o}" ${o === our ? "selected" : ""}>${esc(mediaName(o))}</option>`).join("");
-  let tMode = "both";
+  let tMode = "pub";
   const drawTrend = () => {
     trendChart?.destroy();
     tSel.hidden = tMode !== "both";
@@ -218,8 +218,13 @@ export async function dashboard(el, R, ctx) {
         </tbody></table></div><div class="form-hint" style="margin-top:4px">차이 = ${esc(mediaName(our))} − ${esc(mediaName(cmp))}</div>`;
       return;
     }
-    sub.textContent = R.n === 1 ? "하루만 선택됨 (기간을 넓히면 추이가 보입니다)" : "매체별 · 범례를 눌러 매체를 숨길 수 있습니다";
-    const media = tMode === "views" ? rankMedia : pubMedia;
+    const SELm = mediaSel();
+    const media = tMode === "views"
+      ? [...new Set([...rankMedia, ...[...SELm.rank].filter((o) => (M.ranking_media || []).includes(o) && !A.noView.has(o))])]
+      : [...new Set([...pubMedia, ...[...SELm.pub].filter((o) => (M.publish_media || []).includes(o) || (M.count_media || []).includes(o))])];
+    const srcM = tMode === "views" ? A.rankDay : A.pubDay;
+    const missing = media.filter((o) => !R.days.some((d) => srcM[d]?.[o] != null));
+    sub.textContent = `${tMode === "views" ? "매체 설정에서 고른 랭킹 매체" : "매체 설정에서 고른 발행 매체"} ${media.length - missing.length}곳${R.n === 1 ? " · 하루만 선택됨" : " · 범례를 눌러 숨길 수 있음"}${missing.length ? ` · 아직 집계 전: ${missing.map(mediaName).join(", ")}` : ""}`;
     const src = tMode === "views" ? A.rankDay : A.pubDay;
     const ds = media.map((oid) => ({
       label: mediaName(oid),
@@ -229,7 +234,7 @@ export async function dashboard(el, R, ctx) {
       order: isOur(oid) ? 0 : 1,
     }));
     trendChart = R.n === 1
-      ? barChart(trendCanvas, media.map(mediaName), [{ label: tMode === "views" ? "조회수" : "발행", data: media.map((o) => src[R.days[0]]?.[o] || 0), backgroundColor: media.map(mediaColor) }])
+      ? (() => { const ms = media.filter((o) => src[R.days[0]]?.[o] != null).sort((a, b) => src[R.days[0]][b] - src[R.days[0]][a]); return barChart(trendCanvas, ms.map(mediaName), [{ label: tMode === "views" ? "조회수" : "발행", data: ms.map((o) => src[R.days[0]][o]), backgroundColor: ms.map(mediaColor) }]); })()
       : lineChart(trendCanvas, dayLabels(R.days), ds, { spanGaps: false, days: R.days });
   };
   drawTrend();
