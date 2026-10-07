@@ -653,38 +653,113 @@ export async function insights(el, R, ctx) {
 }
 
 // ═══════════════════════════════════════════════════════
-// 6. 기자 통계
+// 6. 기자 통계 — 기사 원본(랭킹·발행)에서 직접 계산
 // ═══════════════════════════════════════════════════════
 export async function reporters(el, R, ctx) {
   const A = R.agg;
-  el.append(h(`<div class="page-head"><div><h1>기자 통계 ${info("reporters")}</h1><p>기자별 발행량과 랭킹 진입 성과입니다. 기사 상세페이지의 바이라인 기준이며, 기간이 길면 일별 상위 80명 기준으로 합산됩니다.</p></div></div>`));
-  if (!A.rep.size) {
-    if (!A.rankDayCount && !A.pubDayCount) return el.append(h(noData(R)));
-    return el.append(h(`<div class="card">${emptyBox("이 기간 기사에는 아직 기자명이 없습니다.<br>엑셀에서 가져온 과거 자료는 기자명이 비어 있어요. Colab 노트북의 ‘기존 엑셀에 기자명 채우기’로 채운 뒤 다시 가져오면 표시됩니다.<br>자동 수집으로 들어오는 기사는 처음부터 기자명이 포함됩니다.")}</div>`));
+  const M = meta();
+  el.append(h(`<div class="page-head"><div><h1>기자 통계 ${info("reporters")}</h1><p>네이버 기사 페이지의 바이라인에서 확인한 기자별 발행량과 랭킹 성과입니다. 기자를 누르면 기사 목록이 열립니다.</p></div></div>`));
+  if (!A.rankDayCount && !A.pubDayCount) return el.append(h(noData(R)));
+  const loading = h('<div class="card"><div class="loading">기자별 기사를 모으는 중…</div></div>');
+  el.append(loading);
+  const [rk, ar] = await Promise.all([R.ranking(), R.articles()]);
+  loading.remove();
+
+  const map = new Map();
+  const get = (name, oid) => {
+    const key = name + "|" + oid;
+    if (!map.has(key)) map.set(key, { name, oid, mname: mediaName(oid), pub: 0, rank: 0, top1: 0, top3: 0, views: 0, viewN: 0, best: null, rkItems: [], pubItems: [] });
+    return map.get(key);
+  };
+  const split = (s) => (s || "").split("·").map((x) => x.trim()).filter(Boolean);
+  let rkTotal = 0, rkNamed = 0, arTotal = 0, arNamed = 0;
+  if (rk) {
+    for (const a of rk) {
+      rkTotal++;
+      const names = split(a.reporter);
+      if (names.length) rkNamed++;
+      for (const n of names) {
+        const r = get(n, a.oid);
+        r.rank++; if (a.rank === 1) r.top1++; if (a.rank <= 3) r.top3++;
+        if (a.views != null) { r.views += a.views; r.viewN++; if (!r.best || a.views > r.best.views) r.best = a; }
+        r.rkItems.push(a);
+      }
+    }
   }
-  const rows = [...A.rep.values()].map((r) => ({ ...r, mname: mediaName(r.oid), avg: r.rank ? r.views / r.rank : null, rate: r.pub ? r.rank / r.pub : null }));
-  const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 랭킹 진입수 ÷ 발행 기사수 (발행목록 수집 매체만)</div></div>
-    <div class="tools"><select class="input" id="rm"><option value="">전체 매체</option>${[...new Set(rows.map((r) => r.oid))].map((o) => `<option value="${o}" ${o === meta().our_media ? "selected" : ""}>${esc(mediaName(o))}</option>`).join("")}</select>
-    <input class="input" id="rq" placeholder="기자명 검색" style="width:140px"><button class="btn sm" id="rx">엑셀 저장</button></div></div><div id="rt"></div></div>`);
+  if (ar) {
+    for (const a of ar) {
+      arTotal++;
+      const names = split(a.reporter);
+      if (names.length) arNamed++;
+      for (const n of names) { const r = get(n, a.oid); r.pub++; r.pubItems.push(a); }
+    }
+  } else {
+    // 31일 넘는 기간: 발행 수는 일별 요약값 사용
+    for (const x of A.rep.values()) for (const n of split(x.name)) get(n, x.oid).pub += x.pub;
+  }
+  if (!rk) for (const x of A.rep.values()) for (const n of split(x.name)) { const r = get(n, x.oid); r.rank += x.rank; r.views += x.views; r.viewN += x.rank; }
+  const rows = [...map.values()].map((r) => ({ ...r, avg: r.viewN ? r.views / r.viewN : null, rate: r.pub ? r.rank / r.pub : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
+
+  if (!rows.length) {
+    el.append(h(`<div class="card">${emptyBox("이 기간 기사에는 아직 기자명이 없습니다.<br>엑셀에서 가져온 과거 자료는 기자명이 비어 있어요. 자동 수집으로 새로 받은 기사부터 기자명이 들어갑니다.")}</div>`));
+    return;
+  }
+  const byViews = [...rows].sort((a, b) => b.views - a.views)[0];
+  const byPub = [...rows].sort((a, b) => b.pub - a.pub)[0];
+  const ourRows = rows.filter((r) => r.oid === M.our_media);
+  el.append(h(`<div class="grid g-4">
+    <div class="card kpi"><div class="label">확인된 기자</div><div class="value blue num">${fmt(rows.length)}명</div>
+      <div class="meta">${esc(mediaName(M.our_media))} ${fmt(ourRows.length)}명 · ${fmt(new Set(rows.map((r) => r.oid)).size)}개 매체</div></div>
+    <div class="card kpi"><div class="label">기자명 확인 비율 ${info("reporterCoverage")}</div><div class="value num">${rkTotal ? pct(rkNamed / rkTotal, 0) : "-"}</div>
+      <div class="meta">랭킹 기사 ${fmt(rkNamed)}/${fmt(rkTotal)}${arTotal ? ` · 발행 기사 ${pct(arNamed / arTotal, 0)}` : ""}</div></div>
+    <div class="card kpi"><div class="label">랭킹 조회수 1위 기자</div><div class="value orange" style="font-size:22px">${esc(byViews.name)}</div>
+      <div class="meta">${esc(byViews.mname)} · ${short(byViews.views)} · 랭킹 ${fmt(byViews.rank)}건</div></div>
+    <div class="card kpi"><div class="label">발행 1위 기자</div><div class="value green" style="font-size:22px">${esc(byPub.name)}</div>
+      <div class="meta">${esc(byPub.mname)} · ${fmt(byPub.pub)}건 · 하루 ${fmt1(byPub.pubDay)}건</div></div>
+  </div>`));
+
+  const medias = [...new Set(rows.map((r) => r.oid))].sort((a, b) => (a === M.our_media ? -1 : b === M.our_media ? 1 : mediaName(a).localeCompare(mediaName(b), "ko")));
+  const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 랭킹 진입 ÷ 발행 기사 (발행목록을 수집하는 매체만) · 공동 바이라인은 각 기자에게 모두 반영</div></div>
+    <div class="tools"><select class="input" id="rm"><option value="">전체 매체</option>${medias.map((o) => `<option value="${o}">${esc(mediaName(o))}</option>`).join("")}</select>
+    <input class="input" id="rq" placeholder="기자명 검색" style="width:130px"><button class="btn sm" id="rx">엑셀 저장</button></div></div><div id="rt"></div></div>`);
   el.append(card);
+  const detail = h(`<div id="repDetail"></div>`);
+  el.append(detail);
+  let cur = rows;
   const draw = () => {
     const m = $("#rm", card).value, q = $("#rq", card).value.trim();
-    const list = rows.filter((r) => (!m || r.oid === m) && (!q || r.name.includes(q)));
+    cur = rows.filter((r) => (!m || r.oid === m) && (!q || r.name.includes(q)));
     sortableTable($("#rt", card), [
-      { key: "name", label: "기자", html: (r) => `<b>${esc(r.name)}</b>` },
+      { key: "name", label: "기자", html: (r) => `<a href="javascript:void 0" data-rep="${esc(r.name + "|" + r.oid)}"><b>${esc(r.name)}</b></a>` },
       { key: "mname", label: "매체", html: (r) => chip(r.oid) },
-      { key: "pub", label: "발행 기사", cls: "r num", html: (r) => (r.pub ? fmt(r.pub) : "-") },
+      { key: "pub", label: "발행", cls: "r num", html: (r) => (r.pub ? fmt(r.pub) : "-") },
       { key: "rank", label: "랭킹 진입", cls: "r num", html: (r) => fmt(r.rank) },
-      { key: "views", label: "랭킹 조회수", cls: "r num", html: (r) => fmt(r.views) },
-      { key: "avg", label: "진입 기사 평균", cls: "r num", html: (r) => fmt(r.avg) },
+      { key: "top1", label: "1위", cls: "r num", html: (r) => (r.top1 ? `<span class="tag orange">${r.top1}</span>` : "-") },
+      { key: "views", label: "조회수 합계", cls: "r num", html: (r) => (r.viewN ? fmt(r.views) : '<span class="form-hint">미공개</span>') },
+      { key: "avg", label: "기사당 평균", cls: "r num", html: (r) => fmt(r.avg) },
       { key: "rate", label: "진입률", cls: "r num", html: (r) => (r.rate == null ? "-" : pct(r.rate)) },
-    ], list, { sort: "views", limit: 300, rowClass: (r) => (isOur(r.oid) ? "ours" : "") });
-    return list;
+      { key: "best", label: "최고 조회 기사", sort: false, html: (r) => (r.best ? `<a href="${articleUrl(r.best.oid, r.best.aid)}" target="_blank" rel="noopener">${esc(r.best.title.slice(0, 34))}${r.best.title.length > 34 ? "…" : ""}</a> <span class="form-hint num">${short(r.best.views)}</span>` : "-") },
+    ], cur, { sort: rows.some((r) => r.viewN) ? "views" : "pub", limit: 400, rowClass: (r) => (isOur(r.oid) ? "ours" : "") });
+    $$("a[data-rep]", card).forEach((a) => a.addEventListener("click", () => openRep(a.dataset.rep)));
   };
-  let cur = draw();
-  $("#rm", card).addEventListener("change", () => (cur = draw()));
-  $("#rq", card).addEventListener("input", debounce(() => (cur = draw()), 150));
-  $("#rx", card).addEventListener("click", () => ctx.exportSheets(`기자통계_${R.s}_${R.e}`, [{ name: "기자", rows: cur.map((r) => ({ 기자: r.name, 매체: r.mname, 발행: r.pub, 랭킹진입: r.rank, 랭킹조회수: r.views, 진입기사평균: Math.round(r.avg || 0) })) }]));
+  function openRep(key) {
+    const r = map.get(key);
+    if (!r) return;
+    detail.innerHTML = "";
+    const box = h(`<div class="card kw-detail"><div class="card-head"><div><h3>${esc(r.name)} · ${esc(r.mname)}</h3>
+      <div class="sub">발행 ${fmt(r.pub)}건 · 랭킹 진입 ${fmt(r.rank)}건 · 1위 ${fmt(r.top1)}회 · 조회수 합계 ${r.viewN ? fmt(r.views) : "미공개"}</div></div><button class="btn sm" id="rc">닫기</button></div>
+      <h4 style="font-size:13px;margin:4px 0 8px">랭킹에 오른 기사</h4><div id="rr"></div>
+      ${r.pubItems.length ? `<h4 style="font-size:13px;margin:16px 0 8px">발행 기사 (${fmt(r.pubItems.length)}건)</h4><div id="rp"></div>` : ""}</div>`);
+    detail.append(box);
+    $("#rc", box).addEventListener("click", () => (detail.innerHTML = ""));
+    articleTable($("#rr", box), [...r.rkItems].sort((a, b) => (b.views ?? -1) - (a.views ?? -1)).slice(0, 50), { showDay: true });
+    if (r.pubItems.length) articleTable($("#rp", box), [...r.pubItems].sort((a, b) => (b.day + b.time).localeCompare(a.day + a.time)).slice(0, 100), { showRank: false, showViews: false, showTime: true });
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  $("#rm", card).addEventListener("change", draw);
+  $("#rq", card).addEventListener("input", debounce(draw, 150));
+  $("#rx", card).addEventListener("click", () => ctx.exportSheets(`기자통계_${R.s}_${R.e}`, [{ name: "기자", rows: cur.map((r) => ({ 기자: r.name, 매체: r.mname, 발행: r.pub, 랭킹진입: r.rank, "1위": r.top1, 조회수합계: r.viewN ? r.views : "미공개", 기사당평균: r.avg ? Math.round(r.avg) : "", 진입률: r.rate == null ? "" : +(r.rate * 100).toFixed(1), 최고기사: r.best?.title || "", 최고조회수: r.best?.views ?? "" })) }]));
+  draw();
 }
 
 // ── 검색 키워드 (키워드 랭킹의 두 번째 탭) ────────────────

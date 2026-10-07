@@ -175,19 +175,67 @@ def parse_reporter(soup, html=""):
     return "·".join(names[:3])
 
 
-def _debug_sample(oid, aid, soup, html, rep):
+def _debug_sample(oid, aid, soup, html, rep, origin=""):
     """매체마다 첫 기사 1건의 바이라인 주변을 저장 (추출이 맞는지 점검용)"""
     with _dbg_lock:
         if any(d["oid"] == oid for d in _dbg) or len(_dbg) >= 30:
             return
         body = soup.select_one("#dic_area, #newsct_article, article")
         txt = re.sub(r"\s+", " ", body.get_text(" ", strip=True)) if body else ""
-        _dbg.append({"oid": oid, "aid": aid, "found": rep, "head": txt[:250], "tail": txt[-250:]})
+        _dbg.append({"oid": oid, "aid": aid, "found": rep, "origin": origin, "head": txt[:160], "tail": txt[-160:]})
         store.write_json(DATA / "cache" / "byline_debug.json", _dbg, pretty=True)
 
 
 _dbg_lock = threading.Lock()
 _dbg = []
+
+
+_ORIGIN_ROLE = r"(?:인턴\s?|수습\s?|객원\s?|선임\s?|전문\s?|취재\s?)?(?:기자|특파원)"
+
+
+def parse_origin_reporter(html):
+    """언론사 원문 페이지에서 기자명: 구조화 데이터 → 메타 태그 → 화면 글자 순"""
+    soup = BeautifulSoup(html, "html.parser")
+    cands = []
+    for sc in soup.select('script[type="application/ld+json"]'):
+        for m in re.finditer(r'"author"\s*:\s*(\[[^\]]*\]|\{[^}]*\})', sc.string or ""):
+            cands += re.findall(r'"name"\s*:\s*"([^"]{2,30})"', m.group(1))
+    for sel in ['meta[name="author"]', 'meta[property="article:author"]', 'meta[name="byl"]', 'meta[property="dable:author"]',
+                'meta[name="dable:author"]', 'meta[name="twitter:creator"]', 'meta[property="og:article:author"]']:
+        t = soup.select_one(sel)
+        if t and t.get("content"):
+            cands.append(t["content"])
+    names = []
+    for c in cands:
+        for part in re.split(r"[,/·ㆍ|]", c):
+            part = re.sub(r"\(.*?\)|[\w.+-]+@[\w.-]+", " ", part)
+            part = re.sub(r"\s*" + _ORIGIN_ROLE + r".*$", "", part).strip()
+            if re.fullmatch(_NAME, part) and _ok_name(part) and part not in names:
+                names.append(part)
+    if names:
+        return "·".join(names[:3])
+    for t in soup(["script", "style", "noscript"]):
+        t.decompose()
+    txt = re.sub(r"\s+", " ", soup.get_text(" ", strip=True))
+    found = re.findall(r"(?:^|[\s=\]\)·|/])(" + _NAME + r")\s(?:[가-힣]{2,6}\s)?" + _ORIGIN_ROLE + r"(?=[\s=\(\[·,]|$)", txt)
+    found = [f for f in found if _ok_name(f)]
+    if found:
+        from collections import Counter
+        return Counter(found).most_common(1)[0][0]
+    return ""
+
+
+def fetch_origin_reporter(session, soup):
+    a = soup.select_one("a.media_end_head_origin_link[href], a[class*=origin_link][href]")
+    if not a:
+        return "", ""
+    url = a["href"].replace("&amp;", "&")
+    try:
+        r = session.get(url, timeout=12, headers={"Referer": "https://n.news.naver.com/"})
+        r.encoding = r.apparent_encoding if (r.encoding or "").lower() in ("iso-8859-1", "ascii") else r.encoding
+        return parse_origin_reporter(r.text), url
+    except Exception:
+        return "", url
 
 
 def fetch_article_meta(session, oid, aid):
@@ -208,19 +256,17 @@ def fetch_article_meta(session, oid, aid):
         if tag:
             pub = _norm_dt(tag.get_text(" ", strip=True).replace(".", "-"))
     reporter = parse_reporter(soup, r.text)
-    _debug_sample(oid, aid, soup, r.text, reporter)
-    if not reporter and os.environ.get("DEBUG_RAW"):
-        with _dbg_lock:
-            fp = DATA / "cache" / f"raw_{oid}.html"
-            if not fp.exists():
-                fp.write_text(r.text, "utf-8")
+    origin = ""
+    if not reporter:
+        reporter, origin = fetch_origin_reporter(session, soup)   # 네이버에 기자명이 없으면 언론사 원문에서
+    _debug_sample(oid, aid, soup, r.text, reporter, origin)
     return pub, reporter
 
 
 def resolve_meta(session, keys, cache, workers):
     """keys: [(oid, aid)] → 캐시에 없는 것만 병렬 조회해서 cache 갱신"""
     # 캐시에 없거나, 예전 방식으로 기자명을 못 찾은 항목(버전 표시 없음)은 다시 조회
-    todo = [k for k in keys if (cache.get(f"{k[0]}_{k[1]}") or [None, None, 0])[-1] != 4]
+    todo = [k for k in keys if (cache.get(f"{k[0]}_{k[1]}") or [None, None, 0])[-1] != 5]
     if not todo:
         return 0
     fails = 0
@@ -232,7 +278,7 @@ def resolve_meta(session, keys, cache, workers):
                 pub, rep = f.result()
                 if pub:
                     with _cache_lock:
-                        cache[f"{oid}_{aid}"] = [pub, rep, 4]
+                        cache[f"{oid}_{aid}"] = [pub, rep, 5]
                 else:
                     fails += 1
             except Exception:
@@ -428,16 +474,6 @@ def main():
 
     session = make_session(workers)
     cache = load_cache()
-    if os.environ.get("DEBUG_RAW"):
-        # 임시 점검: 기사 페이지가 쓰는 네이버 스크립트를 저장 (기자 이름표를 불러오는 주소 확인용)
-        try:
-            html = session.get("https://n.news.naver.com/mnews/article/346/0000116948", timeout=15).text
-            for src in sorted(set(re.findall(r'https://static-nnews\.pstatic\.net/js/min/[^"\']+\.js', html))):
-                js = session.get(src, timeout=20).text
-                (DATA / "cache" / ("js_" + src.rsplit("/", 1)[-1])).write_text(js, "utf-8")
-                log("saved", src, len(js))
-        except Exception as e:
-            log("debug js fail", e)
     status = {"at": now_kst().isoformat(timespec="seconds"), "range": [days[0], days[-1]]}
     touched = set()
     try:
