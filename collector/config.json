@@ -1,5 +1,5 @@
 {
-  "_설명": "매체 코드(oid)는 네이버 언론사 코드입니다. ranking_media = 랭킹 수집 매체, publish_media = 전체 발행목록 수집 매체, our_media = 우리 매체(대시보드에서 강조). ranking_all = 네이버 언론사 목록(data/media_catalog.json)에서 랭킹이 있는 매체는 모두 랭킹 수집, count_all = 나머지 모든 매체는 발행 건수만 빠르게 집계. 대시보드 기본 표시는 처음 목록(ranking_media/publish_media).",
+  "_설명": "매체 코드(oid)는 네이버 언론사 코드입니다. ranking_media = 랭킹 수집 매체, publish_media = 전체 발행목록 수집 매체, our_media = 우리 매체(대시보드에서 강조). ranking_all = 네이버 언론사 목록(data/media_catalog.json)에서 랭킹이 있는 매체는 모두 랭킹 수집, count_all = 나머지 모든 매체는 발행 건수만 빠르게 집계. 대시보드 기본 표시는 처음 목록(ranking_media/publish_media). retention_months = 데이터 보관 개월 수(지나면 오래된 것부터 자동 삭제).",
   "media": {
     "346": "헬스조선",
     "296": "코메디닷컴",
@@ -83,5 +83,6 @@
   "ranking_size": 20,
   "keep_cache_days": 60,
   "ranking_all": true,
-  "count_all": true
+  "count_all": true,
+  "retention_months": 24
 }

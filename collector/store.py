@@ -385,6 +385,7 @@ def build_meta(status=None):
     if cat:
         meta["naver_catalog"] = dict(cat.get("counts", {}), updated_at=cat.get("updated_at"))
     meta.update({
+        "retention_months": CONFIG.get("retention_months", 24),
         "updated_at": now_kst().isoformat(timespec="seconds"),
         "media": CONFIG["media"],
         "ranking_media": CONFIG["ranking_media"],
@@ -418,3 +419,33 @@ def rebuild(days):
     """변경된 날짜들이 속한 월 요약 + meta 재생성"""
     for ym in sorted({d[:7] for d in days}):
         build_month(ym)
+
+
+# ── 보관 기간 (기본 24개월) ─────────────────────────────────
+def prune(months=None):
+    """보관 기간(config retention_months, 기본 24개월)보다 오래된 데이터를 오래된 것부터 삭제.
+    일별 파일(랭킹·발행·건수·스냅샷·검색어)은 기준일 이전 날짜, 월별 파일(요약·접속/활동 기록)은 기준월 이전 달을 지운다.
+    기준월 요약은 남은 날짜로 다시 만든다. 지운 파일 수를 돌려준다."""
+    months = months or CONFIG.get("retention_months", 24)
+    t = today_kst()
+    y, m = t.year, t.month - months
+    while m <= 0:
+        m += 12
+        y -= 1
+    import calendar
+    cutoff = dt.date(y, m, min(t.day, calendar.monthrange(y, m)[1])).isoformat()  # 이 날짜부터 보관
+    cut_ym = cutoff[:7]
+    removed = 0
+    for sub in ("ranking", "articles", "counts", "snap", "search"):
+        for p in (DATA / sub).glob("*.json"):
+            if re.fullmatch(r"\d{4}-\d{2}-\d{2}", p.stem) and p.stem < cutoff:
+                p.unlink()
+                removed += 1
+    for sub in ("summary", "logs/access", "logs/activity"):
+        for p in (DATA / sub).glob("*.json"):
+            if re.fullmatch(r"\d{4}-\d{2}", p.stem) and p.stem < cut_ym:
+                p.unlink()
+                removed += 1
+    if removed and (DATA / "summary" / f"{cut_ym}.json").exists():
+        build_month(cut_ym)
+    return {"cutoff": cutoff, "removed": removed}

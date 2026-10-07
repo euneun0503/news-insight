@@ -565,6 +565,10 @@ def main():
     status["elapsed"] = round(time.time() - t0, 1)
     if not a.no_build:
         store.rebuild(touched)
+    try:
+        status["prune"] = store.prune()   # 보관 기간(24개월) 지난 데이터 순차 삭제
+    except Exception as e:
+        err(f"오래된 데이터 정리 실패: {e}")
     store.build_meta(status)
     log(f"\n✅ 완료 ({status['elapsed']}초, 경고 {len(_errors)}건)")
 

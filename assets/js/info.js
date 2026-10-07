@@ -71,6 +71,7 @@ function render(key) {
     C.short,
     M.ranking_media?.length && `랭킹 수집 매체: ${M.ranking_media.map(mediaName).join(", ")}`,
     M.publish_media?.length && `발행목록 수집 매체: ${M.publish_media.map(mediaName).join(", ")}`,
+    `보관 기간: 최근 ${M.retention_months || 24}개월 (지난 데이터는 오래된 것부터 자동 삭제)`,
   ].filter(Boolean);
   return `<div class="info-pop-head"><b>${esc(d.t)}</b><button type="button" class="info-close" aria-label="닫기">✕</button></div>
     <div class="info-sec"><div class="info-lab">출처</div><ul>${srcHtml}</ul></div>
