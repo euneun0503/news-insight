@@ -335,6 +335,7 @@ def build_meta(status=None):
         "ranking_media": CONFIG["ranking_media"],
         "publish_media": CONFIG["publish_media"],
         "our_media": CONFIG.get("our_media"),
+        "compare_media": CONFIG.get("compare_media", "296"),
         "ranking_size": CONFIG.get("ranking_size", 20),
         "naver_total": CONFIG.get("naver_total"),
         "google_anchor": CONFIG.get("google_anchor", "날씨"),

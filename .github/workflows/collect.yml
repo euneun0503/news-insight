@@ -3,8 +3,9 @@ name: 뉴스 수집
 on:
   # 9월 보충 수집이 끝날 때까지 잠시 멈춤 (끝나면 다시 켬)
   # schedule:
-  #   # 매시간 10분: 랭킹 조회수 스냅샷(시간대별 조회수용). 3시간마다 발행목록·검색어까지 전체 수집
+  #   # 30분마다(매시 10분·40분): 오늘 랭킹 조회수 + 오늘 발행목록. 3시간마다(10분 회차) 어제치 재확인·검색어까지 전체 수집
   #   - cron: "10 * * * *"
+  #   - cron: "40 * * * *"
   workflow_dispatch:
     inputs:
       start:
@@ -57,8 +58,9 @@ jobs:
         run: |
           ARGS=""
           H=$(TZ=Asia/Seoul date +%-H)
-          if [[ "${{ github.event_name }}" == "schedule" && $((H % 3)) -ne 0 && $H -ge 3 ]]; then
-            ARGS="--only ranking --start $(TZ=Asia/Seoul date +%F)"   # 가벼운 매시간 수집: 오늘 랭킹만
+          FULL=0; [[ "${{ github.event.schedule }}" == "10 * * * *" && ( $((H % 3)) -eq 0 || $H -lt 3 ) ]] && FULL=1
+          if [[ "${{ github.event_name }}" == "schedule" && $FULL -eq 0 ]]; then
+            ARGS="--start $(TZ=Asia/Seoul date +%F)"   # 가벼운 30분 수집: 오늘 랭킹 + 오늘 발행목록
             echo "LIGHT=1" >> "$GITHUB_ENV"
           fi
           [[ "$IN_START" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && ARGS="$ARGS --start $IN_START"
