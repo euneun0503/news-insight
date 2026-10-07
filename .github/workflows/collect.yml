@@ -25,6 +25,10 @@ on:
         description: "매체코드 쉼표구분 (예: 346) / 비우면 설정 전체"
         required: false
         default: ""
+      mode:
+        description: "light(오늘만) / full(어제~오늘 전체) — 자동 수집 타이머가 사용"
+        required: false
+        default: ""
       lane:
         description: "급한 보충 수집을 다른 수집과 동시에 돌릴 때 이름 (예: fast) / 비우면 차례대로"
         required: false
@@ -67,7 +71,8 @@ jobs:
           H=$(TZ=Asia/Seoul date +%-H)
           FULL=0; [[ "${{ github.event.schedule }}" == "10 * * * *" && ( $((H % 3)) -eq 0 || $H -lt 3 ) ]] && FULL=1
           [[ "${{ github.event.schedule }}" == "30 22 * * *" ]] && FULL=1   # 매일 7:30 강제 전체 수집
-          if [[ "${{ github.event_name }}" == "schedule" && $FULL -eq 0 ]]; then
+          [[ "${{ github.event.inputs.mode }}" == "full" ]] && FULL=1
+          if [[ ( "${{ github.event_name }}" == "schedule" && $FULL -eq 0 ) || "${{ github.event.inputs.mode }}" == "light" ]]; then
             ARGS="--start $(TZ=Asia/Seoul date +%F)"   # 가벼운 30분 수집: 오늘 랭킹 + 오늘 발행목록
             echo "LIGHT=1" >> "$GITHUB_ENV"
           fi
