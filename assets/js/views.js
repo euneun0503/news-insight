@@ -1,5 +1,5 @@
 // 분석 화면들
-import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR } from "./util.js";
+import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, dayKind, DAY_COLOR, holiday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR } from "./util.js";
 import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel } from "./data.js";
 import { openMediaSettings } from "./mediasel.js";
 import { lineChart, barChart, comboChart, dayLabels } from "./charts.js";
@@ -151,6 +151,7 @@ export async function dashboard(el, R, ctx) {
     <div class="card" style="display:flex;flex-direction:column"><div class="card-head"><div><h3>일별 추이 ${info("trend")}</h3><div class="sub" id="trendSub"></div></div>
       <div class="tools"><select class="input" id="trendMedia"></select><div class="seg" id="trendSeg"><button data-m="both" class="on">발행 + 조회수</button><button data-m="pub">발행 기사수</button><button data-m="views">랭킹 조회수</button></div></div></div>
       <div class="chart-box lg" style="flex:1;min-height:340px"><canvas></canvas></div>
+      <div id="trendTbl"></div>
       <div class="form-hint" style="margin-top:6px">날짜 아래 요일 표시 · <b style="color:#dc2626">빨강</b> 일요일·공휴일(대체공휴일 포함, ‘휴’) · <b style="color:#2563eb">파랑</b> 토요일</div></div>
     <div class="card"><div class="card-head"><div><h3>매체별 랭킹 조회수 ${info("mediaRank")}</h3><div class="sub">상위 20건 조회수 합 · 증감은 직전 동일기간 대비 하루 평균 기준</div></div></div>
       <div id="mediaRank"></div></div>
@@ -174,6 +175,24 @@ export async function dashboard(el, R, ctx) {
       trendChart = comboChart(trendCanvas, dayLabels(R.days),
         { label: "발행 기사수", data: R.days.map((d) => A.pubDay[d]?.[oid] ?? null), backgroundColor: mediaColor(oid) + "99" },
         { label: "랭킹 조회수", data: R.days.map((d) => A.rankDay[d]?.[oid] ?? null), borderColor: "#0f2341", backgroundColor: "#0f2341", spanGaps: false }, { days: R.days });
+      return;
+    }
+    $("#trendTbl", row).innerHTML = "";
+    if (tMode === "pub") {
+      // 발행 기사수: 헬스조선 vs 코메디닷컴 비교 (막대 + 날짜별 표)
+      const two = [our, cmp];
+      sub.textContent = `${mediaName(our)} vs ${mediaName(cmp)} · 날짜별 발행 기사수`;
+      const val = (d, o) => A.pubDay[d]?.[o] ?? null;
+      trendChart = barChart(trendCanvas, dayLabels(R.days), two.map((o) => ({ label: mediaName(o), data: R.days.map((d) => val(d, o)), backgroundColor: o === our ? OUR_COLOR : "#2563eb", maxBarThickness: 16 })), { days: R.days });
+      const tot = two.map((o) => R.days.reduce((t, d) => t + (val(d, o) || 0), 0));
+      const nd = two.map((o) => R.days.filter((d) => val(d, o) != null).length);
+      const diff = (a, b) => (a == null || b == null ? "-" : `<span style="color:${a - b > 0 ? "#c2410c" : a - b < 0 ? "#2563eb" : "inherit"}">${a - b > 0 ? "+" : ""}${fmt(a - b)}</span>`);
+      const dayCell = (d) => { const k = dayKind(d); return `<span style="color:${k ? DAY_COLOR[k] : "inherit"}" title="${esc(holiday(d))}">${mmdd(d)}(${weekday(d)}${holiday(d) ? "·휴" : ""})</span>`; };
+      $("#trendTbl", row).innerHTML = `<div class="table-wrap trend-tbl"><table class="t"><thead><tr><th>날짜</th>${two.map((o) => `<th class="r">${esc(mediaName(o))}</th>`).join("")}<th class="r">차이</th></tr></thead><tbody>
+        <tr class="ours"><td><b>합계</b> <span class="form-hint">${R.n}일</span></td>${tot.map((t, i) => `<td class="r num"><b>${nd[i] ? fmt(t) : "-"}</b></td>`).join("")}<td class="r num">${nd[0] && nd[0] === nd[1] ? diff(tot[0], tot[1]) : `<span class="form-hint" title="수집된 날 수가 달라 합계 차이는 표시하지 않음">${nd[0]}일·${nd[1]}일 수집</span>`}</td></tr>
+        <tr><td>일평균</td>${tot.map((t, i) => `<td class="r num">${nd[i] ? fmt1(t / nd[i]) : "-"}</td>`).join("")}<td class="r num">${nd[0] && nd[1] ? fmt1(tot[0] / nd[0] - tot[1] / nd[1]) : "-"}</td></tr>
+        ${[...R.days].reverse().map((d) => `<tr><td style="white-space:nowrap">${dayCell(d)}</td>${two.map((o) => `<td class="r num">${val(d, o) != null ? fmt(val(d, o)) : '<span class="form-hint">수집 전</span>'}</td>`).join("")}<td class="r num">${diff(val(d, our), val(d, cmp))}</td></tr>`).join("")}
+        </tbody></table></div><div class="form-hint" style="margin-top:4px">차이 = ${esc(mediaName(our))} − ${esc(mediaName(cmp))}</div>`;
       return;
     }
     sub.textContent = R.n === 1 ? "하루만 선택됨 (기간을 넓히면 추이가 보입니다)" : "매체별 · 범례를 눌러 매체를 숨길 수 있습니다";
