@@ -478,7 +478,7 @@ export async function media(el, R, ctx) {
   const pubMedia = mediaListFor(A, "pub");
   const charts = h(`<div class="grid g-2">
     <div class="card"><div class="card-head"><div><h3>랭킹 조회수 vs 발행량 ${info("mediaCombo")}</h3><div class="sub">막대: 랭킹 조회수 · 선: 발행 기사수 (둘 다 수집되는 매체)</div></div></div>${canvas("lg")}</div>
-    <div class="card"><div class="card-head"><div><h3>요일별 평균 랭킹 조회수 ${info("weekday")}</h3><div class="sub">매체별 · 하루 평균</div></div></div>${canvas("lg")}</div>
+    <div class="card"><div class="card-head"><div><h3>요일별 랭킹 조회수 합 (하루 평균) ${info("weekday")}</h3><div class="sub" id="wdSub">매체별 · 하루 랭킹 조회수 합(상위 20건)을 요일마다 평균</div></div></div>${canvas("lg")}</div>
   </div>`);
   el.append(charts);
   const both = rows.filter((r) => r.views != null).sort((a, b) => b.views - a.views);
@@ -496,7 +496,9 @@ export async function media(el, R, ctx) {
     }
     return { label: mediaName(oid), data: WD_ORDER.map((w) => (cnt[w] ? sum[w] / cnt[w] : null)), backgroundColor: mediaColor(oid) };
   });
-  barChart(c2, WD_ORDER.map((w) => WD_NAME[w]), wdDs, { plugins: { legend: { display: false }, tooltip: { backgroundColor: "#0f2341", callbacks: { label: (c) => ` ${c.dataset.label}: ${fmt(c.raw)}` } } } });
+  const wdN = WD_ORDER.map((w) => R.days.filter((d) => new Date(d + "T00:00:00Z").getUTCDay() === w && A.rankDay[d] && Object.keys(A.rankDay[d]).length).length);
+  if (wdN.every((n) => n <= 1)) $("#wdSub", charts).textContent = "매체별 · 하루 랭킹 조회수 합(상위 20건) · 기간이 짧아 요일마다 하루씩이라 그날 합계와 같습니다 (기간을 늘리면 요일별 평균이 됩니다)";
+  barChart(c2, WD_ORDER.map((w, i) => [WD_NAME[w], `${wdN[i]}일`]), wdDs, { plugins: { legend: { display: false }, tooltip: { backgroundColor: "#0f2341", callbacks: { label: (c) => ` ${c.dataset.label}: ${fmt(c.raw)}` } } } });
 
   // 발행 시간대 히트맵
   if (pubMedia.length) {
@@ -674,7 +676,7 @@ export async function insights(el, R, ctx) {
   if (bestHours.length) tips.push(["⏰", `랭킹 기사의 평균 조회수는 <b>${bestHours.map(([i]) => `${i}시`).join(", ")}</b> 발행 기사에서 가장 높았습니다 (각 ${bestHours.map(([, v]) => short(v)).join(" / ")}).`]);
   if (busiest.length && busiest[0][1]) tips.push(["📰", `전체 매체의 발행이 몰리는 시간은 <b>${busiest.map(([i]) => `${i}시`).join(", ")}</b>입니다. 이 시간대는 경쟁이 치열합니다.`]);
   if (ourPeak.length && ourH.some((v) => v)) tips.push(["🏠", `${esc(mediaName(M.our_media))}은(는) 주로 <b>${ourPeak.map((i) => `${i}시`).join(", ")}</b>에 발행했습니다.${bestHours.length && !ourPeak.includes(bestHours[0][0]) ? ` 조회수가 높은 ${bestHours[0][0]}시대 발행을 늘려보는 것도 방법입니다.` : ""}`]);
-  if (bestWd) tips.push(["📅", `요일별로는 <b>${WD_NAME[bestWd[0]]}요일</b>의 하루 평균 랭킹 조회수가 가장 높았습니다.`]);
+  if (bestWd) tips.push(["📅", `요일별로는 <b>${WD_NAME[bestWd[0]]}요일</b>의 하루 랭킹 조회수 합(평균)이 가장 높았습니다.`]);
   const strong = pat.filter((p) => p.lift != null && p.n >= 5).sort((a, b) => b.lift - a.lift);
   if (strong[0] && strong[0].lift > 0.05) tips.push(["✍️", `‘${strong[0].name}’ 제목의 랭킹 기사는 그렇지 않은 기사보다 평균 조회수가 <b>${pct(strong[0].lift, 0)}</b> 높았습니다.`]);
   const weak = strong[strong.length - 1];
@@ -686,12 +688,12 @@ export async function insights(el, R, ctx) {
 
   const charts = h(`<div class="grid g-2">
     <div class="card"><div class="card-head"><div><h3>발행 시간대별 반응 ${info("insightHour")}</h3><div class="sub">막대: 전체 매체 발행 기사수 · 선: 그 시간에 발행된 랭킹 기사의 평균 조회수${avgByHour.every((v) => v == null) ? '<br><span style="color:#b45309">랭킹 기사의 입력시각이 아직 없어 선은 표시되지 않습니다 (엑셀에서 가져온 자료는 ‘기자명 채우기’를 하면 입력시각도 함께 채워집니다)</span>' : ""}</div></div></div>${canvas("lg")}</div>
-    <div class="card"><div class="card-head"><div><h3>요일별 반응 ${info("insightWeekday")}</h3><div class="sub">막대: 하루 평균 발행 · 선: 하루 평균 랭킹 조회수</div></div></div>${canvas("lg")}</div>
+    <div class="card"><div class="card-head"><div><h3>요일별 반응 ${info("insightWeekday")}</h3><div class="sub">막대: 하루 평균 발행 기사수 · 선: 하루 랭킹 조회수 합의 요일 평균</div></div></div>${canvas("lg")}</div>
   </div>`);
   el.append(charts);
   const [c1, c2] = $$("canvas", charts);
   comboChart(c1, Array.from({ length: 24 }, (_, i) => `${i}시`), { label: "발행 기사수", data: pubHourAll, backgroundColor: "#bfd3fb" }, { label: "랭킹 평균 조회수", data: avgByHour, borderColor: OUR_COLOR, backgroundColor: OUR_COLOR, spanGaps: true });
-  comboChart(c2, WD_ORDER.map((w) => WD_NAME[w]), { label: "하루 평균 발행", data: wdPubAvg, backgroundColor: "#bfd3fb" }, { label: "하루 평균 랭킹 조회수", data: wdAvg, borderColor: OUR_COLOR, backgroundColor: OUR_COLOR, spanGaps: true });
+  comboChart(c2, WD_ORDER.map((w) => WD_NAME[w]), { label: "하루 평균 발행", data: wdPubAvg, backgroundColor: "#bfd3fb" }, { label: "하루 랭킹 조회수 합(평균)", data: wdAvg, borderColor: OUR_COLOR, backgroundColor: OUR_COLOR, spanGaps: true });
 
   const maxShare = Math.max(...pat.map((p) => Math.max(p.share, p.base || 0)), 0.01);
   // 독자가 읽은 시간대 (매시간 조회수 증가량)
