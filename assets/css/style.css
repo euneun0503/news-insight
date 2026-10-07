@@ -430,3 +430,7 @@ body.gated .topbar, body.gated .layout { display: none; }
 .grp-row:hover td, .grp-row.open td { background: #e8f7ee; }
 .grp-arrow { display: inline-block; width: 12px; color: #03a94d; }
 .grp-detail > td { background: #fff; padding: 6px 4px 12px !important; }
+
+.t td.one { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tr-t { table-layout: fixed; width: 100%; }
+.sr-panel table.t th, .sr-panel table.t td { padding-top: 9px; padding-bottom: 9px; }

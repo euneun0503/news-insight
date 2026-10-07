@@ -1037,7 +1037,7 @@ async function searchKeywords(el, R, ctx) {
           </div>
           <h4 class="kw-h">급상승 검색어 TOP 15 <span class="form-hint">구글이 알려주는 대략 검색량 (예: 20,000+)</span></h4><div class="chart-box lg"><canvas id="srG"></canvas></div>
           <h4 class="kw-h">급상승 중인데 우리 기간 기사가 없는 검색어 <span class="form-hint">선택 기간 발행 0건</span></h4>
-          ${trendNo.length ? `<table class="t"><thead><tr><th>검색어</th><th class="r">검색량</th><th>관련 뉴스</th></tr></thead><tbody>${trendNo.map((x) => `<tr><td><a href="${ctx.link("keywords", { k: x.title })}"><b>${esc(x.title)}</b></a></td><td class="r num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</td><td class="title">${x.news[0] && /^https?:/.test(x.news[0][1]) ? `<a href="${esc(x.news[0][1])}" target="_blank" rel="noopener">${esc(x.news[0][0])}</a>` : "-"}</td></tr>`).join("")}</tbody></table>` : emptyBox("없음")}
+          ${trendNo.length ? `<table class="t tr-t"><colgroup><col style="width:34%"><col style="width:18%"><col></colgroup><thead><tr><th>검색어</th><th class="r">검색량</th><th>관련 뉴스</th></tr></thead><tbody>${trendNo.map((x) => `<tr><td class="one"><a href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.title)}"><b>${esc(x.title)}</b></a></td><td class="r num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</td><td class="one">${x.news[0] && /^https?:/.test(x.news[0][1]) ? `<a href="${esc(x.news[0][1])}" target="_blank" rel="noopener" title="${esc(x.news[0][0])}">${esc(x.news[0][0])}</a>` : '<span class="form-hint">-</span>'}</td></tr>`).join("")}</tbody></table>` : emptyBox("없음")}
         </section>
       </div></div>`);
     if (repEl) repEl.replaceWith(rep); else el.append(rep);
@@ -1137,9 +1137,9 @@ async function searchKeywords(el, R, ctx) {
     ${rows.map(([x, i]) => {
       const sp = supply(x.title);
       const n = x.news[0];
-      return `<tr><td class="c num">${i + 1}</td><td><a href="${ctx.link("keywords", { k: x.title })}"><b>${esc(x.title)}</b></a></td>
+      return `<tr><td class="c num">${i + 1}</td><td class="one" style="max-width:220px"><a href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.title)}"><b>${esc(x.title)}</b></a></td>
         <td class="r num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</td><td class="c num">${x.days.length}일</td><td class="num">${mmdd(x.days[x.days.length - 1])}</td>
-        <td class="title">${n && /^https?:/.test(n[1]) ? `<a href="${esc(n[1])}" target="_blank" rel="noopener">${esc(n[0])}</a> <span class="form-hint">${esc(n[2])}</span>` : "-"}</td>
+        <td class="one" style="max-width:420px">${n && /^https?:/.test(n[1]) ? `<a href="${esc(n[1])}" target="_blank" rel="noopener" title="${esc(n[0])}">${esc(n[0])}</a> <span class="form-hint">${esc(n[2])}</span>` : '<span class="form-hint">-</span>'}</td>
         <td class="r num">${sp.pub ? fmt(sp.pub) : '<span class="tag gray">0</span>'}</td></tr>`;
     }).join("")}</tbody></table></div>`, { per: 20 });
 }
