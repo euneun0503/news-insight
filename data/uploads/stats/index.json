@@ -1,6 +1,24 @@
 {
- "updated_at": "2026-10-07T12:26:19.979Z",
+ "updated_at": "2026-10-07T12:26:27.395Z",
  "uploads": [
+  {
+   "id": "20261007-k5pscq",
+   "name": "네이버_랭킹뉴스_20261004_20261004_232124.xlsx",
+   "at": "2026-10-07T12:26:24.091Z",
+   "by": "마스터(health)",
+   "kind": "ranking",
+   "days": [
+    "2026-10-04"
+   ],
+   "media": 10,
+   "raw": "data/uploads/stats/raw/20261007-k5pscq.xlsx",
+   "size": 28687,
+   "preview": {
+    "fill": 0,
+    "same": 10,
+    "diff": 0
+   }
+  },
   {
    "id": "20261007-1muvh3",
    "name": "네이버_랭킹뉴스_20261004_20261004_232124.xlsx",
