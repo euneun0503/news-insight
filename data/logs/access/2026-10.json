@@ -8,7 +8,16 @@
    "ev": "로그인",
    "detail": "처음 설정",
    "ua": "Chrome · Windows"
+  },
+  {
+   "t": "2026-10-07T03:26:04.569Z",
+   "id": "health",
+   "name": "마스터",
+   "role": "master",
+   "ev": "로그인",
+   "detail": "",
+   "ua": "Edge · Windows"
   }
  ],
- "updated_at": "2026-10-07T03:22:01.500Z"
+ "updated_at": "2026-10-07T03:26:05.040Z"
 }
