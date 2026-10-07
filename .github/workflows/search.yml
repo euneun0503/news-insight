@@ -11,6 +11,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: search
@@ -47,3 +49,26 @@ jobs:
             sleep $((i * 5))
           done
           exit 1
+
+  deploy:
+    needs: search
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - name: 새 버전이 바로 보이도록 (브라우저 캐시 무효화)
+        run: |
+          V=${GITHUB_SHA::7}-$(date +%s)
+          sed -i -E "s#(from \"\./[a-z]+\.js)\"#\1?v=$V\"#g" assets/js/*.js
+          sed -i -E "s#assets/js/main\.js\"#assets/js/main.js?v=$V\"#; s#assets/css/style\.css\"#assets/css/style.css?v=$V\"#" index.html
+          grep -c "?v=$V" index.html assets/js/main.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
