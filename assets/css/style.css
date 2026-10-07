@@ -301,3 +301,4 @@ table.t { overflow-wrap: normal; }
   .dates input { width: 132px; }
   .status-pill { max-width: 40vw; overflow: hidden; }
 }
+.pager { flex-wrap: wrap; }

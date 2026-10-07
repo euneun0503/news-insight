@@ -26,10 +26,18 @@ function noData(R) {
   return `<div class="card">${emptyBox(`선택한 기간(${R.s} ~ ${R.e})에 수집된 데이터가 없습니다.<br>관리자 메뉴에서 수집을 실행하거나 기간을 바꿔 조회해 주세요.`)}</div>`;
 }
 
+// 페이지 번호 탭
+function pagerHtml(page, pages, total) {
+  const nums = [];
+  for (let i = 1; i <= pages; i++) if (i === 1 || i === pages || Math.abs(i - page) <= 2) nums.push(i); else if (nums[nums.length - 1] !== "…") nums.push("…");
+  return `<div class="pager">${page > 1 ? `<button class="btn sm pg-num" data-p="${page - 1}">이전</button>` : ""}${nums.map((n) => (n === "…" ? '<span class="form-hint">…</span>' : `<button class="btn sm pg-num ${n === page ? "primary" : ""}" data-p="${n}">${n}</button>`)).join("")}${page < pages ? `<button class="btn sm pg-num" data-p="${page + 1}">다음</button>` : ""}<span class="form-hint" style="margin-left:6px">총 ${total.toLocaleString("ko-KR")}명</span></div>`;
+}
+
 // 정렬 가능한 표
-function sortableTable(el, cols, rows, { sort, desc = true, limit, rowClass } = {}) {
+function sortableTable(el, cols, rows, { sort, desc = true, limit, rowClass, pageSize, rankCol } = {}) {
   let key = sort || cols.find((c) => c.sort)?.key;
   let dir = desc ? -1 : 1;
+  let page = 1;
   function render() {
     const col = cols.find((c) => c.key === key);
     const sorted = [...rows].sort((a, b) => {
@@ -38,16 +46,22 @@ function sortableTable(el, cols, rows, { sort, desc = true, limit, rowClass } = 
       if (typeof va === "string") return dir * va.localeCompare(vb, "ko");
       return dir * ((va ?? -Infinity) - (vb ?? -Infinity));
     });
-    const shown = limit ? sorted.slice(0, limit) : sorted;
-    el.innerHTML = `<div class="table-wrap"><table class="t"><thead><tr>${cols
+    const pages = pageSize ? Math.max(1, Math.ceil(sorted.length / pageSize)) : 1;
+    page = Math.min(page, pages);
+    const off = pageSize ? (page - 1) * pageSize : 0;
+    const shown = pageSize ? sorted.slice(off, off + pageSize) : limit ? sorted.slice(0, limit) : sorted;
+    const cols2 = rankCol ? [{ key: "_n", label: "#", cls: "c num", sort: false, html: (r, i) => off + i + 1 }, ...cols] : cols;
+    el.innerHTML = `<div class="table-wrap"><table class="t"><thead><tr>${cols2
       .map((c) => `<th class="${c.cls || ""} ${c.sort !== false ? "sortable" : ""} ${c.key === key ? "sorted" : ""}" data-k="${c.key}">${c.label}</th>`)
       .join("")}</tr></thead><tbody>${shown
-      .map((r, i) => `<tr class="${rowClass ? rowClass(r) : ""}">${cols.map((c) => `<td class="${c.cls || ""}">${c.html ? c.html(r, i) : esc(r[c.key])}</td>`).join("")}</tr>`)
-      .join("") || `<tr><td colspan="${cols.length}">${emptyBox("데이터가 없습니다.")}</td></tr>`}</tbody></table></div>`;
+      .map((r, i) => `<tr class="${rowClass ? rowClass(r) : ""}">${cols2.map((c) => `<td class="${c.cls || ""}">${c.html ? c.html(r, i) : esc(r[c.key])}</td>`).join("")}</tr>`)
+      .join("") || `<tr><td colspan="${cols2.length}">${emptyBox("데이터가 없습니다.")}</td></tr>`}</tbody></table></div>${pages > 1 ? pagerHtml(page, pages, sorted.length) : ""}`;
+    $$(".pg-num", el).forEach((b) => b.addEventListener("click", () => { page = +b.dataset.p; render(); el.scrollIntoView({ block: "start", behavior: "smooth" }); }));
     $$("th.sortable", el).forEach((th) =>
       th.addEventListener("click", () => {
         if (key === th.dataset.k) dir *= -1;
         else { key = th.dataset.k; dir = -1; }
+        page = 1;
         render();
       })
     );
@@ -740,11 +754,13 @@ export async function reporters(el, R, ctx) {
   const medias = [...new Set(rows.map((r) => r.oid))].sort((a, b) => (a === M.our_media ? -1 : b === M.our_media ? 1 : mediaName(a).localeCompare(mediaName(b), "ko")));
   const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 랭킹 진입 ÷ 발행 기사 (발행목록을 수집하는 매체만) · 공동 바이라인은 각 기자에게 모두 반영 · 취합 조회수 합계 = 랭킹(매체별 상위 20건)에 오른 기사 조회수의 합</div></div>
     <div class="tools"><select class="input" id="rm"><option value="">전체 매체</option>${medias.map((o) => `<option value="${o}">${esc(mediaName(o))}</option>`).join("")}</select>
-    <input class="input" id="rq" placeholder="기자명 검색" style="width:130px"><button class="btn sm" id="rx">엑셀 저장</button></div></div><div id="rt"></div></div>`);
+    <input class="input" id="rq" placeholder="기자명 검색" style="width:130px"><div class="seg" id="rsize"><button data-n="30" class="on">30명씩</button><button data-n="100">100명씩</button></div><button class="btn sm" id="rx">엑셀 저장</button></div></div><div id="rt"></div></div>`);
   el.append(card);
   const detail = h(`<div id="repDetail"></div>`);
   el.append(detail);
   let cur = rows;
+  let pageSize = 30;
+  $$("#rsize button", card).forEach((b) => b.addEventListener("click", () => { pageSize = +b.dataset.n; $$("#rsize button", card).forEach((x) => x.classList.toggle("on", x === b)); draw(); }));
   const draw = () => {
     const m = $("#rm", card).value, q = $("#rq", card).value.trim();
     cur = rows.filter((r) => (!m || r.oid === m) && (!q || r.name.includes(q)));
@@ -758,7 +774,7 @@ export async function reporters(el, R, ctx) {
       { key: "bestViews", label: "최고 조회수", cls: "r num", html: (r) => (r.best ? fmt(r.best.views) : "-") },
       { key: "rate", label: "진입률", cls: "r num", html: (r) => (r.rate == null ? "-" : pct(r.rate)) },
       { key: "best", label: "최고 조회 기사", sort: false, html: (r) => (r.best ? `<a href="${articleUrl(r.best.oid, r.best.aid)}" target="_blank" rel="noopener">${esc(r.best.title.slice(0, 34))}${r.best.title.length > 34 ? "…" : ""}</a> <span class="form-hint num">${short(r.best.views)}</span>` : "-") },
-    ], cur, { sort: rows.some((r) => r.viewN) ? "views" : "pub", limit: 400, rowClass: (r) => (isOur(r.oid) ? "ours" : "") });
+    ], cur, { sort: rows.some((r) => r.viewN) ? "views" : "pub", pageSize, rankCol: true, rowClass: (r) => (isOur(r.oid) ? "ours" : "") });
     $$("a[data-rep]", card).forEach((a) => a.addEventListener("click", () => openRep(a.dataset.rep)));
   };
   function openRep(key) {
