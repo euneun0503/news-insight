@@ -140,7 +140,7 @@ export async function dashboard(el, R, ctx) {
     <div class="card kpi"><div class="label">랭킹 조회수 합 ${info("rankViews")}</div>
       <div class="value num">${short(A.rankViews)}<span title="${prevLabel}">${delta(A.rankViews / (A.rankDayCount || 1), P.rankDayCount ? P.rankViews / P.rankDayCount : null)}</span></div>
       <div class="meta">조회수 공개 ${rankMedia.length}개 매체 × 상위 ${M.ranking_size || 20}건 합계</div>
-      <div class="meta" style="margin-top:4px;line-height:1.5">포함: ${nameList(rankMedia)}${A.noView.size ? `<br>제외(조회수 미공개): ${nameList([...A.noView])}` : ""}</div></div>
+      <div class="meta" style="margin-top:4px;line-height:1.5">포함: ${nameList(rankMedia)}</div></div>
     <div class="card kpi"><div class="label">${esc(mediaName(our))} 랭킹 조회수 ${info("ourViews")}</div>
       <div class="value orange num">${ourRank ? short(ourRank.views) : "-"}<span title="${prevLabel}">${delta(ourRank ? ourRank.views / ourRank.days : null, P.rank[our] ? P.rank[our].views / P.rank[our].days : null)}</span></div>
       <div class="meta">${ourRank ? `점유율 ${pct(ourRank.views / A.rankViews)} · ${rankMedia.length}개 중 <b>${ourPos}위</b>` : "랭킹 데이터 없음"}</div></div>
