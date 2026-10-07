@@ -1,6 +1,6 @@
 // 분석 화면들
 import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, dayKind, DAY_COLOR, holiday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR } from "./util.js";
-import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel, Range } from "./data.js";
+import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel, Range, loadRankingDays } from "./data.js";
 import { openMediaSettings } from "./mediasel.js";
 import { lineChart, barChart, comboChart, dayLabels } from "./charts.js";
 import { boardTypeLabel, activeNotices } from "./board.js";
@@ -782,6 +782,10 @@ export async function reporters(el, R, ctx) {
   const loading = h('<div class="card"><div class="loading">기자별 기사를 모으는 중…</div></div>');
   el.append(loading);
   const [rk, ar] = await Promise.all([R.ranking(), R.articles()]);
+  // 기간 마지막 날 발행 기사가 다음 날 랭킹에 오르는 경우까지 보려고, 기간 뒤 2일 랭킹을 진입률 계산에만 추가로 읽음
+  const yd = addDaysISO(kstTodayISO(), -1);
+  const extraDays = [1, 2].map((n) => addDaysISO(R.e, n)).filter((d) => d <= yd && (M.ranking_days || []).includes(d));
+  const rkAfter = rk && extraDays.length ? await loadRankingDays(extraDays) : [];
   loading.remove();
   // 적용 매체: 매체 설정에서 고른 매체 중 기자명을 확인하는 매체 (설정을 바꾸면 자동 반영)
   {
@@ -800,7 +804,7 @@ export async function reporters(el, R, ctx) {
   const map = new Map();
   const get = (name, oid) => {
     const key = name + "|" + oid;
-    if (!map.has(key)) map.set(key, { name, oid, mname: mediaName(oid), pub: 0, rank: 0, rankDays: 0, top1: 0, top3: 0, views: 0, viewN: 0, best: null, rkItems: [], pubItems: [], pubSet: new Set(), rankSet: new Set() });
+    if (!map.has(key)) map.set(key, { name, oid, mname: mediaName(oid), pub: 0, rank: 0, rankDays: 0, top1: 0, top3: 0, views: 0, viewN: 0, best: null, rkItems: [], pubItems: [], pubSet: new Set(), rankSet: new Set(), enterSet: new Set() });
     return map.get(key);
   };
   // 매체 이름이 기자명 자리에 들어간 예전 수집분은 제외 (예: "서울신문", "헬스조선")
@@ -830,18 +834,22 @@ export async function reporters(el, R, ctx) {
     }
     // 랭킹에 오른 기사 중 기간 안에 발행됐는데 발행 목록에서 빠진 기사(공동 바이라인 표기 차이 등)도 발행 수에 더함
     const detail = new Set(ar.map((a) => a.oid)); // 이 기간 발행목록이 실제로 수집된 매체만
+    const arDay = new Set(ar.map((a) => a.oid + "|" + a.day)); // 기자명까지 확인한 발행목록이 있는 매체·날짜
     for (const r of map.values()) {
       if (!detail.has(r.oid)) continue;
-      for (const a of r.rkItems) { const pd = (a.pub || a.day || "").slice(0, 10); if (pd >= R.s && pd <= R.e) r.pubSet.add(a.oid + "_" + a.aid); }
+      for (const a of r.rkItems) { const pd = (a.pub || a.day || "").slice(0, 10); if (pd >= R.s && pd <= R.e && arDay.has(a.oid + "|" + pd)) r.pubSet.add(a.oid + "_" + a.aid); } // 그날 발행목록이 수집된 경우만
     }
     for (const r of map.values()) r.pub = r.pubSet.size;
+    // 기간 발행 기사 중 20위 안에 든 기사 (기간 안 랭킹 + 기간 뒤 2일 랭킹)
+    const ranked = new Set([...(rk || []), ...rkAfter].map((a) => a.oid + "_" + a.aid));
+    for (const r of map.values()) for (const k of r.pubSet) if (ranked.has(k)) r.enterSet.add(k);
   } else {
     // 31일 넘는 기간: 발행 수는 일별 요약값 사용
     for (const x of A.rep.values()) for (const n of split(x.name)) get(n, x.oid).pub += x.pub;
   }
   for (const r of map.values()) r.rank = r.rankSet.size; // 랭킹 진입 = 랭킹에 오른 서로 다른 기사 수 (같은 기사가 며칠 올라도 1건)
   if (!rk) for (const x of A.rep.values()) for (const n of split(x.name)) { const r = get(n, x.oid); r.rank += x.rank; r.views += x.views; r.viewN += x.rank; }
-  const rows = [...map.values()].map((r) => ({ ...r, bestViews: r.best ? r.best.views : null, avg: r.viewN ? r.views / r.viewN : null, rate: r.pub ? Math.min(1, r.rank / r.pub) : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
+  const rows = [...map.values()].map((r) => ({ ...r, bestViews: r.best ? r.best.views : null, avg: r.viewN ? r.views / r.viewN : null, enter: ar ? r.enterSet.size : null, rate: ar && r.pub ? r.enterSet.size / r.pub : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
 
   if (!rows.length) {
     el.append(h(`<div class="card">${emptyBox("이 기간 기사에는 아직 기자명이 없습니다.<br>엑셀에서 가져온 과거 자료는 기자명이 비어 있어요. 자동 수집으로 새로 받은 기사부터 기자명이 들어갑니다.")}</div>`));
@@ -871,7 +879,7 @@ export async function reporters(el, R, ctx) {
   </div></div>`));
 
   const medias = [...new Set(rows.map((r) => r.oid))].sort((a, b) => (a === M.our_media ? -1 : b === M.our_media ? 1 : mediaName(a).localeCompare(mediaName(b), "ko")));
-  const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 랭킹에 오른 기사 수 ÷ 발행 기사 수 (최고 100%, 발행목록을 수집하는 매체만) · 공동 기자 기사는 각 기자의 발행·랭킹에 모두 포함 · 취합 조회수 합계 = 랭킹(매체별 상위 20건)에 오른 기사 조회수의 합</div></div>
+  const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 기간 중 발행한 기사 가운데 매체 랭킹 20위 안에 든 기사 수 ÷ 기간 발행 기사 수 (최고 100%, 발행 다음 2일 랭킹까지 확인, 발행목록을 수집하는 매체만) · 공동 기자 기사는 각 기자의 발행·랭킹에 모두 포함 · 취합 조회수 합계 = 랭킹(매체별 상위 20건)에 오른 기사 조회수의 합</div></div>
     <div class="tools"><select class="input" id="rm"><option value="">전체 매체</option>${medias.map((o) => `<option value="${o}">${esc(mediaName(o))}</option>`).join("")}</select>
     <input class="input" id="rq" placeholder="기자명 검색" style="width:130px"><div class="seg" id="rsize"><button data-n="30" class="on">30명씩</button><button data-n="100">100명씩</button></div><button class="btn sm dl" id="rx">엑셀 저장</button></div></div><div id="rt"></div></div>`);
   el.append(card);
@@ -888,6 +896,7 @@ export async function reporters(el, R, ctx) {
       { key: "mname", label: "매체", html: (r) => chip(r.oid) },
       { key: "pub", label: "발행", cls: "r num", html: (r) => (r.pub ? fmt(r.pub) : "-") },
       { key: "rank", label: "랭킹 진입", cls: "r num", html: (r) => fmt(r.rank) },
+      { key: "enter", label: "발행 중 20위 진입", cls: "r num", html: (r) => (r.enter == null ? "-" : fmt(r.enter)) },
       { key: "top1", label: "1위", cls: "r num", html: (r) => (r.top1 ? `<span class="tag orange">${r.top1}</span>` : "-") },
       { key: "views", label: "취합 조회수 합계", cls: "r num", val: (r) => (r.viewN ? r.views : -1), html: (r) => (r.viewN ? fmt(r.views) : '<span class="form-hint" title="네이버가 이 매체의 조회수를 공개하지 않습니다">미공개</span>') },
       { key: "bestViews", label: "최고 조회수", cls: "r num", html: (r) => (r.best ? fmt(r.best.views) : "-") },
@@ -912,7 +921,7 @@ export async function reporters(el, R, ctx) {
   }
   $("#rm", card).addEventListener("change", draw);
   $("#rq", card).addEventListener("input", debounce(draw, 150));
-  $("#rx", card).addEventListener("click", () => ctx.exportSheets(`기자통계_${R.s}_${R.e}`, [{ name: "기자", rows: cur.map((r) => ({ 기자: r.name, 매체: r.mname, 발행: r.pub, 랭킹진입: r.rank, "1위": r.top1, 취합조회수합계: r.viewN ? r.views : "미공개", 최고조회수: r.best?.views ?? "", 진입률: r.rate == null ? "" : +(r.rate * 100).toFixed(1), 최고기사: r.best?.title || "" })) }]));
+  $("#rx", card).addEventListener("click", () => ctx.exportSheets(`기자통계_${R.s}_${R.e}`, [{ name: "기자", rows: cur.map((r) => ({ 기자: r.name, 매체: r.mname, 발행: r.pub, 랭킹진입: r.rank, "1위": r.top1, 취합조회수합계: r.viewN ? r.views : "미공개", 최고조회수: r.best?.views ?? "", 발행중20위진입: r.enter ?? "", 진입률: r.rate == null ? "" : +(r.rate * 100).toFixed(1), 최고기사: r.best?.title || "" })) }]));
   draw();
 }
 

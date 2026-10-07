@@ -367,6 +367,16 @@ def rough_date(raw, today):
     return None
 
 
+def exact_rel_date(raw, today):
+    """'N분 전'·'N시간 전'은 지금 시각에서 빼서 날짜를 정확히 계산, 나머지는 rough_date"""
+    s = (raw or "").strip()
+    m = re.search(r"(\d+)\s*(분|시간)\s*전", s)
+    if m:
+        delta = dt.timedelta(minutes=int(m.group(1))) if m.group(2) == "분" else dt.timedelta(hours=int(m.group(1)))
+        return (now_kst() - delta).date()
+    return rough_date(s, today)
+
+
 def list_candidates(session, oid, day, seen, max_pages=150):
     """
     언론사별 기사목록(date=그날)을 끝까지 넘기며 후보 수집.
@@ -419,6 +429,7 @@ def list_day_exact(session, oid, day, max_pages=150):
     목록에 날짜가 적혀 있으면 그 날짜가 같은 것만, 시각만 있으면 요청한 날짜로 본다."""
     out, prev_keys, stale = set(), None, 0
     seen = set()
+    today = today_kst()
     for page in range(1, max_pages + 1):
         params = {"mode": "LPOD", "mid": "sec", "oid": oid, "listType": "title", "date": day.replace("-", ""), "page": page}
         r = session.get("https://news.naver.com/main/list.naver?" + urlencode(params), timeout=15)
@@ -436,8 +447,11 @@ def list_day_exact(session, oid, day, max_pages=150):
             seen.add(key)
             new_n += 1
             span = li.select_one("span.date")
-            m = re.search(r"(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})", span.get_text() if span else "")
-            d = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}" if m else day
+            # 최근 기사는 '3일전'·'어제'·'10:23' 처럼 상대 표기 → 실제 날짜로 환산 (모르면 제외)
+            rd = exact_rel_date(span.get_text(strip=True) if span else "", today)
+            if rd is None:
+                continue
+            d = rd.isoformat()
             if d == day:
                 out.add(key)
             elif d < day:
@@ -554,8 +568,13 @@ def main():
         if a.only != "ranking":
             cmedia = [m for m in CONFIG.get("count_media", []) if not media_filter or m in media_filter]
             if cmedia and not a.no_counts:
-                status["counts"] = collect_counts(session, days, cmedia, workers)
-                touched |= set(days)
+                # 최근 기사는 목록에 '3일전'처럼 상대 날짜로 나와 건수가 어긋날 수 있어,
+                # 기본 실행(기간 미지정)에서는 최근 8일을 다시 세어 날짜가 확정되면 바로잡는다
+                cdays = days
+                if not a.start:
+                    cdays = sorted(set(days) | set(store.date_range((today - dt.timedelta(days=8)).isoformat(), today.isoformat())))
+                status["counts"] = collect_counts(session, cdays, cmedia, workers)
+                touched |= set(cdays)
     finally:
         save_cache(cache)
 
