@@ -1033,9 +1033,10 @@ async function searchKeywords(el, R, ctx) {
         <section class="sr-panel naver">
           <div class="sr-head"><span class="sr-logo n">N</span><b>네이버 키워드 랭킹</b><span class="form-hint">실제 월간 검색 횟수 (검색광고 API)</span></div>
           <div class="grid g-2">
-            <div class="card kpi"><div class="label">검색량 1위</div>${nTop[0] ? `<div class="value" style="font-size:22px;color:#03a94d">${esc(nTop[0].word)}</div><div class="meta">월 ${fmt(nTop[0].total)}회 · 키워드 ${fmt(Object.keys(S.volume).length)}개 + 연관 ${fmt(S.related.length)}개</div>` : '<div class="meta">아직 없음</div>'}</div>
+            <div class="card kpi"><div class="label">검색량 1위</div>${nTop[0] ? `<div class="value" style="font-size:22px;color:#03a94d">${esc(nTop[0].word)}</div><div class="meta">월 ${fmt(nTop[0].total)}회 (모바일 ${fmt(nTop[0].mo)} · PC ${fmt(nTop[0].pc)})<br><a href="javascript:void 0" class="kw-all-link">조회한 키워드 ${fmt(nTop.length)}개 전체 보기 ▾</a></div>` : '<div class="meta">아직 없음</div>'}</div>
             <div class="card kpi"><div class="label">가장 많이 검색된 분야</div>${grpTop[0] ? `<div class="value" style="font-size:22px;color:#03a94d">${esc(grpTop[0][0])}</div><div class="meta">월 ${short(grpTop[0][1].total)}회 · 키워드 ${fmt(grpTop[0][1].n)}개 · 1위 ${esc(grpTop[0][1].top.word)}</div>` : '<div class="meta">수집 후 표시</div>'}</div>
           </div>
+          <div class="kw-all" hidden></div>
           <h4 class="kw-h">월간 검색수 TOP 15 <span class="form-hint">진한 초록 = 모바일 · 연한 초록 = PC(웹)</span></h4><div class="chart-box lg"><canvas id="srN"></canvas></div>
           <h4 class="kw-h">분야별 검색량 <span class="form-hint">관심 키워드 + 연관검색어 월간 검색수 합계</span></h4>
           ${grpTop.length ? `<div class="form-hint" style="margin:-4px 0 6px">분야를 누르면 키워드 전체가 PC·모바일 검색량과 함께 펼쳐집니다</div><table class="t grp-t"><thead><tr><th>분야</th><th class="r">키워드</th><th class="r">월간 검색 합계</th><th>가장 많이 검색된 키워드</th></tr></thead><tbody>${grpTop.map(([g, x]) => `<tr class="grp-row" data-g="${esc(g)}"><td><span class="grp-arrow">▸</span> <b>${esc(g)}</b></td><td class="r num"><u>${fmt(x.n)}개</u></td><td class="r num">${fmt(x.total)}</td><td>${esc(x.top.word)} <span class="form-hint">${short(x.top.total)}</span></td></tr>
@@ -1056,6 +1057,17 @@ async function searchKeywords(el, R, ctx) {
     repEl = rep;
     $$("#srScope button[data-s]", rep).forEach((b) => b.addEventListener("click", () => drawReport(b.dataset.s)));
     $("#srScope [data-cfg]", rep).addEventListener("click", () => openSeedEditor(rep, S));
+    // 조회한 키워드 전체 (월간·모바일·PC)
+    $(".kw-all-link", rep)?.addEventListener("click", () => {
+      const box = $(".kw-all", rep);
+      if (box.parentElement.classList.contains("sr-panel")) $(".sr-split", rep).before(box); // 표가 넓어서 두 영역 위에 전체 폭으로
+      box.hidden = !box.hidden;
+      $(".kw-all-link", rep).textContent = `조회한 키워드 ${fmt(nTop.length)}개 ${box.hidden ? "전체 보기 ▾" : "접기 ▴"}`;
+      if (box.hidden || box.dataset.done) return;
+      box.dataset.done = "1";
+      box.insertAdjacentHTML("afterbegin", `<h4 class="kw-h" style="margin-top:0">네이버 조회 키워드 전체 <span class="form-hint">최근 30일 · 월간 합계 = 모바일 + PC(웹) · 검색량 순</span></h4><div class="kw-all-body"></div>`);
+      trendPager($(".kw-all-body", box), nTop.map((r) => ({ ...r, title: r.word })), (rows) => `<div class="table-wrap"><table class="t"><thead><tr><th class="c">#</th><th>키워드</th><th>분야</th><th class="r">월간 합계</th><th class="r">모바일</th><th class="r">PC(웹)</th><th class="r">모바일 비중</th></tr></thead><tbody>${rows.map(([r, i]) => `<tr><td class="c num">${i + 1}</td><td class="one" style="max-width:200px"><a href="${ctx.link("keywords", { k: r.word })}" title="${esc(r.word)}"><b>${esc(r.word)}</b></a>${r.src === "연관" && r.seed ? ` <span class="form-hint">← ${esc(r.seed)}</span>` : ""}</td><td style="white-space:nowrap">${r.group ? `<span class="tag orange">${esc(r.group)}</span>` : '<span class="form-hint">-</span>'}</td><td class="r num"><b>${fmt(r.total)}</b></td><td class="r num">${fmt(r.mo)}</td><td class="r num">${fmt(r.pc)}</td><td class="r num">${pct(r.mobile, 0)}</td></tr>`).join("")}</tbody></table></div>`, { per: 20 });
+    });
     $$(".grp-row", rep).forEach((tr) => tr.addEventListener("click", (e) => {
       if (e.target.closest("a")) return;
       const d = $(`.grp-detail[data-gd="${CSS.escape(tr.dataset.g)}"]`, rep);
