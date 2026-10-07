@@ -291,7 +291,7 @@ export async function dashboard(el, R, ctx) {
     const maxT = Math.max(...list.map((x) => x.traffic), 1);
     trendPager($("#trList", topRow), list, (rows) => `<div class="kw-list">${rows.map(([x, i]) => `<a class="kw-row" href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.news[0]?.[0] || "")}"><span class="n">${i + 1}</span><span class="w">${esc(x.title)}</span><div class="bar orange"><span style="width:${(x.traffic / maxT) * 100}%"></span></div><span class="v num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</span></a>`).join("")}</div>`, { per: 20 });
   });
-  articleTable($("#topTable", topCard), A.top.slice(0, 10), { showDay: R.n > 1, overall: 0 });
+  articleTable($("#topTable", topCard), A.top.filter((a) => a.views != null).slice(0, 10), { showDay: R.n > 1, overall: 0 });
 
   // 수집 상태
   el.append(statusCard());
@@ -466,7 +466,7 @@ export async function keywords(el, R, ctx) {
     $("#kwMedia", box).innerHTML = mm.length
       ? `<table class="t"><thead><tr><th>매체</th><th class="r">제목에 쓴 발행 기사</th><th class="r">랭킹 20위 진입</th><th class="r">랭킹 조회수</th></tr></thead><tbody>${mm.map(([oid, m]) => `<tr class="${isOur(oid) ? "ours" : ""}"><td>${chip(oid)}</td><td class="r num">${arHits && arMedia.has(oid) ? fmt(m.pub) + "건" : '<span class="form-hint" title="이 매체는 아직 기사 제목 목록을 수집하지 않았습니다">미수집</span>'}</td><td class="r num">${fmt(m.rank)}건</td><td class="r num">${m.hasV ? fmt(m.views) : '<span class="form-hint">미공개</span>'}</td></tr>`).join("")}</tbody></table>`
       : emptyBox("데이터 없음");
-    articleTable($("#kwTop", box), [...rkHits].sort((a, b) => (b.views ?? -1) - (a.views ?? -1)).slice(0, 15), { showDay: R.n > 1, overall: 0 });
+    articleTable($("#kwTop", box), rkHits.filter((a) => a.views != null).sort((a, b) => b.views - a.views).slice(0, 15), { showDay: R.n > 1, overall: 0 });
     if (arHits) articleTable($("#kwRecent", box), [...arHits].sort((a, b) => (b.day + b.time).localeCompare(a.day + a.time)).slice(0, 20), { showRank: false, showViews: false, showTime: true });
     box.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -640,6 +640,7 @@ export async function articles(el, R, ctx) {
         data = R.agg.top;
         $("#count", card).textContent = "";
       }
+      data = data.filter((a) => a.views != null); // 조회수를 공개하지 않는 매체(조선일보 등)는 순위를 매길 수 없어 제외
     } else {
       data = await R.articles();
       if (!data) {
@@ -676,8 +677,9 @@ export async function articles(el, R, ctx) {
     const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
     const items = filtered.slice((state.page - 1) * PAGE, state.page * PAGE);
     const rankNote = state.src === "rank" && !R.canRanking ? ` · ${LIMITS.rankingDays}일 초과 기간이라 일별 상위 30건만 표시` : "";
+    const nvNote = state.src === "rank" ? " · 조회수 미공개 매체(조선일보·동아일보·중앙일보·데일리안 등) 제외" : "";
     const listOnly = state.src === "pub" && filtered.some((a) => a.listOnly) ? " · 발행 시각·기자명은 상세 수집 매체(헬스조선·코메디닷컴 등)만 표시, 나머지는 네이버 목록 기준" : "";
-    $("#count", card).textContent = `${fmt(filtered.length)}건${rankNote}${listOnly}`;
+    $("#count", card).textContent = `${fmt(filtered.length)}건${rankNote}${nvNote}${listOnly}`;
     const box = $("#list", card);
     articleTable(box, items, { showDay: true, showRank: state.src === "rank", showViews: state.src === "rank", showTime: true, overall: state.src === "rank" && state.sort === "views" ? (state.page - 1) * PAGE : null });
     if (pages > 1) {
