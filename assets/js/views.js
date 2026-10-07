@@ -302,7 +302,7 @@ export async function dashboard(el, R, ctx) {
     box.innerHTML = '<div class="loading">불러오는 중…</div>';
     const full = await R.ranking().catch(() => null);
     const list = (full || A.top).filter((a) => a.views != null).sort((a, b) => b.views - a.views).slice(0, 50);
-    const PER = 10;
+    const PER = 20;
     let page = 1;
     const draw = () => {
       const pages = Math.max(1, Math.ceil(list.length / PER));
