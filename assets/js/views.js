@@ -98,10 +98,7 @@ export async function dashboard(el, R, ctx) {
   const pubMedia = mediaListFor(A, "pub").sort((a, b) => (A.pub[b] || 0) - (A.pub[a] || 0));
   const ourPubPos = pubMedia.indexOf(our) + 1;
 
-  el.append(h(`<div class="grid g-4">
-    <div class="card kpi"><div class="label">전체 발행 기사 ${info("pubTotal")}</div>
-      <div class="value blue num">${fmt(A.pubTotal)}${delta(A.pubTotal / (A.pubDayCount || 1), P.pubDayCount ? P.pubTotal / P.pubDayCount : null)}</div>
-      <div class="meta">${pubMedia.length}개 매체 · 일평균 ${fmt1(A.pubTotal / Math.max(1, A.pubDayCount))}건</div></div>
+  el.append(h(`<div class="grid g-3">
     <div class="card kpi"><div class="label">랭킹 조회수 합 ${info("rankViews")}</div>
       <div class="value num">${short(A.rankViews)}${delta(A.rankViews / (A.rankDayCount || 1), P.rankDayCount ? P.rankViews / P.rankDayCount : null)}</div>
       <div class="meta">조회수 공개 ${rankMedia.length}개 매체 × 상위 ${M.ranking_size || 20}건${A.noView.size ? ` · 미공개 ${A.noView.size}곳 제외` : ""}</div></div>
@@ -115,8 +112,8 @@ export async function dashboard(el, R, ctx) {
 
   // 일별 추이 + 매체 순위
   const row = h(`<div class="grid g-21">
-    <div class="card" style="display:flex;flex-direction:column"><div class="card-head"><div><h3>일별 추이 ${info("trend")}</h3><div class="sub">매체별 · ${R.n === 1 ? "하루만 선택됨 (기간을 넓히면 추이가 보입니다)" : "범례를 눌러 매체를 숨길 수 있습니다"}</div></div>
-      <div class="tools"><div class="seg" id="trendSeg"><button data-m="views" class="on">랭킹 조회수</button><button data-m="pub">발행 기사수</button></div></div></div>
+    <div class="card" style="display:flex;flex-direction:column"><div class="card-head"><div><h3>일별 추이 ${info("trend")}</h3><div class="sub" id="trendSub"></div></div>
+      <div class="tools"><select class="input" id="trendMedia"></select><div class="seg" id="trendSeg"><button data-m="both" class="on">발행 + 조회수</button><button data-m="pub">발행 기사수</button><button data-m="views">랭킹 조회수</button></div></div></div>
       <div class="chart-box lg" style="flex:1;min-height:340px"><canvas></canvas></div></div>
     <div class="card"><div class="card-head"><div><h3>매체별 랭킹 조회수 ${info("mediaRank")}</h3><div class="sub">상위 20건 조회수 합 · 증감은 직전 동일기간 대비 하루 평균 기준</div></div></div>
       <div id="mediaRank"></div></div>
@@ -125,10 +122,26 @@ export async function dashboard(el, R, ctx) {
 
   const trendCanvas = $("canvas", row);
   let trendChart;
-  const drawTrend = (mode) => {
+  // 겹쳐보기: 선택한 매체의 발행 기사수(막대) + 랭킹 조회수(선)
+  const tMedia = [...new Set([...pubMedia, ...rankMedia])];
+  const tSel = $("#trendMedia", row);
+  tSel.innerHTML = tMedia.map((o) => `<option value="${o}" ${o === our ? "selected" : ""}>${esc(mediaName(o))}</option>`).join("");
+  let tMode = "both";
+  const drawTrend = () => {
     trendChart?.destroy();
-    const media = mode === "views" ? rankMedia : pubMedia;
-    const src = mode === "views" ? A.rankDay : A.pubDay;
+    tSel.hidden = tMode !== "both";
+    const sub = $("#trendSub", row);
+    if (tMode === "both") {
+      const oid = tSel.value;
+      sub.textContent = `${mediaName(oid)} · 막대: 발행 기사수(왼쪽) · 선: 랭킹 조회수(오른쪽)${A.pubDay && !Object.values(A.pubDay).some((x) => x[oid] != null) ? " · 이 매체는 발행목록을 수집하지 않습니다" : ""}`;
+      trendChart = comboChart(trendCanvas, R.days.map(mmdd),
+        { label: "발행 기사수", data: R.days.map((d) => A.pubDay[d]?.[oid] ?? null), backgroundColor: mediaColor(oid) + "99" },
+        { label: "랭킹 조회수", data: R.days.map((d) => A.rankDay[d]?.[oid] ?? null), borderColor: "#0f2341", backgroundColor: "#0f2341", spanGaps: false });
+      return;
+    }
+    sub.textContent = R.n === 1 ? "하루만 선택됨 (기간을 넓히면 추이가 보입니다)" : "매체별 · 범례를 눌러 매체를 숨길 수 있습니다";
+    const media = tMode === "views" ? rankMedia : pubMedia;
+    const src = tMode === "views" ? A.rankDay : A.pubDay;
     const ds = media.map((oid) => ({
       label: mediaName(oid),
       data: R.days.map((d) => src[d]?.[oid] ?? null),
@@ -137,16 +150,19 @@ export async function dashboard(el, R, ctx) {
       order: isOur(oid) ? 0 : 1,
     }));
     trendChart = R.n === 1
-      ? barChart(trendCanvas, media.map(mediaName), [{ label: mode === "views" ? "조회수" : "발행", data: media.map((o) => src[R.days[0]]?.[o] || 0), backgroundColor: media.map(mediaColor) }])
+      ? barChart(trendCanvas, media.map(mediaName), [{ label: tMode === "views" ? "조회수" : "발행", data: media.map((o) => src[R.days[0]]?.[o] || 0), backgroundColor: media.map(mediaColor) }])
       : lineChart(trendCanvas, R.days.map(mmdd), ds, { spanGaps: false });
   };
-  drawTrend("views");
+  drawTrend();
+  tSel.addEventListener("change", drawTrend);
   $$("#trendSeg button", row).forEach((b) =>
     b.addEventListener("click", () => {
       $$("#trendSeg button", row).forEach((x) => x.classList.toggle("on", x === b));
-      drawTrend(b.dataset.m);
+      tMode = b.dataset.m;
+      drawTrend();
     })
   );
+
 
   const maxV = Math.max(...rankMedia.map((o) => A.rank[o]?.views || 0), 1);
   $("#mediaRank", row).innerHTML = rankMedia.length
