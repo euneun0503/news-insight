@@ -2,6 +2,7 @@
 import { $, $$, esc, h, toast, kstToday, addDays, mmdd, weekday, kstDateTime, relTime, loadScript, setMediaColors, dateList, articleUrl } from "./util.js";
 import { loadMeta, loadBoard, loadSettings, meta, mediaName, naverCoverage, Range, presetRange, rangeLabel, keywordTable, LIMITS } from "./data.js";
 import { destroyCharts } from "./charts.js";
+import { openReportDialog } from "./report.js";
 import * as V from "./views.js";
 import { renderBanners, renderTicker, boardList, boardPost } from "./board.js";
 import { adminPage, authState, can, loginGate, currentAcct, signOut, PAGE_PERMS } from "./admin.js";
@@ -59,7 +60,11 @@ function setupFilter() {
   );
   $("#btnApply").addEventListener("click", () => apply(ds.value, de.value));
   [ds, de].forEach((i) => i.addEventListener("keydown", (ev) => ev.key === "Enter" && apply(ds.value, de.value)));
-  $("#btnReport").addEventListener("click", exportReport);
+  $("#btnReport").addEventListener("click", () => {
+    if (!can("download")) return toast("다운로드 권한이 없습니다. 마스터에게 요청하세요.", 3000);
+    const r = currentRange(parseHash().q);
+    openReportDialog({ canDownload: () => can("download"), onExcel: (p) => exportReport(p), defaultDay: r.s === r.e ? r.e : null });
+  });
 }
 
 function syncFilter(r) {
@@ -164,10 +169,10 @@ async function exportSheets(filename, sheets) {
   }
 }
 
-async function exportReport() {
+async function exportReport(range) {
   if (!can("download")) return toast("엑셀 다운로드 권한이 없습니다. 마스터에게 요청하세요.", 4000);
   const { q } = parseHash();
-  const r = currentRange(q);
+  const r = range || currentRange(q);
   const R = await getRange(r.s, r.e);
   const A = R.agg;
   const M = meta();
