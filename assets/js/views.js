@@ -276,15 +276,15 @@ export async function dashboard(el, R, ctx) {
   // 랭킹 상위 기사
   const topRow = h(`<div class="grid g-21">
     <div class="card"><div class="card-head"><div><h3>랭킹 상위 기사 ${info("topArticles")}</h3><div class="sub">선택 기간 전체 매체 중 조회수 높은 순</div></div><a href="${ctx.link("articles")}">전체 보기</a></div><div id="topTable"></div></div>
-    <div class="card"><div class="card-head"><div><h3>급상승 검색어 TOP 30 ${info("googleTrends")}</h3><div class="sub" id="trSub">구글 트렌드 한국</div></div><a href="${ctx.link("keywords", { tab: "search" })}">더 보기</a></div><div id="trList"><div class="loading"></div></div></div>
+    <div class="card"><div class="card-head"><div><h3>급상승 검색어 TOP 200 ${info("googleTrends")}</h3><div class="sub" id="trSub">구글 트렌드 한국</div></div><a href="${ctx.link("keywords", { tab: "search" })}">더 보기</a></div><div id="trList"><div class="loading"></div></div></div>
   </div>`);
   el.append(topRow);
   const topCard = topRow;
   R.search().then((S) => {
-    const list = S.google.slice(0, 30);
+    const list = S.google.slice(0, 200);
     $("#trSub", topRow).textContent = S.days.length ? `구글 트렌드 한국 · ${S.fallback ? "가장 최근 수집 " : ""}${S.days.map(mmdd).join(", ").slice(0, 40)}${S.fallback ? " (선택 기간 밖)" : ""}` : "구글 트렌드 한국";
     const maxT = Math.max(...list.map((x) => x.traffic), 1);
-    trendPager($("#trList", topRow), list, (rows) => `<div class="kw-list">${rows.map(([x, i]) => `<a class="kw-row" href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.news[0]?.[0] || "")}"><span class="n">${i + 1}</span><span class="w">${esc(x.title)}</span><div class="bar orange"><span style="width:${(x.traffic / maxT) * 100}%"></span></div><span class="v num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</span></a>`).join("")}</div>`);
+    trendPager($("#trList", topRow), list, (rows) => `<div class="kw-list">${rows.map(([x, i]) => `<a class="kw-row" href="${ctx.link("keywords", { k: x.title })}" title="${esc(x.news[0]?.[0] || "")}"><span class="n">${i + 1}</span><span class="w">${esc(x.title)}</span><div class="bar orange"><span style="width:${(x.traffic / maxT) * 100}%"></span></div><span class="v num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</span></a>`).join("")}</div>`, { per: 20 });
   });
   articleTable($("#topTable", topCard), A.top.slice(0, 10), { showDay: R.n > 1 });
 
@@ -1004,9 +1004,9 @@ async function searchKeywords(el, R, ctx) {
     for (const r of nRows) if (r.group) { const g = (grp[r.group] ||= { n: 0, total: 0, top: null, rows: [] }); g.n++; g.total += r.total; g.rows.push(r); if (!g.top || r.total > g.top.total) g.top = r; }
     const grpTop = Object.entries(grp).sort((a, b) => b[1].total - a[1].total);
     const trendNo = S.google.filter((x) => !supply(x.title).pub).slice(0, 10);
-    const ourHit = S.google.slice(0, 30).filter((x) => supply(x.title).pub).length;
+    const ourHit = S.google.slice(0, 200).filter((x) => supply(x.title).pub).length;
     const rep = h(`<div class="card search-report"><div class="card-head"><div><h3>검색 키워드 요약 보고서 ${info("searchNaver")}</h3>
-      <div class="sub">네이버 검색량 ${hasN ? `${dotDate(S.volumeDay)} 조회(최근 30일)` : "키 등록 후 수집"} · 구글 관심도 ${hasG ? `${dotDate(S.gvolDay)} 조회(‘${esc(S.gvolAnchor)}’=100)` : "수집 전"} · 급상승 검색어 ${S.days.map(mmdd).join(", ")} 누적 · 발행 수는 선택 기간 기준</div></div>
+      <div class="sub">네이버 검색량 ${hasN ? `${dotDate(S.volumeDay)} 조회(최근 30일)` : "키 등록 후 수집"} · 급상승 검색어 ${S.days.map(mmdd).join(", ")} 누적 · 발행 수는 선택 기간 기준</div></div>
       </div>
       <div class="sr-scope" id="srScope"><button class="sr-cfg" data-cfg="1">⚙ 관심 분야 설정</button><button data-s="seed" class="${scope === "seed" ? "on" : ""}">관심 분야 전체</button>${Object.keys(S.seedGroups || {}).map((g) => `<button data-s="${esc(g)}" class="${scope === g ? "on" : ""}">${esc(g)}</button>`).join("")}<button data-s="all" class="${scope === "all" ? "on" : ""}">전체 (기사 제목 키워드 포함)</button></div>
       <div class="grid g-2 sr-split">
@@ -1022,12 +1022,12 @@ async function searchKeywords(el, R, ctx) {
             <tr class="grp-detail" data-gd="${esc(g)}" hidden><td colspan="4"><div class="table-wrap" style="max-height:360px;overflow-y:auto"><table class="t"><thead><tr><th class="c">#</th><th>키워드</th><th>구분</th><th class="r">PC(웹)</th><th class="r">모바일</th><th class="r">월간 합계</th><th class="r">모바일 비중</th></tr></thead><tbody>${[...x.rows].sort((a, b) => b.total - a.total).map((r, i) => `<tr><td class="c num">${i + 1}</td><td style="white-space:nowrap"><a href="${ctx.link("keywords", { k: r.word })}"><b>${esc(r.word)}</b></a>${r.seed && r.src === "연관" ? ` <span class="form-hint">← ${esc(r.seed)}</span>` : ""}</td><td style="white-space:nowrap"><span class="tag ${r.src === "관심" ? "green" : "gray"}">${r.src === "관심" ? "관심" : r.src === "연관" ? "연관" : "제목"}</span></td><td class="r num">${fmt(r.pc)}</td><td class="r num">${fmt(r.mo)}</td><td class="r num"><b>${fmt(r.total)}</b></td><td class="r num">${pct(r.mobile, 0)}</td></tr>`).join("")}</tbody></table></div></td></tr>`).join("")}</tbody></table>` : emptyBox("네이버 검색량 수집 후 표시됩니다.")}
         </section>
         <section class="sr-panel google">
-          <div class="sr-head"><span class="sr-logo g">G</span><b>구글 키워드 랭킹</b><span class="form-hint">상대 관심도 (‘${esc(S.gvolAnchor)}’=100) · 급상승 검색어</span></div>
+          <div class="sr-head"><span class="sr-logo g">G</span><b>구글 급상승 검색어</b><span class="form-hint">구글 트렌드 한국 · ${S.days.map(mmdd).join(", ")} 누적</span></div>
           <div class="grid g-2">
-            <div class="card kpi"><div class="label">관심도 1위</div>${gTop[0] ? `<div class="value" style="font-size:22px;color:#1a73e8">${esc(gTop[0].word)}</div><div class="meta">${fmt1(gTop[0].g)} · ${fmt(gTop.length)}개 키워드</div>` : '<div class="meta">아직 없음</div>'}</div>
-            <div class="card kpi"><div class="label">급상승 검색어</div><div class="value num" style="color:#1a73e8">${fmt(S.google.length)}개</div><div class="meta">${S.google[0] ? `1위 ${esc(S.google[0].title)} ${S.google[0].traffic ? fmt(S.google[0].traffic) + "+" : ""} · ` : ""}TOP 30 중 우리가 쓴 주제 ${ourHit}개</div></div>
+            <div class="card kpi"><div class="label">급상승 1위</div>${S.google[0] ? `<div class="value" style="font-size:22px;color:#1a73e8">${esc(S.google[0].title)}</div><div class="meta">검색 ${S.google[0].traffic ? fmt(S.google[0].traffic) + "+" : "-"}${S.google[0].news[0] ? " · " + esc(S.google[0].news[0][0]).slice(0, 40) : ""}</div>` : '<div class="meta">아직 없음</div>'}</div>
+            <div class="card kpi"><div class="label">급상승 검색어</div><div class="value num" style="color:#1a73e8">${fmt(S.google.length)}개</div><div class="meta">TOP 200 중 우리가 쓴 주제 ${ourHit}개</div></div>
           </div>
-          <h4 class="kw-h">관심도 TOP 15 <span class="form-hint">‘${esc(S.gvolAnchor)}’ = 100</span></h4><div class="chart-box lg"><canvas id="srG"></canvas></div>
+          <h4 class="kw-h">급상승 검색어 TOP 15 <span class="form-hint">구글이 알려주는 대략 검색량 (예: 20,000+)</span></h4><div class="chart-box lg"><canvas id="srG"></canvas></div>
           <h4 class="kw-h">급상승 중인데 우리 기간 기사가 없는 검색어 <span class="form-hint">선택 기간 발행 0건</span></h4>
           ${trendNo.length ? `<table class="t"><thead><tr><th>검색어</th><th class="r">검색량</th><th>관련 뉴스</th></tr></thead><tbody>${trendNo.map((x) => `<tr><td><a href="${ctx.link("keywords", { k: x.title })}"><b>${esc(x.title)}</b></a></td><td class="r num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</td><td class="title">${x.news[0] && /^https?:/.test(x.news[0][1]) ? `<a href="${esc(x.news[0][1])}" target="_blank" rel="noopener">${esc(x.news[0][0])}</a>` : "-"}</td></tr>`).join("")}</tbody></table>` : emptyBox("없음")}
         </section>
@@ -1052,16 +1052,17 @@ async function searchKeywords(el, R, ctx) {
         { label: "PC(웹)", data: top.map((r) => r.pc), backgroundColor: "#9be3b8" },
       ], { horizontal: true, stacked: true, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, boxHeight: 10 } }, tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${fmt(c.raw)}회`, footer: (items) => `합계 ${fmt(top[items[0].dataIndex].total)}회` } } } });
     }
-    hbar("#srG", gTop.slice(0, 15), (r) => r.g, "#1a73e8", (v) => `관심도 ${fmt1(v)}`);
+    const gt = S.google.slice(0, 15).map((x) => ({ word: x.title, traffic: x.traffic }));
+    hbar("#srG", gt, (r) => r.traffic, "#1a73e8", (v) => `검색 ${fmt(v)}+`);
     if (!nTop.length) $("#srN", rep).parentElement.innerHTML = emptyBox("네이버 검색량이 아직 없습니다.");
-    if (!gTop.length) $("#srG", rep).parentElement.innerHTML = emptyBox("구글 관심도가 아직 없습니다.");
+    if (!gt.length) $("#srG", rep).parentElement.innerHTML = emptyBox("급상승 검색어가 아직 없습니다.");
   };
   let repEl = null;
   drawReport("seed");
 
-  const st = { vt: ctx.q.vt === "google" ? "google" : "naver", sort: "", src: "", q: "" };
+  const st = { vt: "naver", sort: "", src: "", q: "" };
   const card = h(`<div class="card">
-    <div class="board-tabs" id="vtab" style="margin:-4px 0 14px"><button data-v="naver">🟢 네이버 검색량 전체 표</button><button data-v="google">🔵 구글 관심도 전체 표</button></div>
+    <div class="board-tabs" id="vtab" style="margin:-4px 0 14px"><button data-v="naver">🟢 네이버 검색량 전체 표</button></div>
     <div class="card-head"><div><h3 id="vTitle"></h3><div class="sub" id="vSub"></div></div>
       <div class="tools"><input class="input" id="sq" placeholder="검색어 찾기" style="width:130px">
         <select class="input" id="ssrc"></select><div class="seg" id="ssort"></div></div></div>
@@ -1120,11 +1121,11 @@ async function searchKeywords(el, R, ctx) {
 
   // ② 구글 급상승 검색어
   const g = S.google;
-  const gcard = h(`<div class="card"><div class="card-head"><div><h3>급상승 검색어 TOP 30 · 구글 ${info("googleTrends")}</h3><div class="sub">구글 트렌드 한국 급상승 검색어 · ${S.days.length}일 누적 · 현재 ${Math.min(30, g.length)}개 · 여러 날 오른 검색어가 위에 옵니다</div></div></div>
+  const gcard = h(`<div class="card"><div class="card-head"><div><h3>급상승 검색어 TOP 200 · 구글 ${info("googleTrends")}</h3><div class="sub">구글 트렌드 한국 급상승 검색어 · ${S.days.map(mmdd).join(", ")} 누적 · 현재 ${Math.min(200, g.length)}개 · 검색량 순 · 20개씩</div></div></div>
     <div id="gTrend"></div>
     <div class="form-hint" style="margin-top:8px">검색량은 구글이 제공하는 대략치(예: 2,000+)입니다. 네이버는 2021년 실시간 검색어를 종료해 급상승 목록을 공식 제공하지 않습니다. 네이버 쪽 흐름은 위 표의 월간 검색수로 확인하세요.</div></div>`);
   el.append(gcard);
-  trendPager($("#gTrend", gcard), g.slice(0, 30), (rows) => `<div class="table-wrap"><table class="t"><thead><tr><th class="c">#</th><th>검색어</th><th class="r">최대 검색량</th><th class="c">등장일</th><th>최근</th><th>관련 뉴스</th><th class="r">우리 기간 발행</th></tr></thead><tbody>
+  trendPager($("#gTrend", gcard), g.slice(0, 200), (rows) => `<div class="table-wrap"><table class="t"><thead><tr><th class="c">#</th><th>검색어</th><th class="r">최대 검색량</th><th class="c">등장일</th><th>최근</th><th>관련 뉴스</th><th class="r">우리 기간 발행</th></tr></thead><tbody>
     ${rows.map(([x, i]) => {
       const sp = supply(x.title);
       const n = x.news[0];
@@ -1132,7 +1133,7 @@ async function searchKeywords(el, R, ctx) {
         <td class="r num">${x.traffic ? fmt(x.traffic) + "+" : "-"}</td><td class="c num">${x.days.length}일</td><td class="num">${mmdd(x.days[x.days.length - 1])}</td>
         <td class="title">${n && /^https?:/.test(n[1]) ? `<a href="${esc(n[1])}" target="_blank" rel="noopener">${esc(n[0])}</a> <span class="form-hint">${esc(n[2])}</span>` : "-"}</td>
         <td class="r num">${sp.pub ? fmt(sp.pub) : '<span class="tag gray">0</span>'}</td></tr>`;
-    }).join("")}</tbody></table></div>`);
+    }).join("")}</tbody></table></div>`, { per: 20 });
 }
 
 

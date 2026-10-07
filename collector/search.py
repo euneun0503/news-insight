@@ -302,8 +302,8 @@ def main():
         print("네이버 검색광고 API 키 없음 → 검색량 수집 생략 (README 참고)")
 
     # 3) 구글 키워드별 관심도 (하루 1회)
-    if a.trends_only:
-        pass
+    if a.trends_only or not CONFIG.get("google_interest", False):
+        pass   # 구글 키워드별 관심도는 화면에서 쓰지 않음(급상승 검색어만 노출) → 수집 생략
     elif doc.get("gvol") and not a.force:
         print("구글 관심도: 오늘 이미 조회함 (건너뜀)")
     else:
