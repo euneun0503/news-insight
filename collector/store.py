@@ -382,6 +382,7 @@ def build_meta(status=None):
     ar_days = sorted(p.stem for p in (DATA / "articles").glob("*.json"))
     months = sorted(p.stem for p in (DATA / "summary").glob("*.json"))
     meta = read_json(DATA / "meta.json", {}) or {}
+    meta["coverage"] = media_coverage()
     cat = read_json(DATA / "media_catalog.json")
     if cat:
         meta["naver_catalog"] = dict(cat.get("counts", {}), updated_at=cat.get("updated_at"))
@@ -450,3 +451,36 @@ def prune(months=None):
     if removed and (DATA / "summary" / f"{cut_ym}.json").exists():
         build_month(cut_ym)
     return {"cutoff": cutoff, "removed": removed}
+
+
+def media_coverage():
+    """매체별 수집 현황: {oid: {"r": [첫날, 마지막날, 수집일수, [빠진날…]], "p": …(발행 상세), "c": …(발행 건수)}}"""
+    def span(days_by_oid):
+        out = {}
+        for oid, ds in days_by_oid.items():
+            ds = sorted(ds)
+            full = date_range(ds[0], ds[-1])
+            have = set(ds)
+            miss = [d for d in full if d not in have]
+            out[oid] = [ds[0], ds[-1], len(ds), miss[:40]]
+        return out
+    rk, ar, cn = defaultdict(set), defaultdict(set), defaultdict(set)
+    for p in (DATA / "ranking").glob("*.json"):
+        doc = read_json(p) or {}
+        for o in {it[0] for it in doc.get("items", [])}:
+            rk[o].add(p.stem)
+    for p in (DATA / "articles").glob("*.json"):
+        doc = read_json(p) or {}
+        for o, m in (doc.get("media") or {}).items():
+            if m.get("n") is not None:
+                ar[o].add(p.stem)
+    for p in (DATA / "counts").glob("*.json"):
+        doc = read_json(p) or {}
+        for o, m in (doc.get("media") or {}).items():
+            if m.get("n") is not None:
+                cn[o].add(p.stem)
+    R, P, C = span(rk), span(ar), span(cn)
+    cov = {}
+    for o in set(R) | set(P) | set(C):
+        cov[o] = {k: v[o] for k, v in (("r", R), ("p", P), ("c", C)) if o in v}
+    return cov
