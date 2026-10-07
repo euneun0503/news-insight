@@ -111,6 +111,61 @@ def _norm_dt(raw):
     return f"{y}-{mo}-{d} {h}:{mi}"
 
 
+# ── 기자명 추출 (여러 방식으로 시도) ─────────────────────────
+_ROLE = r"(?:기자|특파원|객원기자|선임기자|전문기자|수습기자|논설위원|칼럼니스트|PD|앵커)"
+_BYLINE_SEL = ("em.media_end_head_journalist_name, .media_end_head_journalist_name, "
+               ".media_end_head_journalist_box em, span.byline_s, .byline .byline_s, p.byline_p span, "
+               "[class*=journalist_name], [class*=byline], [class*=reporter], [class*=writer]")
+
+
+def _clean_name(t):
+    t = clean_text(t)
+    t = re.sub(r"\(.*?\)|\[.*?\]|[\w.+-]+@[\w.-]+", " ", t)
+    t = re.sub(r"\s+" + _ROLE + r"(?=\s|$|[·,/]).*$", "", t).strip()
+    t = re.sub(r"^(글|사진|취재|정리)\s*[=:]?\s*", "", t)
+    return t if 1 < len(t) <= 20 and re.search(r"[가-힣A-Za-z]", t) and not re.search(r"구독|응원|기사|뉴스", t) else ""
+
+
+def parse_reporter(soup, html=""):
+    names = []
+    for tag in soup.select(_BYLINE_SEL):
+        n = _clean_name(tag.get_text(" ", strip=True))
+        if n and n not in names:
+            names.append(n)
+        if len(names) >= 3:
+            break
+    if not names:
+        # 메타 태그 / 본문 끝 "홍길동 기자 (email)" 형태
+        for sel in ['meta[property="dable:author"]', 'meta[name="author"]', 'meta[property="article:author"]', 'meta[name="twitter:creator"]']:
+            m = soup.select_one(sel)
+            n = _clean_name(m.get("content", "")) if m else ""
+            if n and not n.startswith("http"):
+                names.append(n)
+                break
+    if not names:
+        body = soup.select_one("#dic_area, #newsct_article, article") or soup
+        txt = body.get_text(" ", strip=True)[-600:]
+        m = re.findall(r"([가-힣]{2,4})\s?" + _ROLE + r"\s*[\(\[]?\s*[\w.+-]+@[\w.-]+", txt) or re.findall(r"([가-힣]{2,4})\s" + _ROLE + r"\s*$", txt)
+        if m:
+            names.append(m[-1])
+    return "·".join(names[:3])
+
+
+_dbg_lock = threading.Lock()
+_dbg = []
+
+
+def _debug_byline(oid, aid, soup, html):
+    """기자명을 못 찾은 기사 몇 건의 관련 부분을 저장 (선택자 점검용)"""
+    with _dbg_lock:
+        if len(_dbg) >= 6:
+            return
+        idx = [m.start() for m in re.finditer("기자|journalist|byline", html)][:6]
+        snippets = [html[max(0, i - 300): i + 200] for i in idx]
+        _dbg.append({"oid": oid, "aid": aid, "len": len(html), "snippets": snippets})
+        store.write_json(DATA / "cache" / "byline_debug.json", _dbg, pretty=True)
+
+
 def fetch_article_meta(session, oid, aid):
     url = f"https://n.news.naver.com/mnews/article/{oid}/{aid}"
     r = session.get(url, timeout=12)
@@ -128,18 +183,16 @@ def fetch_article_meta(session, oid, aid):
         tag = soup.select_one("em.date, span.date, .article_info .date")
         if tag:
             pub = _norm_dt(tag.get_text(" ", strip=True).replace(".", "-"))
-    reporter = ""
-    rtag = soup.select_one("em.media_end_head_journalist_name, span.byline_s, .byline .byline_s")
-    if rtag:
-        reporter = clean_text(rtag.get_text(" ", strip=True))
-        reporter = re.sub(r"\s+(기자|특파원|객원기자|선임기자|전문기자|수습기자|논설위원|위원|PD|앵커)(?=\s|$).*$", "", reporter)
-        reporter = re.sub(r"\(.*?\)|[\w.+-]+@[\w.-]+", "", reporter).strip()[:20]
+    reporter = parse_reporter(soup, r.text)
+    if not reporter:
+        _debug_byline(oid, aid, soup, r.text)
     return pub, reporter
 
 
 def resolve_meta(session, keys, cache, workers):
     """keys: [(oid, aid)] → 캐시에 없는 것만 병렬 조회해서 cache 갱신"""
-    todo = [k for k in keys if f"{k[0]}_{k[1]}" not in cache]
+    # 캐시에 없거나, 예전 방식으로 기자명을 못 찾은 항목(버전 표시 없음)은 다시 조회
+    todo = [k for k in keys if len(cache.get(f"{k[0]}_{k[1]}") or []) < 3 and not (cache.get(f"{k[0]}_{k[1]}") or ["", ""])[1]]
     if not todo:
         return 0
     fails = 0
@@ -151,7 +204,7 @@ def resolve_meta(session, keys, cache, workers):
                 pub, rep = f.result()
                 if pub:
                     with _cache_lock:
-                        cache[f"{oid}_{aid}"] = [pub, rep]
+                        cache[f"{oid}_{aid}"] = [pub, rep, 2]
                 else:
                     fails += 1
             except Exception:
@@ -238,28 +291,21 @@ def rough_date(raw, today):
     return None
 
 
-def list_candidates(session, oid, days, max_pages=None):
+def list_candidates(session, oid, day, seen, max_pages=150):
     """
-    언론사별 기사목록을 최신순으로 넘기며 요청 기간(앞뒤 하루 여유) 근처의 기사를 후보로 모은다.
-    네이버 목록의 date= 필터는 날짜별로 정확히 걸러주지 않아(기존 노트북에서 확인),
-    목록 날짜로는 '대략'만 거르고, 정확한 날짜는 상세페이지 입력시각으로 확정한다.
+    언론사별 기사목록(date=그날)을 끝까지 넘기며 후보 수집.
+    목록 날짜 표시로 그날 ±1일 밖의 기사는 거르고, 정확한 날짜는 상세페이지 입력시각으로 확정한다.
     """
     today = today_kst()
-    first, last = dt.date.fromisoformat(days[0]), dt.date.fromisoformat(days[-1])
-    win_lo, win_hi = first - dt.timedelta(days=1), last + dt.timedelta(days=1)
-    max_pages = max_pages or max(300, len(days) * 150)
-    out, seen, prev_keys, stale = {}, set(), None, 0
-    reached = False
+    d0 = dt.date.fromisoformat(day)
+    win_lo, win_hi = d0 - dt.timedelta(days=1), d0 + dt.timedelta(days=1)
+    out, prev_keys, stale = {}, None, 0
     for page in range(1, max_pages + 1):
-        params = {"mode": "LPOD", "mid": "sec", "oid": oid, "listType": "title",
-                  "date": days[-1].replace("-", ""), "page": page}
+        params = {"mode": "LPOD", "mid": "sec", "oid": oid, "listType": "title", "date": day.replace("-", ""), "page": page}
         r = session.get("https://news.naver.com/main/list.naver?" + urlencode(params), timeout=15)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
         lis = soup.select(LIST_SELECTOR)
-        if not lis:
-            reached = True
-            break
         page_keys, new_n, any_dated, all_old = set(), 0, False, True
         for li in lis:
             a = li.find("a", href=True)
@@ -276,26 +322,19 @@ def list_candidates(session, oid, days, max_pages=None):
             new_n += 1
             span = li.select_one("span.date")
             d = rough_date(span.get_text(strip=True) if span else "", today)
-            if d is None:
-                out[key] = title          # 날짜를 모르면 일단 후보 (상세페이지에서 확정)
-                all_old = False
-                continue
-            any_dated = True
-            if d >= win_lo:
-                all_old = False
-            if win_lo <= d <= win_hi:
+            if d is None or win_lo <= d <= win_hi:
                 out[key] = title
-        if (prev_keys is not None and page_keys == prev_keys) or new_n == 0:
-            reached = True
-            break                          # 마지막 페이지 반복 / 새 기사 없음
+            if d is None or d >= win_lo:
+                all_old = False
+            any_dated = any_dated or d is not None
+        if not page_keys or page_keys == prev_keys or new_n == 0:
+            return out                     # 목록 끝
         prev_keys = page_keys
         stale = stale + 1 if (any_dated and all_old) else 0
         if stale >= 2:
-            reached = True
-            break                          # 요청 기간보다 오래된 기사만 2페이지 연속
+            return out                     # 그날보다 오래된 기사만 계속 나옴
         time.sleep(0.15)
-    if not reached:
-        err(f"발행목록 {CONFIG['media'].get(oid, oid)}: 페이지 상한({max_pages}) 도달 – {days[0]} 쪽 일부 누락 가능, 기간을 나눠 다시 실행하세요")
+    err(f"발행목록 {day} {CONFIG['media'].get(oid, oid)}: 페이지 상한({max_pages}) 도달 – 일부 누락 가능")
     return out
 
 
@@ -306,13 +345,13 @@ def collect_publish(session, days, media, cache, workers, fast=False):
     for oid in media:
         name = CONFIG["media"].get(oid, oid)
         log(f"\n📰 발행목록 {name} ({days[0]} ~ {days[-1]})")
-        try:
-            cands = list_candidates(session, oid, days)
-        except Exception as e:
-            err(f"발행목록 {name}: {e}")
-            for d in days:
-                summary.setdefault(d, {})[oid] = "error"
-            continue
+        cands, seen, failed = {}, set(), []
+        for day in days:
+            try:
+                cands.update(list_candidates(session, oid, day, seen))
+            except Exception as e:
+                failed.append(day)
+                err(f"발행목록 {day} {name}: {e}")
         log(f"   후보 {len(cands)}건 → 상세페이지에서 날짜 확인")
         fails = 0 if fast else resolve_meta(session, list(cands), cache, workers)
         if fails:
@@ -330,7 +369,7 @@ def collect_publish(session, days, media, cache, workers, fast=False):
             store.merge_articles(pday, oid, items, ts)
             touched.add(pday)
         for d in days:
-            summary.setdefault(d, {})[oid] = len(buckets.get(d, []))
+            summary.setdefault(d, {})[oid] = "error" if d in failed else len(buckets.get(d, []))
         log("   " + ", ".join(f"{d[5:]} {len(buckets.get(d, []))}건" for d in days))
     return summary, touched
 
