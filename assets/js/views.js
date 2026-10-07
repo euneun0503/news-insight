@@ -717,7 +717,7 @@ export async function reporters(el, R, ctx) {
     for (const x of A.rep.values()) for (const n of split(x.name)) get(n, x.oid).pub += x.pub;
   }
   if (!rk) for (const x of A.rep.values()) for (const n of split(x.name)) { const r = get(n, x.oid); r.rank += x.rank; r.views += x.views; r.viewN += x.rank; }
-  const rows = [...map.values()].map((r) => ({ ...r, avg: r.viewN ? r.views / r.viewN : null, rate: r.pub ? r.rank / r.pub : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
+  const rows = [...map.values()].map((r) => ({ ...r, bestViews: r.best ? r.best.views : null, avg: r.viewN ? r.views / r.viewN : null, rate: r.pub ? r.rank / r.pub : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
 
   if (!rows.length) {
     el.append(h(`<div class="card">${emptyBox("이 기간 기사에는 아직 기자명이 없습니다.<br>엑셀에서 가져온 과거 자료는 기자명이 비어 있어요. 자동 수집으로 새로 받은 기사부터 기자명이 들어갑니다.")}</div>`));
@@ -738,7 +738,7 @@ export async function reporters(el, R, ctx) {
   </div>`));
 
   const medias = [...new Set(rows.map((r) => r.oid))].sort((a, b) => (a === M.our_media ? -1 : b === M.our_media ? 1 : mediaName(a).localeCompare(mediaName(b), "ko")));
-  const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 랭킹 진입 ÷ 발행 기사 (발행목록을 수집하는 매체만) · 공동 바이라인은 각 기자에게 모두 반영 · 조회수를 공개하지 않는 매체는 조회수 대신 전체 발행 기사 수를 표시</div></div>
+  const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 랭킹 진입 ÷ 발행 기사 (발행목록을 수집하는 매체만) · 공동 바이라인은 각 기자에게 모두 반영 · 취합 조회수 합계 = 랭킹(매체별 상위 20건)에 오른 기사 조회수의 합</div></div>
     <div class="tools"><select class="input" id="rm"><option value="">전체 매체</option>${medias.map((o) => `<option value="${o}">${esc(mediaName(o))}</option>`).join("")}</select>
     <input class="input" id="rq" placeholder="기자명 검색" style="width:130px"><button class="btn sm" id="rx">엑셀 저장</button></div></div><div id="rt"></div></div>`);
   el.append(card);
@@ -754,8 +754,8 @@ export async function reporters(el, R, ctx) {
       { key: "pub", label: "발행", cls: "r num", html: (r) => (r.pub ? fmt(r.pub) : "-") },
       { key: "rank", label: "랭킹 진입", cls: "r num", html: (r) => fmt(r.rank) },
       { key: "top1", label: "1위", cls: "r num", html: (r) => (r.top1 ? `<span class="tag orange">${r.top1}</span>` : "-") },
-      { key: "views", label: "조회수 합계", cls: "r num", val: (r) => (r.viewN ? r.views : -1), html: (r) => (r.viewN ? fmt(r.views) : r.pub ? `<span class="tag gray" title="조회수 미공개 매체 → 전체 발행 기사 수">발행 ${fmt(r.pub)}건</span>` : `<span class="form-hint" title="조회수 미공개 · 발행목록 미수집 매체 → 랭킹 진입 기사 수">랭킹 ${fmt(r.rank)}건</span>`) },
-      { key: "avg", label: "기사당 평균", cls: "r num", html: (r) => fmt(r.avg) },
+      { key: "views", label: "취합 조회수 합계", cls: "r num", val: (r) => (r.viewN ? r.views : -1), html: (r) => (r.viewN ? fmt(r.views) : '<span class="form-hint" title="네이버가 이 매체의 조회수를 공개하지 않습니다">미공개</span>') },
+      { key: "bestViews", label: "최고 조회수", cls: "r num", html: (r) => (r.best ? fmt(r.best.views) : "-") },
       { key: "rate", label: "진입률", cls: "r num", html: (r) => (r.rate == null ? "-" : pct(r.rate)) },
       { key: "best", label: "최고 조회 기사", sort: false, html: (r) => (r.best ? `<a href="${articleUrl(r.best.oid, r.best.aid)}" target="_blank" rel="noopener">${esc(r.best.title.slice(0, 34))}${r.best.title.length > 34 ? "…" : ""}</a> <span class="form-hint num">${short(r.best.views)}</span>` : "-") },
     ], cur, { sort: rows.some((r) => r.viewN) ? "views" : "pub", limit: 400, rowClass: (r) => (isOur(r.oid) ? "ours" : "") });
@@ -766,7 +766,7 @@ export async function reporters(el, R, ctx) {
     if (!r) return;
     detail.innerHTML = "";
     const box = h(`<div class="card kw-detail"><div class="card-head"><div><h3>${esc(r.name)} · ${esc(r.mname)}</h3>
-      <div class="sub">발행 ${fmt(r.pub)}건 · 랭킹 진입 ${fmt(r.rank)}건 · 1위 ${fmt(r.top1)}회 · 조회수 합계 ${r.viewN ? fmt(r.views) : "미공개"}</div></div><button class="btn sm" id="rc">닫기</button></div>
+      <div class="sub">발행 ${fmt(r.pub)}건 · 랭킹 진입 ${fmt(r.rank)}건 · 1위 ${fmt(r.top1)}회 · 취합 조회수 합계 ${r.viewN ? fmt(r.views) : "미공개"} · 최고 조회수 ${r.best ? fmt(r.best.views) : "-"}</div></div><button class="btn sm" id="rc">닫기</button></div>
       <h4 style="font-size:13px;margin:4px 0 8px">랭킹에 오른 기사</h4><div id="rr"></div>
       ${r.pubItems.length ? `<h4 style="font-size:13px;margin:16px 0 8px">발행 기사 (${fmt(r.pubItems.length)}건)</h4><div id="rp"></div>` : ""}</div>`);
     detail.append(box);
@@ -777,7 +777,7 @@ export async function reporters(el, R, ctx) {
   }
   $("#rm", card).addEventListener("change", draw);
   $("#rq", card).addEventListener("input", debounce(draw, 150));
-  $("#rx", card).addEventListener("click", () => ctx.exportSheets(`기자통계_${R.s}_${R.e}`, [{ name: "기자", rows: cur.map((r) => ({ 기자: r.name, 매체: r.mname, 발행: r.pub, 랭킹진입: r.rank, "1위": r.top1, 조회수합계: r.viewN ? r.views : `미공개(발행 ${r.pub}건)`, 기사당평균: r.avg ? Math.round(r.avg) : "", 진입률: r.rate == null ? "" : +(r.rate * 100).toFixed(1), 최고기사: r.best?.title || "", 최고조회수: r.best?.views ?? "" })) }]));
+  $("#rx", card).addEventListener("click", () => ctx.exportSheets(`기자통계_${R.s}_${R.e}`, [{ name: "기자", rows: cur.map((r) => ({ 기자: r.name, 매체: r.mname, 발행: r.pub, 랭킹진입: r.rank, "1위": r.top1, 취합조회수합계: r.viewN ? r.views : "미공개", 최고조회수: r.best?.views ?? "", 진입률: r.rate == null ? "" : +(r.rate * 100).toFixed(1), 최고기사: r.best?.title || "" })) }]));
   draw();
 }
 
