@@ -730,12 +730,31 @@ export async function insights(el, R, ctx) {
 export async function reporters(el, R, ctx) {
   const A = R.agg;
   const M = meta();
-  el.append(h(`<div class="page-head"><div><h1>기자 통계 ${info("reporters")}</h1><p>네이버 기사 페이지의 바이라인에서 확인한 기자별 발행량과 랭킹 성과입니다. 기자를 누르면 기사 목록이 열립니다.</p></div></div>`));
+  const SEL = mediaSel();
+  const head = h(`<div class="page-head"><div><h1>기자 통계 ${info("reporters")}</h1><p>네이버 기사 페이지의 바이라인에서 확인한 기자별 발행량과 랭킹 성과입니다. 기자를 누르면 기사 목록이 열립니다.</p>
+    <div class="rep-media" id="repMedia"><span class="form-hint">적용 매체 확인 중…</span></div></div>
+    <button class="btn" id="msBtn">⚙ 매체 추가·삭제</button></div>`);
+  const msSlot = h(`<div></div>`);
+  el.append(head, msSlot);
+  $("#msBtn", head).addEventListener("click", () => openMediaSettings(msSlot));
   if (!A.rankDayCount && !A.pubDayCount) return el.append(h(noData(R)));
   const loading = h('<div class="card"><div class="loading">기자별 기사를 모으는 중…</div></div>');
   el.append(loading);
   const [rk, ar] = await Promise.all([R.ranking(), R.articles()]);
   loading.remove();
+  // 적용 매체: 매체 설정에서 고른 매체 중 기자명을 확인하는 매체 (설정을 바꾸면 자동 반영)
+  {
+    const cov = (items) => { const c = {}; for (const a of items || []) { const x = (c[a.oid] ||= [0, 0]); x[0]++; if (a.reporter) x[1]++; } return c; };
+    const rc = cov(rk), pc = cov(ar);
+    const rankOn = [...SEL.rank].filter((o) => (M.ranking_media || []).includes(o)).sort((a, b) => (rc[b]?.[0] || 0) - (rc[a]?.[0] || 0));
+    const pubOn = [...SEL.pub].filter((o) => (M.publish_media || []).includes(o)).sort((a, b) => (pc[b]?.[0] || 0) - (pc[a]?.[0] || 0));
+    const cntOnly = [...SEL.pub].filter((o) => !(M.publish_media || []).includes(o) && (M.count_media || []).includes(o));
+    const chip = (o, c) => `<span class="rep-chip${isOur(o) ? " ours" : ""}" title="${c ? `기사 ${fmt(c[0])}건 중 기자명 확인 ${fmt(c[1])}건` : "이 기간 데이터 없음"}">${esc(mediaName(o))}${c ? ` <b>${Math.round((c[1] / c[0]) * 100)}%</b>` : ""}</span>`;
+    $("#repMedia", head).innerHTML = `<div><span class="rep-lab">랭킹 기사 (기자·조회수) ${rankOn.length}곳</span>${rankOn.map((o) => chip(o, rc[o])).join("")}</div>
+      <div><span class="rep-lab">전체 발행 기사 (기자) ${pubOn.length}곳</span>${pubOn.map((o) => chip(o, pc[o])).join("") || '<span class="form-hint">없음</span>'}</div>
+      ${cntOnly.length ? `<div class="form-hint">발행 건수만 집계하는 ${cntOnly.length}곳(${esc(cntOnly.slice(0, 6).map(mediaName).join(", "))}${cntOnly.length > 6 ? " 등" : ""})은 기자명을 확인하지 않아 랭킹 기사로만 반영됩니다.</div>` : ""}
+      <div class="form-hint">% = 기자명 확인 비율 · ‘매체 추가·삭제’나 시장 현황의 매체 설정을 바꾸면 이 목록과 기자 통계가 자동으로 바뀝니다.${SEL.custom ? " (지금 내 설정 사용 중)" : ""}</div>`;
+  }
 
   const map = new Map();
   const get = (name, oid) => {

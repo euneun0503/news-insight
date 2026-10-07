@@ -336,3 +336,10 @@ table.t { overflow-wrap: normal; }
 
 .trend-tbl { max-height: 280px; overflow-y: auto; margin-top: 10px; border: 1px solid var(--line-2); border-radius: 8px; }
 .trend-tbl thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+
+.rep-media { margin-top: 8px; display: grid; gap: 6px; font-size: 12.5px; }
+.rep-media > div { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.rep-lab { font-weight: 650; color: var(--text-2); margin-right: 4px; }
+.rep-chip { background: var(--line-2); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+.rep-chip b { color: var(--blue); font-weight: 650; }
+.rep-chip.ours { background: var(--orange-soft); }
