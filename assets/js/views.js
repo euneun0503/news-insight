@@ -351,7 +351,7 @@ export async function keywords(el, R, ctx) {
       <div class="tools">
         <input class="input" id="kwq" placeholder="키워드 검색" value="${esc(state.q)}" style="width:160px">
         <div class="seg" id="kwSort">
-          <button data-s="score">종합</button><button data-s="views">랭킹 조회수</button><button data-s="pub">발행량</button><button data-s="rise">급상승</button><button data-s="opp">기회</button>
+          <button data-s="score">종합</button><button data-s="views">랭킹 조회수</button><button data-s="pub">발행량</button><button data-s="rise">급상승</button>
         </div>
       </div></div>
     <div class="form-hint" id="sortHint" style="margin:-6px 0 10px"></div>
@@ -378,15 +378,15 @@ export async function keywords(el, R, ctx) {
     else list.sort((a, b) => b.score - a.score);
     list = list.slice(0, 150);
     const showSpark = R.n > 1;
-    $("#kwTable", card).innerHTML = `<div class="table-wrap" style="max-height:560px;overflow-y:auto"><table class="t"><thead><tr><th class="c">#</th><th>키워드</th>${showSpark ? "<th>추이</th>" : ""}<th class="r">발행</th><th class="r">랭킹 진입</th><th class="r">랭킹 조회수</th><th class="r">기사당 조회</th><th class="r">기회</th><th class="r">직전 대비</th></tr></thead><tbody>
+    $("#kwTable", card).innerHTML = `<div class="table-wrap" style="max-height:560px;overflow-y:auto"><table class="t"><thead><tr><th class="c">#</th><th>키워드</th>${showSpark ? "<th>추이</th>" : ""}<th class="r">발행</th><th class="r">랭킹 진입</th><th class="r">랭킹 조회수</th><th class="r" title="랭킹에 오른 기사 1건당 평균 조회수">랭킹 기사당 조회</th><th class="r">직전 대비</th></tr></thead><tbody>
       ${list
         .map(
           (r, i) => `<tr data-k="${esc(r.word)}" style="cursor:pointer" class="${r.word === state.k ? "ours" : ""}"><td class="c num">${i + 1}</td><td><b>${esc(r.word)}</b></td>
         ${showSpark ? `<td>${sparkline(R.days.map((d) => r.daily[d] || 0))}</td>` : ""}
-        <td class="r num">${fmt(r.pub)}</td><td class="r num">${fmt(r.rank)}</td><td class="r num">${fmt(r.views)}</td><td class="r num">${r.rank ? fmt(r.perArticle) : "-"}</td><td class="r num">${r.pub ? short(r.opportunity) : "-"}</td>
+        <td class="r num">${fmt(r.pub)}</td><td class="r num">${fmt(r.rank)}</td><td class="r num">${fmt(r.views)}</td><td class="r num">${r.rank ? fmt(r.perArticle) : "-"}</td>
         <td class="r">${r.isNew ? '<span class="tag new">NEW</span>' : r.change == null ? "-" : `<span class="delta ${r.change > 0 ? "up" : "down"}">${r.change > 0 ? "▲" : "▼"}${Math.abs(Math.round(r.change * 100))}%</span>`}</td></tr>`
         )
-        .join("") || `<tr><td colspan="9">${emptyBox("조건에 맞는 키워드가 없습니다.")}</td></tr>`}
+        .join("") || `<tr><td colspan="8">${emptyBox("조건에 맞는 키워드가 없습니다.")}</td></tr>`}
       </tbody></table></div>`;
     $$("tr[data-k]", card).forEach((tr) =>
       tr.addEventListener("click", () => {

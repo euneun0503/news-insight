@@ -425,11 +425,15 @@ def list_candidates(session, oid, day, seen, max_pages=150):
 
 
 def list_day_exact(session, oid, day, max_pages=150):
-    """발행 '건수'용 빠른 집계: 목록(date=그날)만 넘기며 그날 기사 key 모음. 상세페이지는 열지 않는다.
-    목록에 날짜가 적혀 있으면 그 날짜가 같은 것만, 시각만 있으면 요청한 날짜로 본다."""
+    """발행 '건수'용 빠른 집계: 목록(date=그날)만 넘기며 날짜가 '2026.10.03.'처럼 정확히 적힌 기사만 센다.
+    최근 며칠 기사는 목록에 '3일전'처럼 상대 표기라 날짜를 확정할 수 없으므로,
+    그날 근처에 상대 표기 기사가 섞여 있으면 (건수, False)를 돌려 '아직 확정 못 함'으로 처리한다.
+    → 며칠 지나 정확한 날짜가 표시되면 정기 수집(최근 8일 재집계)에서 확정된다."""
     out, prev_keys, stale = set(), None, 0
     seen = set()
     today = today_kst()
+    d0 = dt.date.fromisoformat(day)
+    sure = True
     for page in range(1, max_pages + 1):
         params = {"mode": "LPOD", "mid": "sec", "oid": oid, "listType": "title", "date": day.replace("-", ""), "page": page}
         r = session.get("https://news.naver.com/main/list.naver?" + urlencode(params), timeout=15)
@@ -447,24 +451,27 @@ def list_day_exact(session, oid, day, max_pages=150):
             seen.add(key)
             new_n += 1
             span = li.select_one("span.date")
-            # 최근 기사는 '3일전'·'어제'·'10:23' 처럼 상대 표기 → 실제 날짜로 환산 (모르면 제외)
-            rd = exact_rel_date(span.get_text(strip=True) if span else "", today)
-            if rd is None:
+            raw = span.get_text(strip=True) if span else ""
+            m = re.search(r"(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})", raw)
+            if not m:
+                rd = rough_date(raw, today)
+                if rd is None or abs((rd - d0).days) <= 1:
+                    sure = False          # 그날일 수도 있는 상대 표기 기사 → 확정 불가
                 continue
-            d = rd.isoformat()
+            d = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
             if d == day:
                 out.add(key)
             elif d < day:
                 older += 1
         if not page_keys or page_keys == prev_keys or new_n == 0:
-            return out
+            return out, sure
         prev_keys = page_keys
         stale = stale + 1 if older and older == new_n else 0
         if stale >= 2:
-            return out
+            return out, sure
         time.sleep(0.1)
     err(f"발행 건수 {day} {CONFIG['media'].get(oid, oid)}: 페이지 상한 도달")
-    return out
+    return out, False
 
 
 def collect_counts(session, days, media, workers):
@@ -477,7 +484,8 @@ def collect_counts(session, days, media, workers):
     def one(oid):
         for d in days:
             try:
-                res[d][oid] = len(list_day_exact(session, oid, d))
+                keys, sure = list_day_exact(session, oid, d)
+                res[d][oid] = len(keys) if sure else "unsure"   # 확정 못 한 날은 저장하지 않음(기존 값도 지움)
             except Exception as e:
                 res[d][oid] = None
                 err(f"발행 건수 {d} {CONFIG['media'].get(oid, oid)}: {e}")
@@ -487,7 +495,7 @@ def collect_counts(session, days, media, workers):
     ts = now_kst().isoformat(timespec="seconds")
     for d in days:
         store.save_counts(d, res[d], ts)
-    log("   " + ", ".join(f"{d[5:]} {sum(v for v in res[d].values() if v)}건" for d in days))
+    log("   " + ", ".join(f"{d[5:]} {sum(v for v in res[d].values() if isinstance(v, int))}건 (미확정 {sum(1 for v in res[d].values() if v == 'unsure')}곳)" for d in days))
     return {d: {o: ("error" if n is None else n) for o, n in res[d].items()} for d in days}
 
 

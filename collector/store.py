@@ -164,6 +164,9 @@ def save_counts(day, counts, collected_at):
     for oid, n in counts.items():
         if n is None:
             continue
+        if n == "unsure":          # 날짜 확정 불가(최근 상대 표기) → 잘못된 값이 남지 않게 지움
+            doc["media"].pop(oid, None)
+            continue
         doc["media"][oid] = {"n": n, "at": collected_at}
     write_json(path, doc)
 
