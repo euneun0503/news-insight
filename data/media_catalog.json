@@ -1,0 +1,953 @@
+{
+ "updated_at": "2026-10-07T11:25:29+09:00",
+ "probe_day": "2026-10-06",
+ "categories": [
+  "종합",
+  "방송/통신",
+  "경제",
+  "인터넷/IT",
+  "매거진",
+  "전문지",
+  "지역",
+  "포토",
+  "기타"
+ ],
+ "media": {
+  "001": {
+   "name": "연합뉴스 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "002": {
+   "name": "프레시안 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "003": {
+   "name": "뉴시스 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "005": {
+   "name": "국민일보 언론사홈",
+   "cat": "종합",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "006": {
+   "name": "미디어오늘 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "007": {
+   "name": "일다 언론사홈",
+   "cat": "전문지",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "008": {
+   "name": "머니투데이 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "009": {
+   "name": "매일경제 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "011": {
+   "name": "서울경제 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "014": {
+   "name": "파이낸셜뉴스 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "015": {
+   "name": "한국경제 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "016": {
+   "name": "헤럴드경제 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "018": {
+   "name": "이데일리 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "020": {
+   "name": "동아일보 언론사홈",
+   "cat": "종합",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "021": {
+   "name": "문화일보 언론사홈",
+   "cat": "종합",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "022": {
+   "name": "세계일보 언론사홈",
+   "cat": "종합",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "023": {
+   "name": "조선일보 언론사홈",
+   "cat": "종합",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "024": {
+   "name": "매경이코노미 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "025": {
+   "name": "중앙일보 언론사홈",
+   "cat": "종합",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "028": {
+   "name": "한겨레 언론사홈",
+   "cat": "종합",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "029": {
+   "name": "디지털타임스 언론사홈",
+   "cat": "인터넷/IT",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "030": {
+   "name": "전자신문 언론사홈",
+   "cat": "인터넷/IT",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "031": {
+   "name": "아이뉴스24 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "032": {
+   "name": "경향신문 언론사홈",
+   "cat": "종합",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "033": {
+   "name": "주간경향 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "036": {
+   "name": "한겨레21 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "037": {
+   "name": "주간동아 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "044": {
+   "name": "코리아헤럴드 언론사홈",
+   "cat": "전문지",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "047": {
+   "name": "오마이뉴스 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "050": {
+   "name": "한경비즈니스 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "052": {
+   "name": "YTN 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "053": {
+   "name": "주간조선 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "055": {
+   "name": "SBS 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "056": {
+   "name": "KBS 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "057": {
+   "name": "MBN 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "065": {
+   "name": "점프볼 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "076": {
+   "name": "스포츠조선 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "077": {
+   "name": "AP연합뉴스",
+   "cat": "포토",
+   "ranking": false,
+   "views": false,
+   "in_list": true
+  },
+  "079": {
+   "name": "노컷뉴스 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "081": {
+   "name": "서울신문 언론사홈",
+   "cat": "종합",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "082": {
+   "name": "부산일보 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "087": {
+   "name": "강원일보 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "088": {
+   "name": "매일신문 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "091": {
+   "name": "EPA연합뉴스",
+   "cat": "포토",
+   "ranking": false,
+   "views": false,
+   "in_list": true
+  },
+  "092": {
+   "name": "ZDNet Korea 언론사홈",
+   "cat": "인터넷/IT",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "094": {
+   "name": "월간 산 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "108": {
+   "name": "스타뉴스 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "109": {
+   "name": "OSEN 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "112": {
+   "name": "헤럴드뮤즈 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "117": {
+   "name": "마이데일리 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": false,
+   "in_list": false
+  },
+  "119": {
+   "name": "데일리안 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "123": {
+   "name": "조세일보 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "127": {
+   "name": "기자협회보 언론사홈",
+   "cat": "전문지",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "138": {
+   "name": "디지털데일리 언론사홈",
+   "cat": "인터넷/IT",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "139": {
+   "name": "스포탈코리아 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "144": {
+   "name": "스포츠경향 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "145": {
+   "name": "레이디경향 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "213": {
+   "name": "TV리포트 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "214": {
+   "name": "MBC 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "215": {
+   "name": "한국경제TV 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "216": {
+   "name": "골닷컴 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "236": {
+   "name": "포모스 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "241": {
+   "name": "일간스포츠 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "243": {
+   "name": "이코노미스트 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "262": {
+   "name": "신동아 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "277": {
+   "name": "아시아경제 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "293": {
+   "name": "블로터 언론사홈",
+   "cat": "인터넷/IT",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "296": {
+   "name": "코메디닷컴 언론사홈",
+   "cat": "전문지",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "308": {
+   "name": "시사IN 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "310": {
+   "name": "여성신문 언론사홈",
+   "cat": "전문지",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "311": {
+   "name": "엑스포츠뉴스 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "312": {
+   "name": "텐아시아 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "343": {
+   "name": "베스트일레븐 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "346": {
+   "name": "헬스조선 언론사홈",
+   "cat": "전문지",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "347": {
+   "name": "데일리e스포츠 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "348": {
+   "name": "신화사 연합뉴스",
+   "cat": "포토",
+   "ranking": false,
+   "views": false,
+   "in_list": true
+  },
+  "351": {
+   "name": "바스켓코리아 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "353": {
+   "name": "중앙SUNDAY 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "356": {
+   "name": "게임메카 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "366": {
+   "name": "조선비즈 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "374": {
+   "name": "SBS Biz 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "382": {
+   "name": "스포츠동아 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "396": {
+   "name": "스포츠월드 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "398": {
+   "name": "루키 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "408": {
+   "name": "MBC연예 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "409": {
+   "name": "몬스터짐 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "410": {
+   "name": "MK스포츠  언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "411": {
+   "name": "포포투 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "413": {
+   "name": "인터풋볼 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "415": {
+   "name": "앳스타일 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "416": {
+   "name": "SBS연예뉴스 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "417": {
+   "name": "동행미디어 시대 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "421": {
+   "name": "뉴스1 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "422": {
+   "name": "연합뉴스TV 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "425": {
+   "name": "마니아타임즈 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "427": {
+   "name": "OBS TV 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "433": {
+   "name": "디스패치 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "435": {
+   "name": "골프다이제스트 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "436": {
+   "name": "풋볼리스트 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "437": {
+   "name": "JTBC 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "438": {
+   "name": "KBS 연예 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "439": {
+   "name": "디스이즈게임 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": false,
+   "in_list": false
+  },
+  "440": {
+   "name": "티브이데일리 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "442": {
+   "name": "인벤 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "445": {
+   "name": "MHN스포츠 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "448": {
+   "name": "TV조선 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "449": {
+   "name": "채널A 언론사홈",
+   "cat": "방송/통신",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "450": {
+   "name": "STN 뉴스 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "465": {
+   "name": "아이즈 ize 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "468": {
+   "name": "스포츠서울 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "469": {
+   "name": "한국일보 언론사홈",
+   "cat": "종합",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "472": {
+   "name": "스포츠타임스 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "477": {
+   "name": "스포티비뉴스 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": false,
+   "in_list": false
+  },
+  "481": {
+   "name": "테니스코리아 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "529": {
+   "name": "더게이트 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "584": {
+   "name": "동아사이언스 언론사홈",
+   "cat": "전문지",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "586": {
+   "name": "시사저널 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "607": {
+   "name": "뉴스타파 언론사홈",
+   "cat": "전문지",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "609": {
+   "name": "뉴스엔 언론사홈",
+   "cat": "기타",
+   "ranking": true,
+   "views": true,
+   "in_list": false
+  },
+  "629": {
+   "name": "더팩트 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "640": {
+   "name": "코리아중앙데일리 언론사홈",
+   "cat": "전문지",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "648": {
+   "name": "비즈워치 언론사홈",
+   "cat": "경제",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "654": {
+   "name": "강원도민일보 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "655": {
+   "name": "CJB청주방송 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "656": {
+   "name": "대전일보 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "657": {
+   "name": "대구MBC 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "658": {
+   "name": "국제신문 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "659": {
+   "name": "전주MBC 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "660": {
+   "name": "kbc광주방송 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "661": {
+   "name": "JIBS 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  },
+  "662": {
+   "name": "농민신문 언론사홈",
+   "cat": "전문지",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "665": {
+   "name": "더스쿠프 언론사홈",
+   "cat": "매거진",
+   "ranking": true,
+   "views": false,
+   "in_list": true
+  },
+  "666": {
+   "name": "경기일보 언론사홈",
+   "cat": "지역",
+   "ranking": true,
+   "views": true,
+   "in_list": true
+  }
+ },
+ "counts": {
+  "total": 133,
+  "ranking": 130,
+  "views": 87
+ }
+}
