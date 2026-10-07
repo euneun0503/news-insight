@@ -19,6 +19,35 @@
   "ver": 1,
   "created": "2026-10-07T03:21:59.397Z"
  },
- "users": [],
- "updated_at": "2026-10-07T03:21:59.820Z"
+ "users": [
+  {
+   "id": "eh_son",
+   "name": "손은희",
+   "perms": {
+    "dashboard": true,
+    "keywords": true,
+    "media": true,
+    "articles": true,
+    "insights": false,
+    "reporters": false,
+    "board": true,
+    "download": true,
+    "posts": false,
+    "collect": false
+   },
+   "active": true,
+   "salt": "lg1fdQaoKhrQe2jVBtzw4g==",
+   "it": 310000,
+   "vh": "de2b0806f40b59210e6ec9cf555f91ae63934747f4dc56f1aebe32bb6ffe953b",
+   "wk": {
+    "iv": "wdM6Ah0INYmTQKD+",
+    "ct": "7x0UPTxbutUwE0oLe3+0rVzNCebYKXfNLh1f3JkvVx2bdl5WU+NGRPV0128HwD7h"
+   },
+   "ver": 1,
+   "mustChange": false,
+   "created": "2026-10-07T03:58:43.383Z",
+   "createdBy": "health"
+  }
+ ],
+ "updated_at": "2026-10-07T03:58:43.383Z"
 }
