@@ -127,7 +127,9 @@ def _clean_name(t):
     return t if 1 < len(t) <= 20 and re.search(r"[가-힣A-Za-z]", t) and not re.search(r"구독|응원|기사|뉴스", t) else ""
 
 
-_MEDIA_WORDS = set(CONFIG["media"].values()) | {"뉴스", "연합", "기자", "사진", "영상", "그래픽", "편집", "온라인", "디지털", "헬스", "닷컴"}
+_MEDIA_WORDS = set(CONFIG["media"].values()) | {"뉴스", "연합", "기자", "사진", "영상", "그래픽", "편집", "온라인", "디지털", "헬스", "닷컴",
+    "이미지", "일러스트", "자료", "출처", "제공", "확대", "크게보기", "원본", "보기", "구독", "응원", "제보", "취재", "인턴", "수습", "객원",
+    "선임", "전문", "기획", "특별", "공동", "본지", "본사", "온라인팀", "디지털팀", "뉴스팀", "정치부", "사회부", "경제부", "국제부", "문화부"}
 _NAME = r"[가-힣]{2,4}"
 _ROLE_RE = r"(?:기자|특파원|객원기자|선임기자|전문기자|수습기자|기상캐스터)"
 
@@ -266,7 +268,7 @@ def fetch_article_meta(session, oid, aid):
 def resolve_meta(session, keys, cache, workers):
     """keys: [(oid, aid)] → 캐시에 없는 것만 병렬 조회해서 cache 갱신"""
     # 캐시에 없거나, 예전 방식으로 기자명을 못 찾은 항목(버전 표시 없음)은 다시 조회
-    todo = [k for k in keys if (cache.get(f"{k[0]}_{k[1]}") or [None, None, 0])[-1] != 5]
+    todo = [k for k in keys if (cache.get(f"{k[0]}_{k[1]}") or [None, None, 0])[-1] != 6]
     if not todo:
         return 0
     fails = 0
@@ -278,7 +280,7 @@ def resolve_meta(session, keys, cache, workers):
                 pub, rep = f.result()
                 if pub:
                     with _cache_lock:
-                        cache[f"{oid}_{aid}"] = [pub, rep, 5]
+                        cache[f"{oid}_{aid}"] = [pub, rep, 6]
                 else:
                     fails += 1
             except Exception:
