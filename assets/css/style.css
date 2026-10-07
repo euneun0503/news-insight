@@ -372,3 +372,6 @@ body.gated .topbar, body.gated .layout { display: none; }
 .user-chip a { color: #fff; text-decoration: none; font-weight: 600; white-space: nowrap; }
 .user-chip button { background: rgba(255,255,255,.12); color: #fff; border: 0; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 12px; white-space: nowrap; }
 @media (max-width: 640px) { .user-chip a { max-width: 70px; overflow: hidden; text-overflow: ellipsis; } }
+
+.ours-kpi { background: linear-gradient(180deg, #fff7ed 0%, #fff 70%); border-color: #fed7aa; }
+.rep-kpis { display: grid; gap: 14px; }

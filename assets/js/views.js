@@ -805,16 +805,25 @@ export async function reporters(el, R, ctx) {
   const byViews = [...rows].sort((a, b) => b.views - a.views)[0];
   const byPub = [...rows].sort((a, b) => b.pub - a.pub)[0];
   const ourRows = rows.filter((r) => r.oid === M.our_media);
-  el.append(h(`<div class="grid g-4">
+  const ourByViews = [...ourRows].filter((r) => r.views > 0).sort((a, b) => b.views - a.views)[0];
+  const ourByPub = [...ourRows].filter((r) => r.pub > 0).sort((a, b) => b.pub - a.pub)[0];
+  const ourN = mediaName(M.our_media);
+  el.append(h(`<div class="rep-kpis"><div class="grid g-4">
     <div class="card kpi"><div class="label">확인된 기자</div><div class="value blue num">${fmt(rows.length)}명</div>
       <div class="meta">${esc(mediaName(M.our_media))} ${fmt(ourRows.length)}명 · ${fmt(new Set(rows.map((r) => r.oid)).size)}개 매체</div></div>
     <div class="card kpi"><div class="label">기자명 확인 비율 ${info("reporterCoverage")}</div><div class="value num">${rkTotal ? pct(rkNamed / rkTotal, 0) : "-"}</div>
       <div class="meta">랭킹 기사 ${fmt(rkNamed)}/${fmt(rkTotal)}${arTotal ? ` · 발행 기사 ${pct(arNamed / arTotal, 0)}` : ""}</div></div>
-    <div class="card kpi"><div class="label">랭킹 조회수 1위 기자</div><div class="value orange" style="font-size:22px">${esc(byViews.name)}</div>
+    <div class="card kpi"><div class="label">전체 랭킹 조회수 1위 기자</div><div class="value orange" style="font-size:22px">${esc(byViews.name)}</div>
       <div class="meta">${esc(byViews.mname)} · ${short(byViews.views)} · 랭킹 ${fmt(byViews.rank)}건</div></div>
-    <div class="card kpi"><div class="label">발행 1위 기자</div><div class="value green" style="font-size:22px">${esc(byPub.name)}</div>
+    <div class="card kpi"><div class="label">전체 발행 1위 기자</div><div class="value green" style="font-size:22px">${esc(byPub.name)}</div>
       <div class="meta">${esc(byPub.mname)} · ${fmt(byPub.pub)}건 · 하루 ${fmt1(byPub.pubDay)}건</div></div>
-  </div>`));
+  </div>
+  <div class="grid g-2">
+    <div class="card kpi ours-kpi"><div class="label">${esc(ourN)} 랭킹 조회수 1위 기자</div>${ourByViews ? `<div class="value orange" style="font-size:22px">${esc(ourByViews.name)}</div>
+      <div class="meta">${short(ourByViews.views)} · 랭킹 ${fmt(ourByViews.rank)}건${ourByViews.top1 ? ` · 1위 ${fmt(ourByViews.top1)}회` : ""}${ourByViews.best ? ` · 최고 ${fmt(ourByViews.best.views)}` : ""}</div>` : '<div class="meta">이 기간 데이터 없음</div>'}</div>
+    <div class="card kpi ours-kpi"><div class="label">${esc(ourN)} 발행 1위 기자</div>${ourByPub ? `<div class="value green" style="font-size:22px">${esc(ourByPub.name)}</div>
+      <div class="meta">${fmt(ourByPub.pub)}건 · 하루 ${fmt1(ourByPub.pubDay)}건 · 랭킹 진입 ${fmt(ourByPub.rank)}건</div>` : '<div class="meta">이 기간 데이터 없음</div>'}</div>
+  </div></div>`));
 
   const medias = [...new Set(rows.map((r) => r.oid))].sort((a, b) => (a === M.our_media ? -1 : b === M.our_media ? 1 : mediaName(a).localeCompare(mediaName(b), "ko")));
   const card = h(`<div class="card"><div class="card-head"><div><h3>기자별 성과 ${info("reporters")}</h3><div class="sub">진입률 = 랭킹 진입 ÷ 발행 기사 (발행목록을 수집하는 매체만) · 공동 바이라인은 각 기자에게 모두 반영 · 취합 조회수 합계 = 랭킹(매체별 상위 20건)에 오른 기사 조회수의 합</div></div>
