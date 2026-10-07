@@ -152,7 +152,7 @@ export async function dashboard(el, R, ctx) {
   // 일별 추이 + 매체 순위
   const row = h(`<div class="grid g-21">
     <div class="card" style="display:flex;flex-direction:column"><div class="card-head"><div><h3>일별 추이 ${info("trend")}</h3><div class="sub" id="trendSub"></div></div>
-      <div class="tools"><select class="input" id="trendMedia"></select><div class="seg" id="trendSeg"><button data-m="both" class="on">발행 + 조회수</button><button data-m="pub">발행 기사수</button><button data-m="views">랭킹 조회수</button></div></div></div>
+      <div class="tools"><select class="input" id="trendMedia"></select><div class="seg" id="trendSeg"><button data-m="both" class="on">발행 + 조회수</button><button data-m="pub">발행 기사수</button><button data-m="cmp">${esc(mediaName(our))}·${esc(mediaName(M.compare_media || "296"))} 비교</button><button data-m="views">랭킹 조회수</button></div></div></div>
       <div class="chart-box lg" style="flex:1;min-height:340px"><canvas></canvas></div>
       <div id="trendTbl"></div>
       <div class="form-hint" style="margin-top:6px">날짜 아래 요일 표시 · <b style="color:#dc2626">빨강</b> 일요일·공휴일(대체공휴일 포함, ‘휴’) · <b style="color:#2563eb">파랑</b> 토요일</div></div>
@@ -181,8 +181,8 @@ export async function dashboard(el, R, ctx) {
       return;
     }
     $("#trendTbl", row).innerHTML = "";
-    if (tMode === "pub") {
-      // 발행 기사수: 헬스조선 vs 코메디닷컴 비교 (막대 + 날짜별 표)
+    if (tMode === "cmp") {
+      // 헬스조선 vs 코메디닷컴 발행 기사수 비교 (막대 + 날짜별 표)
       const two = [our, cmp];
       sub.textContent = `${mediaName(our)} vs ${mediaName(cmp)} · 날짜별 발행 기사수`;
       const val = (d, o) => A.pubDay[d]?.[o] ?? null;

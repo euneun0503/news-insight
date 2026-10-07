@@ -350,7 +350,14 @@ table.t { overflow-wrap: normal; }
 .auth-steps b:first-child { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #18335c; color: #fff; font-size: 11px; margin-right: 6px; }
 
 /* 계정 권한 · 로그인 화면 */
-body.no-dl .dl { display: none !important; }
+body.no-dl .dl { opacity: .45; cursor: not-allowed; filter: grayscale(1); }
+.sidebar a.locked { opacity: .4; cursor: not-allowed; }
+.sidebar a.locked i { filter: grayscale(1); }
+.sidebar a.locked::after { content: "🔒"; margin-left: auto; font-size: 11px; }
+.sidebar a.locked:hover { background: none; }
+.mini-pop { position: fixed; z-index: 1000; background: #0f2341; color: #fff; font-size: 12.5px; font-weight: 600; padding: 8px 12px; border-radius: 8px; box-shadow: 0 6px 20px rgba(15,35,65,.25); display: grid; gap: 2px; transition: opacity .3s; pointer-events: none; }
+.mini-pop .form-hint { color: #c7d2fe; font-weight: 400; font-size: 11.5px; }
+.mini-pop.out { opacity: 0; }
 body.gated .topbar, body.gated .layout { display: none; }
 #gate:empty { display: none; }
 .gate { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; background: linear-gradient(135deg, #0f2341 0%, #18335c 60%, #1e3a8a 100%); }

@@ -92,7 +92,7 @@ async function render() {
   // 계정별 접속 권한: 허용되지 않은 메뉴는 첫 허용 메뉴로
   if (PAGE_PERMS[page] && !can(page)) {
     const first = Object.keys(PAGE_PERMS).find((k) => can(k));
-    if (first && first !== page) { location.hash = `#/${first}`; return; }
+    if (first && first !== page) { toast(`‘${TITLES[page]}’ 접근 권한이 없습니다`, 2500); location.hash = `#/${first}`; return; }
     if (!first) { view.innerHTML = '<div class="card"><div class="empty">볼 수 있는 메뉴가 없습니다. 마스터에게 권한을 요청하세요.</div></div>'; $("#filterbar").hidden = true; return; }
   }
   const isData = !!DATA_PAGES[page];
@@ -145,7 +145,7 @@ async function render() {
 
 // ── 엑셀 ────────────────────────────────
 async function exportSheets(filename, sheets) {
-  if (!can("download")) return toast("엑셀 다운로드 권한이 없습니다. 마스터에게 요청하세요.", 4000);
+  if (!can("download")) return toast("엑셀 다운로드 권한이 없습니다. 마스터에게 요청하세요.", 3000);
   try {
     toast("엑셀 만드는 중…");
     await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
@@ -241,8 +241,25 @@ function renderStatus() {
 
 // 계정 권한을 화면에 반영: 메뉴 숨김, 다운로드 버튼 숨김, 상단에 이름·로그아웃
 function applyAccount(acct) {
-  $$(".sidebar a[data-page]").forEach((a) => { if (PAGE_PERMS[a.dataset.page]) a.hidden = !can(a.dataset.page); });
+  // 권한 없는 메뉴·버튼은 숨기지 않고 흐리게(비활성) + 누르면 '접근 권한이 없습니다' 미니 팝업
+  $$(".sidebar a[data-page]").forEach((a) => {
+    const locked = !!PAGE_PERMS[a.dataset.page] && !can(a.dataset.page);
+    a.classList.toggle("locked", locked);
+    a.setAttribute("aria-disabled", locked ? "true" : "false");
+    if (locked) a.title = "접근 권한이 없습니다";
+  });
   document.body.classList.toggle("no-dl", !can("download"));
+  if (!applyAccount.bound) {
+    applyAccount.bound = true;
+    document.addEventListener("click", (e) => {
+      const nav = e.target.closest(".sidebar a.locked");
+      const dl = document.body.classList.contains("no-dl") && e.target.closest(".dl");
+      if (!nav && !dl) return;
+      e.preventDefault();
+      e.stopPropagation();
+      miniPop(nav || dl, nav ? "접근 권한이 없습니다" : "엑셀 다운로드 권한이 없습니다");
+    }, true);
+  }
   const chip = $("#userChip");
   if (!acct) { chip.hidden = true; return; }
   chip.hidden = false;
@@ -250,6 +267,21 @@ function applyAccount(acct) {
   $("#signOut", chip).addEventListener("click", signOut);
   const adm = $('.sidebar a[data-page="admin"]');
   if (adm && acct.role !== "master" && !can("posts") && !can("collect")) adm.lastChild.textContent = "내 계정";
+}
+
+// 요소 바로 옆에 잠깐 뜨는 작은 말풍선
+function miniPop(el, msg) {
+  document.querySelectorAll(".mini-pop").forEach((x) => x.remove());
+  const r = el.getBoundingClientRect();
+  const p = h(`<div class="mini-pop" role="status">🔒 ${esc(msg)}<span class="form-hint">마스터에게 권한을 요청하세요</span></div>`);
+  document.body.append(p);
+  const w = p.offsetWidth;
+  const left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8);
+  const top = r.bottom + 8 + p.offsetHeight > innerHeight ? r.top - p.offsetHeight - 8 : r.bottom + 8;
+  p.style.left = left + "px";
+  p.style.top = top + "px";
+  setTimeout(() => p.classList.add("out"), 1800);
+  setTimeout(() => p.remove(), 2200);
 }
 
 // ── 시작 ────────────────────────────────
