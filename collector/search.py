@@ -298,7 +298,9 @@ def main():
         words = list(dict.fromkeys(CONFIG.get("search_seeds", []) + title_keywords(day, 20)))
         gv = google_interest(words, anchor)
         if gv:
-            doc["gvol"], doc["gvol_anchor"], doc["gvol_at"] = gv, anchor, ts
+            # 같은 날 여러 번 조회하면 합침 (구글이 일부 묶음을 막아도 앞서 받은 값 유지). 기준어가 바뀌면 새로 시작
+            base = doc.get("gvol") if doc.get("gvol_anchor") == anchor else {}
+            doc["gvol"], doc["gvol_anchor"], doc["gvol_at"] = {**(base or {}), **gv}, anchor, ts
         print(f"구글 관심도 {len(gv)}개 키워드 (기준어 '{anchor}' = 100)")
         if not gv:
             errors.append("구글 관심도: 받지 못함 (구글이 일시적으로 막았을 수 있음)")

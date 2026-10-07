@@ -113,10 +113,13 @@ export async function loadArticleDays(days) {
 
 // 검색 키워드: 구글 급상승(기간 내 누적) + 네이버 검색량(기간 내 가장 최근 조회분)
 export async function loadSearch(days) {
-  // 가장 최근 기간을 보고 있으면, 마지막 랭킹 날짜 이후에 수집된 검색어(오늘 등)도 포함
-  const lastData = META.last || "";
-  const extra = days.length && days[days.length - 1] >= lastData ? (META.search_days || []).filter((d) => d > days[days.length - 1]) : [];
-  let list = [...days.filter((d) => META.searchSet.has(d)), ...extra].slice(-LIMITS.rankingDays);
+  // 검색 키워드는 '지금' 지표라, 어제·오늘을 보고 있으면 오늘 수집분까지 포함 (메타에 아직 없어도 파일을 직접 확인)
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const yday = addDays(today, -1);
+  const known = new Set([...(META.search_days || []), today]);
+  const recent = days.length && days[days.length - 1] >= yday;
+  const extra = recent ? [...known].filter((d) => d > days[days.length - 1]).sort() : [];
+  let list = [...new Set([...days.filter((d) => known.has(d)), ...extra])].slice(-LIMITS.rankingDays);
   let fallback = false;
   if (!list.length && META.search_days?.length) { list = META.search_days.slice(-1); fallback = true; } // 기간 안에 없으면 가장 최근 수집분
   const docs = (await Promise.all(list.map((d) => getJSON(`data/search/${d}.json`)))).map((doc, i) => doc && { ...doc, day: list[i] }).filter(Boolean);
@@ -130,12 +133,23 @@ export async function loadSearch(days) {
       g.set(r.title, x);
     }
   }
-  const volDoc = [...docs].reverse().find((d) => d.volume && Object.keys(d.volume).length);
-  const gDoc = [...docs].reverse().find((d) => d.gvol && Object.keys(d.gvol).length);
+  // 네이버 검색량·구글 관심도는 '최근 30일' 값이라 기간 안에 없으면 가장 최근 수집분을 씀
+  let volDoc = [...docs].reverse().find((d) => d.volume && Object.keys(d.volume).length);
+  let gDoc = [...docs].reverse().find((d) => d.gvol && Object.keys(d.gvol).length);
+  if (!volDoc || !gDoc) {
+    const cand = [...known].sort().reverse().slice(0, 4);
+    for (const d of cand) {
+      const doc = await getJSON(`data/search/${d}.json`);
+      if (!doc) continue;
+      if (!volDoc && doc.volume && Object.keys(doc.volume).length) volDoc = { ...doc, day: d };
+      if (!gDoc && doc.gvol && Object.keys(doc.gvol).length) gDoc = { ...doc, day: d };
+      if (volDoc && gDoc) break;
+    }
+  }
   return {
     days: docs.map((d) => d.day),
     fallback,
-    google: [...g.values()].sort((a, b) => b.days.length - a.days.length || b.traffic - a.traffic),
+    google: [...g.values()].sort((a, b) => b.traffic - a.traffic || b.days.length - a.days.length),
     volume: volDoc?.volume || {},
     related: volDoc?.related || [],
     seeds: new Set(volDoc?.seeds || []),
