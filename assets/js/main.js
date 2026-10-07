@@ -289,6 +289,12 @@ async function boot() {
   $("#brandName").textContent = CFG.siteName || "뉴스 인사이트";
   $("#brandTag").textContent = CFG.siteTagline || "";
   $("#menuBtn").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
+  // 로고(뉴스 인사이트) 누르면 언제나 뉴스통계 (N) 대시보드로 (이미 대시보드면 기본 기간으로 새로 그림)
+  $(".brand").addEventListener("click", (e) => {
+    e.preventDefault();
+    if (location.hash === "#/dashboard") render();
+    else location.hash = "#/dashboard";
+  });
   // 계정 확인: 마스터 계정이 만들어진 뒤에는 로그인한 사람만 볼 수 있음
   const auth = await authState();
   if (auth.configured && !auth.acct) {
