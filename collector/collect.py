@@ -428,6 +428,16 @@ def main():
 
     session = make_session(workers)
     cache = load_cache()
+    if os.environ.get("DEBUG_RAW"):
+        # 임시 점검: 기사 페이지가 쓰는 네이버 스크립트를 저장 (기자 이름표를 불러오는 주소 확인용)
+        try:
+            html = session.get("https://n.news.naver.com/mnews/article/346/0000116948", timeout=15).text
+            for src in sorted(set(re.findall(r'https://static-nnews\.pstatic\.net/js/min/[^"\']+\.js', html))):
+                js = session.get(src, timeout=20).text
+                (DATA / "cache" / ("js_" + src.rsplit("/", 1)[-1])).write_text(js, "utf-8")
+                log("saved", src, len(js))
+        except Exception as e:
+            log("debug js fail", e)
     status = {"at": now_kst().isoformat(timespec="seconds"), "range": [days[0], days[-1]]}
     touched = set()
     try:
