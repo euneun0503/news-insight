@@ -113,8 +113,10 @@ def google_interest(words, anchor, timeframe="today 1-m"):
         req = {"comparisonItem": [{"keyword": w, "geo": "KR", "time": timeframe} for w in group], "category": 0, "property": ""}
         try:
             r = s.get(f"{GT}/explore", params={"hl": "ko", "tz": "-540", "req": json.dumps(req, ensure_ascii=False)}, timeout=20)
-            if r.status_code == 429:
-                time.sleep(20)
+            for wait in (20, 45, 90):  # 구글이 잠시 막으면 기다렸다 재시도
+                if r.status_code != 429:
+                    break
+                time.sleep(wait)
                 r = s.get(f"{GT}/explore", params={"hl": "ko", "tz": "-540", "req": json.dumps(req, ensure_ascii=False)}, timeout=20)
             r.raise_for_status()
             w = next(x for x in _gt_json(r.text)["widgets"] if x.get("id") == "TIMESERIES")
@@ -128,7 +130,7 @@ def google_interest(words, anchor, timeframe="today 1-m"):
                 out[word] = round(avg[j] / avg[0] * 100, 1)
         except Exception as e:
             print(f"  ⚠️ 구글 관심도 실패 ({','.join(group[1:])}): {e}")
-        time.sleep(1.5)
+        time.sleep(4)
     return out
 
 

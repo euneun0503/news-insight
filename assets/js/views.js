@@ -1,12 +1,13 @@
 // 분석 화면들
 import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, dayKind, DAY_COLOR, holiday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR } from "./util.js";
-import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel } from "./data.js";
+import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel, Range } from "./data.js";
 import { openMediaSettings } from "./mediasel.js";
 import { lineChart, barChart, comboChart, dayLabels } from "./charts.js";
 import { boardTypeLabel, activeNotices } from "./board.js";
 import { info } from "./info.js";
 
 const WD_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const kstTodayISO = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 const addDaysISO = (iso, n) => { const d = new Date(iso + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const WD_NAME = "일월화수목금토";
 
@@ -478,8 +479,9 @@ export async function media(el, R, ctx) {
   const pubMedia = mediaListFor(A, "pub");
   const charts = h(`<div class="grid g-2">
     <div class="card"><div class="card-head"><div><h3>랭킹 조회수 vs 발행량 ${info("mediaCombo")}</h3><div class="sub">막대: 랭킹 조회수 · 선: 발행 기사수 (둘 다 수집되는 매체)</div></div></div>${canvas("lg")}</div>
-    <div class="card"><div class="card-head"><div><h3><span id="wdTitle">요일별 랭킹 조회수 합</span> ${info("weekday")}</h3><div class="sub" id="wdSub"></div></div>
-      <div class="seg" id="wdSeg"><button data-g="wd" class="on">요일별</button><button data-g="wk">주별</button><button data-g="mo">월별</button></div></div>${canvas("lg")}</div>
+    <div class="card"><div class="card-head"><div><h3><span id="wdTitle">주간 랭킹 조회수 합</span> ${info("weekday")}</h3><div class="sub" id="wdSub"></div></div>
+      <div class="seg" id="wdSeg"><button data-g="wk" class="on">주간 (월~일)</button><button data-g="mo">월간</button></div></div>
+      <div class="wk-nav"><button class="btn sm" id="wkPrev" aria-label="이전">◀</button><input class="input" type="date" id="wkPick"><input class="input" type="month" id="moPick" hidden><button class="btn sm" id="wkNext" aria-label="다음">▶</button><b id="wkLabel"></b></div>${canvas("lg")}</div>
   </div>`);
   el.append(charts);
   const both = rows.filter((r) => r.views != null).sort((a, b) => b.views - a.views);
@@ -488,30 +490,52 @@ export async function media(el, R, ctx) {
     { label: "랭킹 조회수", data: both.map((r) => r.views), backgroundColor: both.map((r) => mediaColor(r.oid)) },
     { label: "발행 기사수", data: both.map((r) => r.pub), borderColor: "#0f2341", backgroundColor: "#0f2341", spanGaps: true });
 
-  // 요일별 / 주별(월~일) / 월별 랭킹 조회수 합 (매체별 상위 20건 조회수를 더한 값)
-  const wkStart = (d) => { const t = new Date(d + "T00:00:00Z"); const k = (t.getUTCDay() + 6) % 7; return addDaysISO(d, -k); };
-  const groupers = {
-    wd: { title: "요일별 랭킹 조회수 합", key: (d) => new Date(d + "T00:00:00Z").getUTCDay(), order: WD_ORDER, label: (k, n) => [WD_NAME[k], `${n}일`], sub: "같은 요일끼리 하루 랭킹 조회수 합(상위 20건)을 더한 값 · 요일 아래는 더한 날 수" },
-    wk: { title: "주별 랭킹 조회수 합", key: wkStart, label: (k, n) => [`${mmdd(k)}~${mmdd(addDaysISO(k, 6))}`, `${n}일`], sub: "월~일 한 주 단위 합계 · 아래는 그 주에서 수집된 날 수 (7일 미만이면 일부 기간)" },
-    mo: { title: "월별 랭킹 조회수 합", key: (d) => d.slice(0, 7), label: (k, n) => [`${+k.slice(5)}월`, `${n}일`], sub: "월 단위 합계 · 아래는 그 달에서 수집된 날 수 (기간을 넓히면 여러 달 비교)" },
-  };
+  // 주간(월~일 고정) / 월간 랭킹 조회수 합 — 상단 기간과 별도로 주·월을 골라 봄
+  const yday = addDaysISO(kstTodayISO(), -1);
+  const monOf = (d) => addDaysISO(d, -((new Date(d + "T00:00:00Z").getUTCDay() + 6) % 7));
+  const longD = (d) => `${d.replace(/-/g, ".")}(${weekday(d)})`;
+  let wkMode = "wk", wkStart = addDaysISO(monOf(yday), new Date(yday + "T00:00:00Z").getUTCDay() === 0 ? 0 : -7), moKey = yday.slice(0, 7);
   let wdChart;
-  const drawWd = (g) => {
-    const G = groupers[g];
-    const keys = G.order || [...new Set(R.days.map(G.key))].sort();
-    const n = keys.map((k) => R.days.filter((d) => G.key(d) === k && A.rankDay[d] && Object.keys(A.rankDay[d]).length).length);
-    const ds = rankMedia.map((oid) => {
+  const drawWd = async () => {
+    let s0, e0;
+    if (wkMode === "wk") { s0 = wkStart; e0 = addDaysISO(wkStart, 6); }
+    else { s0 = moKey + "-01"; const t = new Date(Date.UTC(+moKey.slice(0, 4), +moKey.slice(5, 7), 0)); e0 = t.toISOString().slice(0, 10); if (e0 > yday && s0 <= yday) e0 = yday; }
+    $("#wkPick", charts).hidden = wkMode !== "wk"; $("#moPick", charts).hidden = wkMode !== "mo";
+    $("#wkPick", charts).value = s0; $("#moPick", charts).value = moKey;
+    $("#wkLabel", charts).textContent = `${longD(s0)} ~ ${longD(e0)}`;
+    $("#wdTitle", charts).textContent = wkMode === "wk" ? "주간 랭킹 조회수 합" : "월간 랭킹 조회수 합";
+    $("#wdSub", charts).textContent = wkMode === "wk" ? "매체별 · 하루 랭킹 조회수 합(상위 20건) · 월요일~일요일 7일 고정, 날짜를 고르면 그 주로 바뀝니다" : "매체별 · 그 달의 주(월~일)별 랭킹 조회수 합(상위 20건) · 달의 처음·끝 주는 그 달에 속한 날만";
+    const RR = await new Range(s0, e0).init();
+    const A2 = RR.agg;
+    const media = mediaListFor(A2, "rank").sort((a, b) => (A2.rank[b]?.views || 0) - (A2.rank[a]?.views || 0));
+    let labels, keys, days = null, key;
+    if (wkMode === "wk") {
+      keys = RR.days; days = RR.days; key = (d) => d;
+      labels = RR.days.map((d) => [`${weekday(d)}${holiday(d) ? "·휴" : ""}`, mmdd(d) + (A2.rankDay[d] && Object.keys(A2.rankDay[d]).length ? "" : " 수집 전")]);
+    } else {
+      key = (d) => (monOf(d) < s0 ? s0 : monOf(d));
+      keys = [...new Set(RR.days.map(key))];
+      labels = keys.map((k) => { const end = addDaysISO(monOf(k), 6) > e0 ? e0 : addDaysISO(monOf(k), 6); const n = RR.days.filter((d) => key(d) === k && A2.rankDay[d] && Object.keys(A2.rankDay[d]).length).length; return [`${mmdd(k)}~${mmdd(end)}`, `${n}일 수집`]; });
+    }
+    const ds = media.map((oid) => {
       const sum = new Map();
-      for (const d of R.days) { const v = A.rankDay[d]?.[oid]; if (v != null) sum.set(G.key(d), (sum.get(G.key(d)) || 0) + v); }
+      for (const d of RR.days) { const v = A2.rankDay[d]?.[oid]; if (v != null) sum.set(key(d), (sum.get(key(d)) || 0) + v); }
       return { label: mediaName(oid), data: keys.map((k) => sum.get(k) ?? null), backgroundColor: mediaColor(oid) };
     });
-    $("#wdTitle", charts).textContent = G.title;
-    $("#wdSub", charts).textContent = `매체별 · ${G.sub}`;
     wdChart?.destroy();
-    wdChart = barChart(c2, keys.map((k, i) => G.label(k, n[i])), ds, { plugins: { legend: { position: "bottom", labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: "rectRounded", font: { size: 11 } } }, tooltip: { backgroundColor: "#0f2341", callbacks: { label: (c) => ` ${c.dataset.label}: ${fmt(c.raw)}` } } } });
+    wdChart = barChart(c2, labels, ds, { ...(days ? { days } : {}), plugins: { legend: { position: "bottom", labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: "rectRounded", font: { size: 11 } } }, tooltip: { backgroundColor: "#0f2341", callbacks: { label: (c) => ` ${c.dataset.label}: ${fmt(c.raw)}` } } } });
   };
-  drawWd("wd");
-  $$("#wdSeg button", charts).forEach((b) => b.addEventListener("click", () => { $$("#wdSeg button", charts).forEach((x) => x.classList.toggle("on", x === b)); drawWd(b.dataset.g); }));
+  const shift = (dir) => {
+    if (wkMode === "wk") wkStart = addDaysISO(wkStart, 7 * dir);
+    else { const [y, m] = moKey.split("-").map(Number); const t = new Date(Date.UTC(y, m - 1 + dir, 1)); moKey = t.toISOString().slice(0, 7); }
+    drawWd();
+  };
+  $("#wkPrev", charts).addEventListener("click", () => shift(-1));
+  $("#wkNext", charts).addEventListener("click", () => shift(1));
+  $("#wkPick", charts).addEventListener("change", (e) => { if (e.target.value) { wkStart = monOf(e.target.value); drawWd(); } });
+  $("#moPick", charts).addEventListener("change", (e) => { if (e.target.value) { moKey = e.target.value; drawWd(); } });
+  $$("#wdSeg button", charts).forEach((b) => b.addEventListener("click", () => { $$("#wdSeg button", charts).forEach((x) => x.classList.toggle("on", x === b)); wkMode = b.dataset.g; drawWd(); }));
+  drawWd();
 
   // 발행 시간대 히트맵
   if (pubMedia.length) {

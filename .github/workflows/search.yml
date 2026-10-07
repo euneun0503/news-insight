@@ -1,0 +1,48 @@
+name: 검색 키워드 수집
+
+# 구글 급상승 검색어 + 구글 관심도 + (키가 있으면) 네이버 검색량만 따로 수집 (다른 수집과 동시에 돌아도 data/search 만 건드림)
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "오늘 이미 조회했어도 다시 (yes)"
+        required: false
+        default: "yes"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: search
+  cancel-in-progress: false
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: collector/requirements.txt
+      - run: pip install -r collector/requirements.txt
+      - name: 검색 키워드
+        env:
+          NAVER_AD_API_KEY: ${{ secrets.NAVER_AD_API_KEY }}
+          NAVER_AD_SECRET: ${{ secrets.NAVER_AD_SECRET }}
+          NAVER_AD_CUSTOMER_ID: ${{ secrets.NAVER_AD_CUSTOMER_ID }}
+        run: python collector/search.py $([[ "${{ github.event.inputs.force }}" == "yes" ]] && echo --force)
+      - name: 저장소에 커밋
+        run: |
+          git config user.name "news-collector[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/search
+          if git diff --cached --quiet; then echo "변경 없음"; exit 0; fi
+          git commit -m "검색 키워드 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') KST"
+          for i in 1 2 3 4 5; do
+            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

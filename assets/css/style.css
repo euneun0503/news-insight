@@ -383,3 +383,7 @@ body.gated .topbar, body.gated .layout { display: none; }
 .ms-cov { font-size: 11px; color: var(--muted); font-weight: 400; }
 .ms-cov.gap { color: #b45309; }
 .ms-cov.none { color: #94a3b8; }
+
+.wk-nav { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: -4px 0 10px; }
+.wk-nav b { font-size: 13.5px; margin-left: 6px; }
+.wk-nav .input { padding: 4px 8px; }
