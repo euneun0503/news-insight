@@ -1,0 +1,520 @@
+{
+ "at": "2026-10-08T10:40:43+09:00",
+ "detail": [
+  {
+   "oid": "421",
+   "aid": "0009216091",
+   "status": 200,
+   "url": "https://m.entertain.naver.com/home/article/421/0009216091",
+   "sec": 1.95,
+   "len": 66582,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "'라스' 김원효 \"웨이터 출신…스카우트 제의받아\" 깜짝",
+   "any_date": "2026-10-07 23:42",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216091\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216091\",\"modifyDatetime\":\"2026-10-07 23:42:15\",\"serviceDatetime\":\"2026-10-07 23:41:11\",\"content\":\"<strong class=\\\"media_end_summary\\\">MBC '라디오스타' 7일 "
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216091\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216091\",\"modifyDatetime\":\"2026-10-07 23:42:15\",\"serviceDatetime\":\"2026-10-07 23:41:11\",\"content\":\"<strong class=\\\"media_end_summary\\\">MBC '라디오스타' 7일 "
+   ]
+  },
+  {
+   "oid": "421",
+   "aid": "0009216088",
+   "status": 200,
+   "url": "https://m.entertain.naver.com/home/article/421/0009216088",
+   "sec": 0.81,
+   "len": 66929,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "'라스' 양치승 \"헬스장 사기 피해액? 총 20억\" 충격",
+   "any_date": "2026-10-07 23:32",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216088\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216088\",\"modifyDatetime\":\"2026-10-07 23:32:11\",\"serviceDatetime\":\"2026-10-07 23:31:23\",\"content\":\"<strong class=\\\"media_end_summary\\\">MBC '라디오스타' 7일 "
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216088\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216088\",\"modifyDatetime\":\"2026-10-07 23:32:11\",\"serviceDatetime\":\"2026-10-07 23:31:23\",\"content\":\"<strong class=\\\"media_end_summary\\\">MBC '라디오스타' 7일 "
+   ]
+  },
+  {
+   "oid": "421",
+   "aid": "0009216086",
+   "status": 200,
+   "url": "https://m.entertain.naver.com/home/article/421/0009216086",
+   "sec": 0.72,
+   "len": 66863,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "'라스' 오만석 \"다작 비결? 출연료 확 낮춰…무조건 해\"",
+   "any_date": "2026-10-07 22:53",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216086\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216086\",\"modifyDatetime\":\"2026-10-07 22:53:08\",\"serviceDatetime\":\"2026-10-07 22:52:21\",\"content\":\"<strong class=\\\"media_end_summary\\\">MBC '라디오스타' 7일 "
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216086\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216086\",\"modifyDatetime\":\"2026-10-07 22:53:08\",\"serviceDatetime\":\"2026-10-07 22:52:21\",\"content\":\"<strong class=\\\"media_end_summary\\\">MBC '라디오스타' 7일 "
+   ]
+  },
+  {
+   "oid": "421",
+   "aid": "0009216085",
+   "status": 200,
+   "url": "https://m.entertain.naver.com/home/article/421/0009216085",
+   "sec": 0.65,
+   "len": 65739,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "'전설의 사내' 장한별, A+ 고3 성적표 공개…\"자랑스럽게 생각해\"",
+   "any_date": "2026-10-07 22:48",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216085\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216085\",\"modifyDatetime\":\"2026-10-07 22:48:11\",\"serviceDatetime\":\"2026-10-07 22:47:22\",\"content\":\"<strong class=\\\"media_end_summary\\\">MBN '전설의 사내' 7일"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216085\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216085\",\"modifyDatetime\":\"2026-10-07 22:48:11\",\"serviceDatetime\":\"2026-10-07 22:47:22\",\"content\":\"<strong class=\\\"media_end_summary\\\">MBN '전설의 사내' 7일"
+   ]
+  },
+  {
+   "oid": "421",
+   "aid": "0009216083",
+   "status": 200,
+   "url": "https://m.sports.naver.com/general/article/421/0009216083",
+   "sec": 1.43,
+   "len": 68301,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "'아시안게임 도마 金' 여서정, 전국체전 여자 개인 종합 우승",
+   "any_date": "2026-10-08 00:12",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216083\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216083\",\"modifyDatetime\":\"2026-10-08 00:12:09\",\"serviceDatetime\":\"2026-10-07 22:44:12\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216083\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216083\",\"modifyDatetime\":\"2026-10-08 00:12:09\",\"serviceDatetime\":\"2026-10-07 22:44:12\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "421",
+   "aid": "0009216082",
+   "status": 200,
+   "url": "https://m.entertain.naver.com/home/article/421/0009216082",
+   "sec": 1.02,
+   "len": 67208,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "'전설의 사내' 정연호x하루, 남진이 인정한 '파트너' 등극",
+   "any_date": "2026-10-07 22:38",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216082\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216082\",\"modifyDatetime\":\"2026-10-07 22:38:08\",\"serviceDatetime\":\"2026-10-07 22:37:09\",\"content\":\"<strong class=\\\"media_end_summary\\\">MBN '전설의 사내' 7일"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"421\",\"articleId\":\"0009216082\",\"type\":\"1\",\"gdid\":\"08138263_000000000000000009216082\",\"modifyDatetime\":\"2026-10-07 22:38:08\",\"serviceDatetime\":\"2026-10-07 22:37:09\",\"content\":\"<strong class=\\\"media_end_summary\\\">MBN '전설의 사내' 7일"
+   ]
+  },
+  {
+   "oid": "001",
+   "aid": "0016364477",
+   "status": 200,
+   "url": "https://m.sports.naver.com/kbaseball/article/001/0016364477",
+   "sec": 0.67,
+   "len": 67779,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "어린이 팬에서 잠실 에이스로…임찬규, 고별무대서 다승 1위",
+   "any_date": "2026-10-07 22:52",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364477\",\"type\":\"1\",\"gdid\":\"880000D8_000000000000000016364477\",\"modifyDatetime\":\"2026-10-07 22:52:28\",\"serviceDatetime\":\"2026-10-07 22:51:41\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364477\",\"type\":\"1\",\"gdid\":\"880000D8_000000000000000016364477\",\"modifyDatetime\":\"2026-10-07 22:52:28\",\"serviceDatetime\":\"2026-10-07 22:51:41\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "001",
+   "aid": "0016364472",
+   "status": 200,
+   "url": "https://m.sports.naver.com/kbaseball/article/001/0016364472",
+   "sec": 0.64,
+   "len": 78718,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "어린이 팬에서 잠실 에이스로…임찬규, 고별무대서 다승 1위",
+   "any_date": "2026-10-07 22:40",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364472\",\"type\":\"1\",\"gdid\":\"880000D8_000000000000000016364472\",\"modifyDatetime\":\"2026-10-07 22:40:25\",\"serviceDatetime\":\"2026-10-07 22:39:42\",\"content\":\"<strong style=\\\"display:block;overflow:hidden;posit"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364472\",\"type\":\"1\",\"gdid\":\"880000D8_000000000000000016364472\",\"modifyDatetime\":\"2026-10-07 22:40:25\",\"serviceDatetime\":\"2026-10-07 22:39:42\",\"content\":\"<strong style=\\\"display:block;overflow:hidden;posit"
+   ]
+  },
+  {
+   "oid": "001",
+   "aid": "0016364471",
+   "status": 200,
+   "url": "https://m.sports.naver.com/kbaseball/article/001/0016364471",
+   "sec": 0.95,
+   "len": 90014,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "4위 LG, 잠실구장 마지막 경기서 승리…두산 5위 확정(종합)",
+   "any_date": "2026-10-07 22:31",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364471\",\"type\":\"1\",\"gdid\":\"880000D8_000000000000000016364471\",\"modifyDatetime\":\"2026-10-07 22:31:16\",\"serviceDatetime\":\"2026-10-07 22:30:18\",\"content\":\"<strong style=\\\"display:block;overflow:hidden;posit"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364471\",\"type\":\"1\",\"gdid\":\"880000D8_000000000000000016364471\",\"modifyDatetime\":\"2026-10-07 22:31:16\",\"serviceDatetime\":\"2026-10-07 22:30:18\",\"content\":\"<strong style=\\\"display:block;overflow:hidden;posit"
+   ]
+  },
+  {
+   "oid": "001",
+   "aid": "0016364466",
+   "status": 200,
+   "url": "https://m.sports.naver.com/kbaseball/article/001/0016364466",
+   "sec": 0.69,
+   "len": 65470,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "[프로야구 중간순위] 7일",
+   "any_date": "2026-10-07 22:23",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364466\",\"type\":\"1\",\"gdid\":\"880000D8_000000000000000016364466\",\"modifyDatetime\":\"2026-10-07 22:23:21\",\"serviceDatetime\":\"2026-10-07 22:22:44\",\"content\":\"<strong style=\\\"display:block;margin:10px 0;padding"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364466\",\"type\":\"1\",\"gdid\":\"880000D8_000000000000000016364466\",\"modifyDatetime\":\"2026-10-07 22:23:21\",\"serviceDatetime\":\"2026-10-07 22:22:44\",\"content\":\"<strong style=\\\"display:block;margin:10px 0;padding"
+   ]
+  },
+  {
+   "oid": "001",
+   "aid": "0016364463",
+   "status": 200,
+   "url": "https://m.sports.naver.com/kbaseball/article/001/0016364463",
+   "sec": 0.65,
+   "len": 65032,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "[프로야구 부산전적] KIA 12-4 롯데",
+   "any_date": "2026-10-07 22:12",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364463\",\"type\":\"0\",\"gdid\":\"880000D8_000000000000000016364463\",\"modifyDatetime\":\"2026-10-07 22:12:20\",\"serviceDatetime\":\"2026-10-07 22:11:33\",\"content\":\"▲ 부산전적(7일)<br><br>    KIA  100 400 070 - 12<br><br>"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364463\",\"type\":\"0\",\"gdid\":\"880000D8_000000000000000016364463\",\"modifyDatetime\":\"2026-10-07 22:12:20\",\"serviceDatetime\":\"2026-10-07 22:11:33\",\"content\":\"▲ 부산전적(7일)<br><br>    KIA  100 400 070 - 12<br><br>"
+   ]
+  },
+  {
+   "oid": "001",
+   "aid": "0016364456",
+   "status": 200,
+   "url": "https://m.sports.naver.com/kbaseball/article/001/0016364456",
+   "sec": 0.62,
+   "len": 64580,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "[프로야구 수원전적] kt 9-3 삼성",
+   "any_date": "2026-10-07 22:03",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364456\",\"type\":\"0\",\"gdid\":\"880000D8_000000000000000016364456\",\"modifyDatetime\":\"2026-10-07 22:03:16\",\"serviceDatetime\":\"2026-10-07 22:02:30\",\"content\":\"▲ 수원전적(7일)<br><br>    삼성  000 000 003 - 3<br><br>  "
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"001\",\"articleId\":\"0016364456\",\"type\":\"0\",\"gdid\":\"880000D8_000000000000000016364456\",\"modifyDatetime\":\"2026-10-07 22:03:16\",\"serviceDatetime\":\"2026-10-07 22:02:30\",\"content\":\"▲ 수원전적(7일)<br><br>    삼성  000 000 003 - 3<br><br>  "
+   ]
+  },
+  {
+   "oid": "081",
+   "aid": "0003686982",
+   "status": 200,
+   "url": "https://m.sports.naver.com/kbaseball/article/081/0003686982",
+   "sec": 0.76,
+   "len": 78781,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "시즌 최다안타 기록은 이제 매일 바뀐다...최원준, 전인미답 204안타 신기원",
+   "any_date": "2026-10-07 22:30",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686982\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686982\",\"modifyDatetime\":\"2026-10-07 22:30:11\",\"serviceDatetime\":\"2026-10-07 22:22:16\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686982\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686982\",\"modifyDatetime\":\"2026-10-07 22:30:11\",\"serviceDatetime\":\"2026-10-07 22:22:16\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "081",
+   "aid": "0003686938",
+   "status": 200,
+   "url": "https://m.sports.naver.com/kbaseball/article/081/0003686938",
+   "sec": 0.57,
+   "len": 75966,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "송승기, 김진성은 못돌아오고 오지환은 쓰기 어렵고...LG의 막판 레이스 부상 암초에 휘청",
+   "any_date": "2026-10-07 17:51",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686938\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686938\",\"modifyDatetime\":\"2026-10-07 17:51:11\",\"serviceDatetime\":\"2026-10-07 17:51:11\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686938\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686938\",\"modifyDatetime\":\"2026-10-07 17:51:11\",\"serviceDatetime\":\"2026-10-07 17:51:11\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "081",
+   "aid": "0003686924",
+   "status": 200,
+   "url": "https://m.entertain.naver.com/home/article/081/0003686924",
+   "sec": 0.63,
+   "len": 71142,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "김원효 “개그맨 되기 전부터 월 500만원 벌어”…무슨 직업이었길래",
+   "any_date": "2026-10-07 17:21",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686924\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686924\",\"modifyDatetime\":\"2026-10-07 17:21:15\",\"serviceDatetime\":\"2026-10-07 17:21:15\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686924\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686924\",\"modifyDatetime\":\"2026-10-07 17:21:15\",\"serviceDatetime\":\"2026-10-07 17:21:15\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "081",
+   "aid": "0003686918",
+   "status": 200,
+   "url": "https://m.sports.naver.com/golf/article/081/0003686918",
+   "sec": 0.61,
+   "len": 75156,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "‘무에서 유를 창조한 골프웨어 신화’ 유용문 대표, “아이스버그골프로 두 번째 마법 증명하겠다” [권훈의 골",
+   "any_date": "2026-10-07 17:07",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686918\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686918\",\"modifyDatetime\":\"2026-10-07 17:07:11\",\"serviceDatetime\":\"2026-10-07 17:07:11\",\"content\":\"골프 의류 업계에서 ‘무(無)에서 유(有)’를 창조했다는 평가를 받는 유용문 대표가 돌아왔다"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686918\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686918\",\"modifyDatetime\":\"2026-10-07 17:07:11\",\"serviceDatetime\":\"2026-10-07 17:07:11\",\"content\":\"골프 의류 업계에서 ‘무(無)에서 유(有)’를 창조했다는 평가를 받는 유용문 대표가 돌아왔다"
+   ]
+  },
+  {
+   "oid": "081",
+   "aid": "0003686908",
+   "status": 200,
+   "url": "https://m.sports.naver.com/kbaseball/article/081/0003686908",
+   "sec": 0.54,
+   "len": 74131,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "가을잔치 일정은 나왔는데 3~5위는 언제쯤?",
+   "any_date": "2026-10-07 16:49",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686908\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686908\",\"modifyDatetime\":\"2026-10-07 16:49:11\",\"serviceDatetime\":\"2026-10-07 16:44:14\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686908\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686908\",\"modifyDatetime\":\"2026-10-07 16:49:11\",\"serviceDatetime\":\"2026-10-07 16:44:14\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "081",
+   "aid": "0003686904",
+   "status": 200,
+   "url": "https://m.entertain.naver.com/home/article/081/0003686904",
+   "sec": 0.59,
+   "len": 69285,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "신민아, 시선 사로잡은 ‘화이트 룩’…파리서 눈부신 근황 [SNS★샷]",
+   "any_date": "2026-10-07 16:35",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686904\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686904\",\"modifyDatetime\":\"2026-10-07 16:35:13\",\"serviceDatetime\":\"2026-10-07 16:35:13\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"081\",\"articleId\":\"0003686904\",\"type\":\"1\",\"gdid\":\"880000D1_000000000000000003686904\",\"modifyDatetime\":\"2026-10-07 16:35:13\",\"serviceDatetime\":\"2026-10-07 16:35:13\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "119",
+   "aid": "0003140633",
+   "status": 200,
+   "url": "https://m.sports.naver.com/golf/article/119/0003140633",
+   "sec": 0.65,
+   "len": 72052,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "\"부담 내려놓고 3연패 도전\" 김효주…박성현·이정은6과 별들의 전쟁",
+   "any_date": "2026-10-07 22:58",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140633\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140633\",\"modifyDatetime\":\"2026-10-07 22:58:09\",\"serviceDatetime\":\"2026-10-07 22:58:09\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140633\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140633\",\"modifyDatetime\":\"2026-10-07 22:58:09\",\"serviceDatetime\":\"2026-10-07 22:58:09\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "119",
+   "aid": "0003140632",
+   "status": 200,
+   "url": "https://m.sports.naver.com/kbaseball/article/119/0003140632",
+   "sec": 0.66,
+   "len": 75035,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "패닉바잉→혜자 계약, 반전 일으킨 최원준 204안타 신기록",
+   "any_date": "2026-10-07 22:27",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140632\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140632\",\"modifyDatetime\":\"2026-10-07 22:27:09\",\"serviceDatetime\":\"2026-10-07 22:27:09\",\"content\":\"<strong class=\\\"media_end_summary\\\">FA 직전 부진으로 4년 4"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140632\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140632\",\"modifyDatetime\":\"2026-10-07 22:27:09\",\"serviceDatetime\":\"2026-10-07 22:27:09\",\"content\":\"<strong class=\\\"media_end_summary\\\">FA 직전 부진으로 4년 4"
+   ]
+  },
+  {
+   "oid": "119",
+   "aid": "0003140631",
+   "status": 200,
+   "url": "https://m.sports.naver.com/general/article/119/0003140631",
+   "sec": 0.84,
+   "len": 68964,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "아시안게임 아쉬움 턴 임종훈-신유빈, WTT 중국 스매시 4강 안착",
+   "any_date": "2026-10-07 22:15",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140631\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140631\",\"modifyDatetime\":\"2026-10-07 22:15:09\",\"serviceDatetime\":\"2026-10-07 22:15:09\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140631\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140631\",\"modifyDatetime\":\"2026-10-07 22:15:09\",\"serviceDatetime\":\"2026-10-07 22:15:09\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "119",
+   "aid": "0003140565",
+   "status": 200,
+   "url": "https://m.entertain.naver.com/home/article/119/0003140565",
+   "sec": 0.78,
+   "len": 65326,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "'처음 만난 외로움' 제작진, 즐거운 시간 [31st BIFF]",
+   "any_date": "2026-10-07 17:13",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140565\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140565\",\"modifyDatetime\":\"2026-10-07 17:13:10\",\"serviceDatetime\":\"2026-10-07 17:13:10\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140565\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140565\",\"modifyDatetime\":\"2026-10-07 17:13:10\",\"serviceDatetime\":\"2026-10-07 17:13:10\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "119",
+   "aid": "0003140564",
+   "status": 200,
+   "url": "https://m.entertain.naver.com/home/article/119/0003140564",
+   "sec": 0.97,
+   "len": 65326,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "'처음 만난 외로움' 제작진, 반가운 부산 [31st BIFF]",
+   "any_date": "2026-10-07 17:12",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140564\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140564\",\"modifyDatetime\":\"2026-10-07 17:12:24\",\"serviceDatetime\":\"2026-10-07 17:12:24\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140564\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140564\",\"modifyDatetime\":\"2026-10-07 17:12:24\",\"serviceDatetime\":\"2026-10-07 17:12:24\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  },
+  {
+   "oid": "119",
+   "aid": "0003140563",
+   "status": 200,
+   "url": "https://m.entertain.naver.com/home/article/119/0003140563",
+   "sec": 0.77,
+   "len": 65366,
+   "date_tag": false,
+   "meta_pub": false,
+   "title": "부산에서 영화팬들 만난 '처음 만난 외로움' 제작진 [31st BIFF]",
+   "any_date": "2026-10-07 17:12",
+   "sports_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140563\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140563\",\"modifyDatetime\":\"2026-10-07 17:12:22\",\"serviceDatetime\":\"2026-10-07 17:12:22\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ],
+   "entertain_api": [
+    200,
+    "{\"code\":200,\"success\":true,\"result\":{\"articleInfo\":{\"article\":{\"officeId\":\"119\",\"articleId\":\"0003140563\",\"type\":\"1\",\"gdid\":\"8812A0A8_000000000000000003140563\",\"modifyDatetime\":\"2026-10-07 17:12:22\",\"serviceDatetime\":\"2026-10-07 17:12:22\",\"content\":\"<span class=\\\"end_photo_org\\\"><img src=\\\"https://im"
+   ]
+  }
+ ],
+ "boundary": [
+  {
+   "oid": "005",
+   "day": "2026-10-01",
+   "n": 92,
+   "sure": false,
+   "sec": 3.6,
+   "errors": [
+    "발행 건수 2026-10-01 국민일보: 경계 확인 실패 날짜 확인 실패"
+   ]
+  },
+  {
+   "oid": "008",
+   "day": "2026-10-02",
+   "n": 0,
+   "sure": false,
+   "sec": 5.0,
+   "errors": [
+    "발행 건수 2026-10-01 국민일보: 경계 확인 실패 날짜 확인 실패",
+    "발행 건수 2026-10-02 머니투데이: 경계 확인 실패 날짜 확인 실패"
+   ]
+  },
+  {
+   "oid": "009",
+   "day": "2026-10-04",
+   "n": 0,
+   "sure": false,
+   "sec": 3.8,
+   "errors": [
+    "발행 건수 2026-10-01 국민일보: 경계 확인 실패 날짜 확인 실패",
+    "발행 건수 2026-10-02 머니투데이: 경계 확인 실패 날짜 확인 실패",
+    "발행 건수 2026-10-04 매일경제: 경계 확인 실패 날짜 확인 실패"
+   ]
+  }
+ ]
+}
