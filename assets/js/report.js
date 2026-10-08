@@ -256,8 +256,9 @@ export function slides(m) {
 
   // 10. 기자
   const reps = [...A.rep.values()];
-  const ourReps = reps.filter((r) => r.oid === k.our).sort((a, b) => b.views - a.views || b.pub - a.pub).slice(0, 10);
-  const allReps = reps.filter((r) => r.views > 0).sort((a, b) => b.views - a.views).slice(0, 10);
+  const splitReps = (list) => { const mm = new Map(); for (const r of list) for (const n of r.name.split("·").map((x) => x.trim()).filter(Boolean)) { const key = n + "|" + r.oid; const x = mm.get(key) || { name: n, oid: r.oid, pub: 0, rank: 0, views: 0 }; x.pub += r.pub; x.rank += r.rank; x.views += r.views; mm.set(key, x); } return [...mm.values()]; };
+  const ourReps = splitReps(reps.filter((r) => r.oid === k.our)).sort((a, b) => b.views - a.views || b.pub - a.pub).slice(0, 10);
+  const allReps = splitReps(reps).filter((r) => r.views > 0).sort((a, b) => b.views - a.views).slice(0, 10);
   out.push({
     ...head("기자 성과", "공동 바이라인은 각 기자에게 모두 반영 · 랭킹 진입(일별) = 매일 매체 랭킹 20위 안에 오른 횟수 · 랭킹 조회수 = 오른 날들의 랭킹 조회수 합"),
     blocks: [
@@ -500,6 +501,110 @@ function pptBlock(pptx, sl, b, T) {
   T(sl, b.text || "", x, y, w, hh, { fontSize: 14, color: hex(C.sub) });
 }
 
+// ── 일간 보고서: A4 세로 2장 (핵심만 압축) ─────────────
+const A4W = 794, A4H = 1123;
+function dailyPages(m) {
+  const { k, A, PA, tr, p } = m;
+  const pw = "전일";
+  const kpi = (l, v, d, sub, cls = "") => `<div class="a4-k ${cls}"><span>${esc(l)}</span><b>${esc(v)}</b><em class="${d.tone}">${esc(d.t)}</em><i>${esc(sub || "")}</i></div>`;
+  const rows = m.rl.slice(0, 8).map((o, i) => { const r = A.rank[o], pr = PA.rank[o]; const d = dl(ch(r.views, pr?.views)); return `<tr class="${o === k.our ? "our" : o === k.cmp ? "cmp" : ""}"><td class="c">${i + 1}</td><td>${esc(mediaName(o))}</td><td class="r">${fmt(r.views)}</td><td class="r ${d.tone}">${esc(d.t)}</td><td class="r">${pct(r.views / A.rankViews)}</td><td class="r">${A.pub[o] != null ? fmt(A.pub[o]) : "-"}</td></tr>`; }).join("");
+  const news = (list, n, wide) => list.slice(0, n).map((a, i) => `<div class="a4-n"><span class="no ${i < 3 ? "top" : ""}">${i + 1}</span><span class="md" style="color:${a.oid === k.our ? C.our : a.oid === k.cmp ? C.cmp : C.sub}">${esc(mediaName(a.oid))}</span><span class="tt">${esc(cut(a.title, wide ? 58 : 34))}${a.reporter ? ` <i>${esc(a.reporter)}</i>` : ""}</span><span class="vw">${fmt(a.views)}</span></div>`).join("") || '<div class="a4-empty">자료 없음</div>';
+  const kwTop = m.kw.slice().sort((a, b) => b.score - a.score).slice(0, 10);
+  const chip = (w, extra = "") => `<span class="a4-chip">${esc(w)}${extra}</span>`;
+  // 공동 바이라인(예: 김영경·신예림)은 각 기자에게 나눠 담음
+  const rm = new Map();
+  for (const r of A.rep.values()) if (r.oid === k.our) for (const n of r.name.split("·").map((x) => x.trim()).filter(Boolean)) { const x = rm.get(n) || { name: n, pub: 0, rank: 0, views: 0 }; x.pub += r.pub; x.rank += r.rank; x.views += r.views; rm.set(n, x); }
+  const reps = [...rm.values()].filter((r) => r.views > 0).sort((a, b) => b.views - a.views).slice(0, 5);
+  const g = (m.S?.google || []).slice(0, 10);
+  const head = (no) => `<div class="a4-hd"><div><div class="t">뉴스 인사이트 <b>일간 리포트</b></div><div class="d">${esc(label("day", p))}${holiday(p.s) ? " · " + esc(holiday(p.s)) : ""}</div></div><div class="r">${esc(k.ourN)} · 비교 ${esc(k.cmpN)}<br>${no} / 2</div></div>`;
+  const foot = `<div class="a4-ft">랭킹 조회수 = 네이버 언론사별 랭킹(상위 20건) 하루 합계 · 선택 매체 ${m.rl.length}곳 기준 · 조회수 미공개 매체 제외 · 작성 ${esc(kstDateTime(m.generated))}</div>`;
+  const p1 = `<div class="a4">${head(1)}
+    <div class="a4-sec">핵심 지표 <span>${pw} 대비</span></div>
+    <div class="a4-kpis">
+      ${kpi(`${k.ourN} 랭킹 조회수`, fmt(k.v), dl(ch(k.v, k.pv)), `${pw} ${fmt(k.pv)}`, "our")}
+      ${kpi("조회수 점유율", pct(k.sh), dlp(k.sh, k.psh), `선택 매체 ${k.nMedia}곳 중`, "our")}
+      ${kpi("매체 순위", k.rank ? `${k.rank}위` : "-", dRank(k.rank, k.prank), `${pw} ${k.prank ? k.prank + "위" : "-"}`, "our")}
+      ${kpi("발행 · 랭킹 진입", `${fmt(k.p)} · ${fmt(k.ent)}`, dl(ch(k.p, k.pp)), `진입률 ${pct(k.rate, 0)}`, "our")}
+      ${kpi(`${k.cmpN} 랭킹 조회수`, fmt(k.cv), dl(ch(k.cv, k.pcv)), `${pw} ${fmt(k.pcv)}`, "cmp")}
+      ${kpi(`${k.cmpN} 발행`, fmt(k.cp), dl(ch(k.cp, k.pcp)), `진입 ${fmt(k.cent)}건`, "cmp")}
+      ${kpi(`${k.ourN} vs ${k.cmpN}`, k.v != null && k.cv != null ? (k.v >= k.cv ? "우위" : "열세") : "-", dl(ch(k.v, k.cv)), "조회수 기준", "")}
+      ${kpi("최다 조회 기사", k.top ? fmt(k.top.views) : "-", { t: k.top ? `최고 ${k.top.best}위` : "", tone: "" }, k.top ? cut(k.top.title, 18) : "", "")}
+    </div>
+    <div class="a4-sec">핵심 포인트</div>
+    <ul class="a4-ul">${m.ins.slice(0, 6).map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
+    <div class="a4-sec">최근 14일 추이 <span>마지막 날이 이번 보고일</span></div>
+    <div class="a4-2"><div class="a4-box"><div class="bt">랭킹 조회수</div><canvas data-a4="v" width="352" height="170" style="width:352px;height:170px"></canvas></div>
+      <div class="a4-box"><div class="bt">발행 기사 수</div><canvas data-a4="p" width="352" height="170" style="width:352px;height:170px"></canvas></div></div>
+    <div class="a4-sec">매체별 성과 <span>선택 매체 랭킹 조회수 순</span></div>
+    <table class="a4-t"><thead><tr><th class="c">#</th><th>매체</th><th class="r">랭킹 조회수</th><th class="r">${pw} 대비</th><th class="r">점유율</th><th class="r">발행</th></tr></thead><tbody>${rows}</tbody></table>
+    ${foot}</div>`;
+  const p2 = `<div class="a4">${head(2)}
+    <div class="a4-sec">${esc(k.ourN)} 많이 읽힌 기사 TOP 10</div>
+    <div class="a4-list">${news(m.our1, 10, true)}</div>
+    <div class="a4-sec">오늘의 주요 뉴스 <span>네이버 전체 매체 랭킹 조회수 TOP 5</span></div>
+    <div class="a4-list">${news(m.allNews, 5, true)}</div>
+    <div class="a4-2">
+      <div><div class="a4-sec">많이 쓰인 키워드</div><div class="a4-chips">${kwTop.map((r) => chip(r.word, ` <i>${fmt(r.score)}</i>`)).join("") || '<div class="a4-empty">자료 없음</div>'}</div>
+        <div class="a4-sec" style="margin-top:10px">급상승 키워드 <span>${pw} 대비</span></div><div class="a4-chips">${m.rising.slice(0, 10).map((r) => chip(r.word, r.isNew ? ' <i class="new">NEW</i>' : ` <i class="up">${dl(r.change).t}</i>`)).join("") || '<div class="a4-empty">비교 자료 부족</div>'}</div></div>
+      <div><div class="a4-sec">구글 급상승 검색어 TOP 10</div><div class="a4-g">${g.map((x, i) => `<div><span class="no">${i + 1}</span><b>${esc(cut(x.title, 16))}</b><i>${x.traffic ? fmt(x.traffic) + "+" : ""}</i></div>`).join("") || '<div class="a4-empty">자료 없음</div>'}</div></div>
+    </div>
+    <div class="a4-sec">${esc(k.ourN)} 기자 TOP 5 <span>랭킹 조회수 기준</span></div>
+    <table class="a4-t"><thead><tr><th class="c">#</th><th>기자</th><th class="r">발행</th><th class="r">랭킹 진입(일별)</th><th class="r">랭킹 조회수</th></tr></thead><tbody>${reps.map((r, i) => `<tr><td class="c">${i + 1}</td><td>${esc(r.name)}</td><td class="r">${fmt(r.pub)}</td><td class="r">${fmt(r.rank)}</td><td class="r">${fmt(r.views)}</td></tr>`).join("") || '<tr><td colspan="5" class="c">자료 없음</td></tr>'}</tbody></table>
+    ${foot}</div>`;
+  return [p1, p2];
+}
+function renderDaily(root, m) {
+  root.innerHTML = dailyPages(m).join("");
+  const Chart = window.Chart;
+  if (Chart) {
+    Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+    const labels = m.tr.map((b) => b.label.replace(/\(.\)$/, ""));
+    const mk = (cv, type, sets) => new Chart(cv, { type, data: { labels, datasets: sets.map((d) => ({ borderWidth: type === "line" ? 2.5 : 0, pointRadius: 2, tension: 0.25, borderRadius: 3, maxBarThickness: 10, spanGaps: true, ...d })) },
+      options: { responsive: false, animation: false, devicePixelRatio: 2, plugins: { legend: { position: "bottom", labels: { boxWidth: 8, boxHeight: 8, font: { size: 10 } } }, tooltip: { enabled: false } },
+        scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, color: "#64748b", maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } }, y: { beginAtZero: true, grid: { color: "#eef2f7" }, ticks: { font: { size: 9 }, color: "#64748b", callback: (v) => shortN(v) } } } } });
+    const v = $('canvas[data-a4="v"]', root), pc = $('canvas[data-a4="p"]', root);
+    if (v) mk(v, "line", [{ label: m.k.ourN, data: m.tr.map((b) => b.ov), borderColor: C.our, backgroundColor: C.our }, { label: m.k.cmpN, data: m.tr.map((b) => b.cv), borderColor: C.cmp, backgroundColor: C.cmp }]);
+    if (pc) mk(pc, "bar", [{ label: m.k.ourN, data: m.tr.map((b) => b.op), backgroundColor: C.our }, { label: m.k.cmpN, data: m.tr.map((b) => b.cp), backgroundColor: C.cmp }]);
+  }
+  return $$(".a4", root);
+}
+async function dailyCanvases(m, onProg) {
+  await loadScript(LIB.canvas);
+  const host = h(`<div class="rp-host"></div>`);
+  document.body.append(host);
+  try {
+    const els = renderDaily(host, m);
+    await document.fonts?.ready;
+    const out = [];
+    for (const [i, el] of els.entries()) { onProg?.(`만드는 중… ${i + 1}/${els.length}`); out.push(await window.html2canvas(el, { scale: 2, backgroundColor: "#ffffff", logging: false })); }
+    return out;
+  } finally { host.remove(); }
+}
+async function toDailyPDF(m, ss, name, onProg) {
+  await loadScript(LIB.pdf);
+  const cvs = await dailyCanvases(m, onProg);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+  cvs.forEach((cv, i) => { if (i) doc.addPage("a4", "portrait"); doc.addImage(cv.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, 210, 297, undefined, "FAST"); });
+  doc.setProperties({ title: name, creator: "뉴스 인사이트" });
+  doc.save(`${name}.pdf`);
+}
+async function toDailyPNG(m, ss, name, onProg) {
+  const cvs = await dailyCanvases(m, onProg);
+  const gap = 24;
+  const all = document.createElement("canvas");
+  all.width = cvs[0].width; all.height = cvs.reduce((s, c) => s + c.height, 0) + gap * (cvs.length - 1);
+  const g = all.getContext("2d");
+  g.fillStyle = "#e5e7eb"; g.fillRect(0, 0, all.width, all.height);
+  let y = 0;
+  for (const c of cvs) { g.drawImage(c, 0, y); y += c.height + gap; }
+  const blob = await new Promise((r) => all.toBlob(r, "image/png"));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `${name}.png`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
 // ── 보고서 창 ─────────────────────────
 export async function openReportDialog({ canDownload, onExcel, defaultDay }) {
   const today = kstToday();
@@ -508,13 +613,14 @@ export async function openReportDialog({ canDownload, onExcel, defaultDay }) {
   const lastMonth = prevMonth(today.slice(0, 7));
   const st = { kind: "day", anchor: { day: yday, week: lastWeek, month: lastMonth + "-01" }, model: null, ss: null };
   const ov = h(`<div class="rp-ov"><div class="rp-dlg">
-    <div class="rp-dh"><div><h3>보고서 받기</h3><div class="sub">일간·주간·월간 보고서를 디자인된 PDF / PPT로 받습니다. PPT는 표·차트를 고쳐 쓸 수 있습니다.</div></div><button class="btn sm" data-x>닫기</button></div>
+    <div class="rp-dh"><div><h3>보고서 받기</h3><div class="sub">일간은 A4 세로 2장 요약(PDF·PNG), 주간·월간은 16:9 보고서(PDF·PPT)로 받습니다. PPT는 표·차트를 고쳐 쓸 수 있습니다.</div></div><button class="btn sm" data-x>닫기</button></div>
     <div class="rp-ctl">
       <div class="seg" id="rk"><button data-k="day" class="on">일간</button><button data-k="week">주간</button><button data-k="month">월간</button></div>
       <span id="rpick"></span>
       <span class="rp-per" id="rper"></span>
       <span class="grow"></span>
       <button class="btn primary" id="rpdf">📄 PDF 받기</button>
+      <button class="btn primary" id="rpng" hidden>🖼 PNG 받기</button>
       <button class="btn primary" id="rppt">📊 PPT 받기</button>
       <button class="btn" id="rxls" title="원자료(표) 엑셀">엑셀(원자료)</button>
     </div>
@@ -547,11 +653,15 @@ export async function openReportDialog({ canDownload, onExcel, defaultDay }) {
       st.ss = slides(model);
       const box = $("#rprev", ov);
       box.innerHTML = "";
-      const inner = h(`<div class="rp-scale"></div>`);
+      const inner = h(`<div class="rp-scale ${st.kind === "day" ? "a4mode" : ""}"></div>`);
       box.append(inner);
-      renderSlides(inner, model, st.ss);
+      if (st.kind === "day") renderDaily(inner, model);
+      else renderSlides(inner, model, st.ss);
+      $("#rpng", ov).hidden = st.kind !== "day";
+      $("#rppt", ov).hidden = st.kind === "day";
+      $("#rpdf", ov).textContent = st.kind === "day" ? "📄 PDF 받기 (A4 2장)" : "📄 PDF 받기";
       const noData = !model.A.rankDayCount && !model.A.pubDayCount;
-      $("#rmsg", ov).innerHTML = noData ? '<span class="warn">이 기간에는 수집된 데이터가 없습니다.</span>' : model.partial ? `<span class="warn">보고 기간에 오늘·집계 중인 날이 있어 숫자가 바뀔 수 있습니다.</span>` : `슬라이드 ${st.ss.length}장 · 아래는 미리보기입니다.`;
+      $("#rmsg", ov).innerHTML = noData ? '<span class="warn">이 기간에는 수집된 데이터가 없습니다.</span>' : model.partial ? `<span class="warn">보고 기간에 오늘·집계 중인 날이 있어 숫자가 바뀔 수 있습니다.</span>` : (st.kind === "day" ? "A4 세로 2장 · 아래는 미리보기입니다." : `슬라이드 ${st.ss.length}장 · 아래는 미리보기입니다.`);
     } catch (e) {
       console.error(e);
       $("#rprev", ov).innerHTML = `<div class="err-box">보고서를 만들지 못했습니다: ${esc(e.message)}</div>`;
@@ -567,7 +677,8 @@ export async function openReportDialog({ canDownload, onExcel, defaultDay }) {
     catch (e) { console.error(e); toast("만들기 실패: " + e.message, 5000); }
     finally { btn.disabled = false; btn.textContent = old; }
   };
-  $("#rpdf", ov).addEventListener("click", run(toPDF, $("#rpdf", ov)));
+  $("#rpdf", ov).addEventListener("click", run((m, ss, n, pg) => (st.kind === "day" ? toDailyPDF(m, ss, n, pg) : toPDF(m, ss, n, pg)), $("#rpdf", ov)));
+  $("#rpng", ov).addEventListener("click", run(toDailyPNG, $("#rpng", ov)));
   $("#rppt", ov).addEventListener("click", run(toPPT, $("#rppt", ov)));
   $("#rxls", ov).addEventListener("click", () => { const p = st.model?.p; onExcel(p ? { s: p.s, e: p.e } : null); });
   picker();

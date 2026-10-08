@@ -527,3 +527,53 @@ body.gated .topbar, body.gated .layout { display: none; }
 .seg.sm button { padding: 3px 9px; font-size: 12px; }
 .seg.sm button[data-v="hide"].on { background: #475569; color: #fff; }
 .seg.sm button[data-v="lock"].on { background: #e2e8f0; color: #334155; }
+
+/* ── 일간 보고서 A4 세로 (794×1123) ── */
+.rp-scale.a4mode { zoom: .7; }
+@media (max-width:760px){ .rp-scale.a4mode { zoom: .4; } }
+.a4 { position: relative; width: 794px; height: 1123px; background: #fff; box-shadow: 0 4px 16px rgba(15,35,65,.12); padding: 30px 36px 40px; box-sizing: border-box; font-family: var(--font); color: #1e293b; overflow: hidden; flex: none; }
+.rp-host .a4 { margin-bottom: 10px; }
+.a4-hd { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #0f2341; padding-bottom: 10px; margin-bottom: 6px; }
+.a4-hd .t { font-size: 13px; color: #64748b; letter-spacing: .5px; }
+.a4-hd .t b { color: #0f2341; font-size: 22px; letter-spacing: -.5px; margin-left: 2px; }
+.a4-hd .d { font-size: 18px; font-weight: 800; color: #f97316; margin-top: 2px; }
+.a4-hd .r { text-align: right; font-size: 11px; color: #64748b; line-height: 1.5; }
+.a4-sec { font-size: 13.5px; font-weight: 800; color: #0f2341; margin: 14px 0 7px; padding-left: 8px; border-left: 4px solid #f97316; line-height: 1.1; }
+.a4-sec span { font-size: 10.5px; font-weight: 500; color: #94a3b8; margin-left: 6px; }
+.a4-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.a4-k { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.a4-k.our { background: #fff4ea; border-color: #fed7aa; }
+.a4-k.cmp { background: #eef4ff; border-color: #bfdbfe; }
+.a4-k span { font-size: 10.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a4-k b { font-size: 19px; font-weight: 800; letter-spacing: -.3px; }
+.a4-k.our b { color: #c2410c; } .a4-k.cmp b { color: #1d4ed8; }
+.a4-k em { font-style: normal; font-size: 11px; font-weight: 700; color: #64748b; }
+.a4-k em.up, .a4-t td.up { color: #dc2626; } .a4-k em.down, .a4-t td.down { color: #2563eb; }
+.a4-k i { font-style: normal; font-size: 10px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a4-ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.65; }
+.a4-ul li::marker { color: #f97316; }
+.a4-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.a4-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 8px 4px; }
+.a4-box .bt { font-size: 11px; font-weight: 700; color: #0f2341; margin-bottom: 2px; }
+.a4-t { width: 100%; border-collapse: collapse; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.a4-t th { background: #0f2341; color: #fff; font-weight: 600; padding: 5px 7px; text-align: left; }
+.a4-t td { padding: 5px 7px; border-bottom: 1px solid #eef1f6; }
+.a4-t .r { text-align: right; } .a4-t .c { text-align: center; }
+.a4-t tr.our td { background: #fff4ea; font-weight: 700; } .a4-t tr.cmp td { background: #eef4ff; }
+.a4-list { display: flex; flex-direction: column; }
+.a4-n { display: flex; align-items: center; gap: 8px; padding: 3.5px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+.a4-n .no { flex: none; width: 19px; height: 19px; border-radius: 50%; background: #e2e8f0; font-size: 10.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.a4-n .no.top { background: #0f2341; color: #fff; }
+.a4-n .md { flex: none; width: 70px; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a4-n .tt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.a4-n .tt i { font-style: normal; font-weight: 400; color: #94a3b8; font-size: 10.5px; }
+.a4-n .vw { flex: none; font-weight: 800; color: #0f2341; }
+.a4-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.a4-chip { font-size: 11.5px; background: #f1f5f9; border-radius: 999px; padding: 3px 9px; }
+.a4-chip i { font-style: normal; color: #94a3b8; font-size: 10px; } .a4-chip i.new { color: #f97316; font-weight: 800; } .a4-chip i.up { color: #dc2626; }
+.a4-g { display: grid; grid-template-columns: 1fr; gap: 3px; font-size: 11.5px; }
+.a4-g div { display: flex; gap: 6px; align-items: center; border-bottom: 1px solid #f1f5f9; padding: 2px 0; }
+.a4-g .no { width: 16px; color: #2563eb; font-weight: 800; text-align: center; }
+.a4-g b { flex: 1; font-weight: 600; } .a4-g i { font-style: normal; color: #94a3b8; font-size: 10.5px; }
+.a4-empty { color: #94a3b8; font-size: 11.5px; padding: 6px 0; }
+.a4-ft { position: absolute; left: 36px; right: 36px; bottom: 14px; font-size: 9.5px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 6px; }
