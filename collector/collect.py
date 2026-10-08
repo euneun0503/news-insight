@@ -58,6 +58,64 @@ def err(msg):
     log("  ⚠️", msg)
 
 
+# ── 실패 원인 분류 (관리자 화면에서 원인·개선 방법을 보여 주기 위해 코드로 남김) ──
+#  timeout  : 네이버 응답이 12초 안에 오지 않음(느림)       429 : 요청이 너무 잦아 네이버가 잠시 막음
+#  403      : 접근 거부                                      404 : 기사 삭제·주소 없음
+#  5xx      : 네이버 서버 오류                               conn: 연결 끊김
+#  sports / entertain : 스포츠·연예 기사라 다른 페이지로 넘어가 날짜 표시를 못 찾음
+#  nodate   : 페이지는 열렸지만 날짜 표시가 없음(형식 변경)   other: 기타
+def why(e):
+    import requests as rq
+    s = str(e)
+    if isinstance(e, rq.exceptions.RetryError) or "429" in s:
+        return "429" if "429" in s else "5xx"
+    if isinstance(e, rq.exceptions.Timeout) or "timed out" in s.lower():
+        return "timeout"
+    if isinstance(e, rq.exceptions.HTTPError) and e.response is not None:
+        c = e.response.status_code
+        return "403" if c == 403 else "404" if c in (404, 410) else "5xx" if c >= 500 else "429" if c == 429 else "other"
+    if isinstance(e, rq.exceptions.ConnectionError):
+        return "conn"
+    return "other"
+
+
+def page_kind(url):
+    return "sports" if "sports.naver.com" in (url or "") else "entertain" if "entertain.naver.com" in (url or "") else "nodate"
+
+
+def reasons_txt(cnt):
+    return ", ".join(f"{k}×{v}" for k, v in sorted(cnt.items(), key=lambda x: -x[1]))
+
+
+_last_url = {}
+
+# 스포츠·연예 기사: n.news 주소가 m.sports / m.entertain 페이지로 넘어가며 날짜 표시 태그가 없음.
+# 그 페이지 안에 들어 있는 기사 정보(JSON)의 serviceDatetime(입력 시각)·reporter(바이라인)를 읽는다. (2026-10-08 점검으로 확인)
+_SVC_RE = re.compile(r'serviceDatetime\\?"\s*:\s*\\?"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})')
+_REP_RE = re.compile(r'"reporter\\?"\s*:\s*\\?"([^"\\]{2,60})')
+
+
+def sports_meta(text, session=None, oid=None, aid=None):
+    m = _SVC_RE.search(text or "")
+    pub = m.group(1) if m else None
+    rm = _REP_RE.search(text or "")
+    rep = rm.group(1) if rm else ""
+    if not pub and session is not None:      # 페이지에서 못 찾으면 기사 정보 주소로 한 번 더
+        try:
+            j = session.get(f"https://api-gw.sports.naver.com/news/article/{oid}/{aid}", timeout=10).json()
+            a = j["result"]["articleInfo"]["article"]
+            pub, rep = (a.get("serviceDatetime") or "")[:16] or None, a.get("reporter") or rep
+        except Exception:
+            pass
+    names = []
+    for part in re.split(r"[,/·ㆍ]", rep or ""):
+        n = re.sub(r"\(.*?\)|[\w.+-]+@[\w.-]+", " ", part)
+        n = re.sub(r"\s*" + _ROLE_RE + r".*$", "", n).strip()
+        if re.fullmatch(_NAME, n) and _ok_name(n) and n not in names:
+            names.append(n)
+    return pub, "·".join(names[:3])
+
+
 def make_session(workers):
     s = requests.Session()
     s.headers.update(HEADERS)
@@ -247,6 +305,7 @@ def fetch_article_meta(session, oid, aid):
     url = f"https://n.news.naver.com/mnews/article/{oid}/{aid}"
     r = session.get(url, timeout=12)
     r.raise_for_status()
+    _last_url[f"{oid}_{aid}"] = r.url
     soup = BeautifulSoup(r.text, "html.parser")
     pub = None
     tag = soup.select_one("span.media_end_head_info_datestamp_time[data-date-time]")
@@ -260,6 +319,11 @@ def fetch_article_meta(session, oid, aid):
         tag = soup.select_one("em.date, span.date, .article_info .date")
         if tag:
             pub = _norm_dt(tag.get_text(" ", strip=True).replace(".", "-"))
+    if not pub and page_kind(r.url) in ("sports", "entertain"):   # 스포츠·연예 기사
+        pub, rep2 = sports_meta(r.text, session, oid, aid)
+        if pub:
+            _debug_sample(oid, aid, soup, r.text, rep2, "sports/entertain")
+            return pub, rep2
     reporter = parse_reporter(soup, r.text)
     origin = ""
     if not reporter:
@@ -268,29 +332,45 @@ def fetch_article_meta(session, oid, aid):
     return pub, reporter
 
 
-def resolve_meta(session, keys, cache, workers):
-    """keys: [(oid, aid)] → 캐시에 없는 것만 병렬 조회해서 cache 갱신"""
-    # 캐시에 없거나, 예전 방식으로 기자명을 못 찾은 항목(버전 표시 없음)은 다시 조회
+def resolve_meta(session, keys, cache, workers, reasons=None):
+    """keys: [(oid, aid)] → 캐시에 없는 것만 병렬 조회해서 cache 갱신. 실패는 원인별로 reasons(Counter)에 더함.
+    느림·일시 차단(시간 초과·429·연결 끊김·서버 오류)으로 실패한 기사는 잠시 쉬었다가 적은 동시 요청으로 한 번 더 시도."""
+    from collections import Counter
+    reasons = reasons if reasons is not None else Counter()
     todo = [k for k in keys if (cache.get(f"{k[0]}_{k[1]}") or [None, None, 0])[-1] != 6]
     if not todo:
         return 0
-    fails = 0
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        futs = {ex.submit(fetch_article_meta, session, oid, aid): (oid, aid) for oid, aid in todo}
-        for i, f in enumerate(as_completed(futs), 1):
-            oid, aid = futs[f]
-            try:
-                pub, rep = f.result()
-                if pub:
-                    with _cache_lock:
-                        cache[f"{oid}_{aid}"] = [pub, rep, 6]
-                else:
-                    fails += 1
-            except Exception:
-                fails += 1
-            if i % 100 == 0:
-                log(f"      상세 확인 {i}/{len(todo)}")
-    return fails
+
+    def run(items, n_workers):
+        failed = {}
+        with ThreadPoolExecutor(max_workers=n_workers) as ex:
+            futs = {ex.submit(fetch_article_meta, session, oid, aid): (oid, aid) for oid, aid in items}
+            for i, f in enumerate(as_completed(futs), 1):
+                oid, aid = futs[f]
+                try:
+                    pub, rep = f.result()
+                    if pub:
+                        with _cache_lock:
+                            cache[f"{oid}_{aid}"] = [pub, rep, 6]
+                    else:
+                        failed[(oid, aid)] = page_kind(_last_url.get(f"{oid}_{aid}"))
+                except Exception as e:
+                    failed[(oid, aid)] = why(e)
+                if i % 100 == 0:
+                    log(f"      상세 확인 {i}/{len(items)}")
+        return failed
+
+    failed = run(todo, workers)
+    retry = [k for k, c in failed.items() if c in ("timeout", "429", "conn", "5xx")]
+    if retry:
+        log(f"      느림·일시 차단 {len(retry)}건 → 20초 쉬고 천천히 다시")
+        time.sleep(20)
+        again = run(retry, max(2, workers // 4))
+        for k in retry:
+            failed.pop(k, None)
+        failed.update(again)
+    reasons.update(failed.values())
+    return len(failed)
 
 
 # ── 랭킹 ─────────────────────────────────────────────────────
@@ -439,6 +519,7 @@ def fetch_pub_date(session, oid, aid, cache):
         return m[0][:10]
     r = session.get(f"https://n.news.naver.com/mnews/article/{oid}/{aid}", timeout=12)
     r.raise_for_status()
+    _last_url[k] = r.url
     soup = BeautifulSoup(r.text, "html.parser")
     pub = None
     tag = soup.select_one("span.media_end_head_info_datestamp_time[data-date-time]")
@@ -448,6 +529,8 @@ def fetch_pub_date(session, oid, aid, cache):
         meta = soup.select_one('meta[property="article:published_time"]')
         if meta:
             pub = _norm_dt(meta.get("content"))
+    if not pub and page_kind(r.url) in ("sports", "entertain"):
+        pub = sports_meta(r.text, session, oid, aid)[0]
     if pub:
         with _cache_lock:
             cache.setdefault(k, [pub, "", 0])   # 버전 0: 기자명은 나중에 상세 수집 때 채움
@@ -464,9 +547,19 @@ def split_by_boundary(session, oid, day, cands, cache):
         lo, hi = 0, len(arr)
         while lo < hi:
             mid = (lo + hi) // 2
-            d = fetch_pub_date(session, oid, arr[mid][0][1], cache)
+            aid = arr[mid][0][1]
+            d = None
+            for attempt in range(3):          # 느림·일시 차단은 잠시 쉬고 다시
+                try:
+                    d = fetch_pub_date(session, oid, aid, cache)
+                    break
+                except Exception as e:
+                    code = why(e)
+                    if attempt == 2 or code in ("404", "403"):
+                        raise RuntimeError(f"날짜 확인 실패 | 원인: {code}×1")
+                    time.sleep(3 * (attempt + 1))
             if d is None:
-                raise RuntimeError("날짜 확인 실패")
+                raise RuntimeError(f"날짜 확인 실패 | 원인: {page_kind(_last_url.get(f'{oid}_{aid}'))}×1")
             if d < target:
                 lo = mid + 1
             else:
@@ -539,7 +632,10 @@ def list_day_exact(session, oid, day, cache=None, max_pages=150):
     try:
         return split_by_boundary(session, oid, day, cands, cache), True
     except Exception as e:
-        err(f"발행 건수 {day} {CONFIG['media'].get(oid, oid)}: 경계 확인 실패 {e}")
+        msg = str(e)
+        if "원인:" not in msg:
+            msg += f" | 원인: {why(e)}×1"
+        err(f"발행 건수 {day} {CONFIG['media'].get(oid, oid)}: 경계 확인 실패 {msg}")
         return out, False
 
 
@@ -588,9 +684,11 @@ def collect_publish(session, days, media, cache, workers, fast=False):
                 failed.append(day)
                 err(f"발행목록 {day} {name}: {e}")
         log(f"   후보 {len(cands)}건 → 상세페이지에서 날짜 확인")
-        fails = 0 if fast else resolve_meta(session, list(cands), cache, workers)
+        from collections import Counter
+        rs = Counter()
+        fails = 0 if fast else resolve_meta(session, list(cands), cache, workers, rs)
         if fails:
-            err(f"발행목록 {name}: 상세 확인 실패 {fails}건 → 제외")
+            err(f"발행목록 {name}: 상세 확인 실패 {fails}건 → 제외 | 원인: {reasons_txt(rs)}")
         buckets = {}
         for (o, aid), title in cands.items():
             m = cache.get(f"{o}_{aid}")
@@ -666,7 +764,7 @@ def main():
     finally:
         save_cache(cache)
 
-    status["errors"] = _errors[:50]
+    status["errors"] = _errors[:300]
     status["errors_n"] = len(_errors)
     status["ok"] = len(_errors) == 0
     status["elapsed"] = round(time.time() - t0, 1)

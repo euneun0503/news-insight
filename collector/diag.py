@@ -32,6 +32,11 @@ def probe(oid, aid):
             rec[name] = [r.status_code, r.text[:300]]
         except Exception as e:
             rec[name] = [type(e).__name__, str(e)[:100]]
+    try:
+        pub, rep = collect.fetch_article_meta(S, oid, aid)
+        rec["fixed"] = [pub, rep]
+    except Exception as e:
+        rec["fixed"] = ["error", str(e)[:100]]
     return rec
 
 

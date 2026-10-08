@@ -957,7 +957,7 @@ async function collectView(pane) {
     }
   }
   loadRuns();
-  if (M.last_run?.errors?.length) runs.append(h(`<div class="err-box" style="margin-top:12px"><b>최근 수집 경고</b><br>${M.last_run.errors.map(esc).join("<br>")}</div>`));
+  if (M.last_run?.errors?.length) runs.append(warnBox(M.last_run));
 }
 
 // ── 통계 업로드 (마스터 전용) ─────────────────────
@@ -1114,6 +1114,45 @@ async function statsView(pane) {
   $("#hr", hist).addEventListener("click", loadHist);
   loadHist();
 }
+
+// ── 수집 경고: 원인별 묶음 + 개선 방법, 목록은 30줄 높이로 스크롤 ──
+const REASON = {
+  timeout: ["느림 (시간 초과)", "네이버 기사 페이지가 12초 안에 응답하지 않았습니다. 한꺼번에 많은 기사(연합뉴스·뉴스1은 하루 2천~3천 건)를 확인할 때 생깁니다.", "자동으로 20초 쉬고 적은 동시 요청으로 한 번 더 확인합니다. 그래도 남으면 다음 수집(3시간마다 전체 수집, 매일 7:30)에서 다시 확인하므로 대부분 채워집니다."],
+  "429": ["접근 제한 (요청 과다)", "짧은 시간에 요청이 너무 많아 네이버가 잠시 응답을 막았습니다(HTTP 429).", "자동으로 쉬었다가 천천히 다시 시도합니다. 계속 나오면 동시 요청 수(collector/config.json의 workers, 지금 12)를 6~8로 낮추세요."],
+  "403": ["접근 거부 (403)", "네이버가 이 요청을 거부했습니다. 수집 서버(GitHub) 주소가 일시적으로 막혔을 가능성이 큽니다.", "보통 몇 시간 뒤 풀립니다. 하루 이상 계속되면 수집 간격을 늘리거나 동시 요청 수를 낮추세요."],
+  "404": ["기사 없음 (삭제·404)", "목록에는 있었지만 기사 페이지가 삭제되었거나 주소가 바뀌었습니다.", "정상적인 경우가 많아 따로 조치할 필요가 없습니다(통계에서 자동 제외)."],
+  "5xx": ["네이버 서버 오류 (5xx)", "네이버 쪽 일시 오류입니다.", "자동으로 다시 시도하고, 다음 수집에서 다시 확인합니다."],
+  conn: ["연결 끊김", "응답 도중 연결이 끊겼습니다(네트워크 일시 오류).", "자동으로 다시 시도합니다."],
+  sports: ["스포츠 기사 (형식 다름)", "스포츠 기사는 스포츠 전용 페이지로 넘어가는데, 그 페이지는 날짜가 화면에 그려진 뒤에야 보여 수집기가 날짜를 읽지 못합니다.", "10/8 개선: 스포츠 페이지 안에 들어 있는 기사 정보(입력 시각·바이라인)를 읽도록 고쳤습니다. 이후 수집부터는 이 원인이 거의 사라지고, 빠졌던 날도 다음 전체 수집에서 채워집니다."],
+  entertain: ["연예 기사 (형식 다름)", "연예 기사는 연예 전용 페이지로 넘어가 날짜 표시를 찾지 못했습니다.", "10/8 개선: 연예 페이지 안의 기사 정보(입력 시각·바이라인)를 읽도록 고쳤습니다. 이후 수집부터는 이 원인이 거의 사라집니다."],
+  nodate: ["날짜 표시 없음", "페이지는 열렸지만 기사 입력 시각 표시를 찾지 못했습니다(페이지 형식 변경·특수 기사).", "건수가 많으면 페이지 형식이 바뀐 것이니 수집기 점검이 필요합니다."],
+  other: ["기타", "분류되지 않은 오류입니다.", "로그를 확인해 주세요."],
+};
+function warnBox(run) {
+  const errs = run.errors || [];
+  const cnt = {};
+  let rank0 = 0;
+  for (const e of errs) {
+    const m = e.match(/원인:\s*(.+)$/);
+    if (m) for (const part of m[1].split(",")) { const [k, n] = part.trim().split("×"); cnt[k] = (cnt[k] || 0) + (+n || 1); }
+    else if (/: 0건/.test(e)) rank0++;
+  }
+  const kinds = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
+  const pubFail = errs.filter((e) => /상세 확인 실패/.test(e)).length, bndFail = errs.filter((e) => /경계 확인 실패/.test(e)).length;
+  const box = h(`<div class="warn-wrap"><div class="card-head" style="margin:0 0 8px"><div><h3 style="font-size:15px">최근 수집 경고 ${fmtN(run.errors_n || errs.length)}건 <span class="form-hint">${esc(kstDateTime(run.at || ""))}</span></h3>
+      <div class="sub">경고가 있어도 그때까지 모은 데이터는 저장되며, 빠진 부분은 다음 수집에서 다시 확인합니다.</div></div></div>
+    <div class="warn-what">
+      ${pubFail ? `<div><b>발행목록 · 상세 확인 실패</b> — 기사마다 상세 페이지를 열어 입력 시각·기자명을 확인하는데, 확인하지 못한 기사는 엉뚱한 날짜에 들어가지 않도록 그 수집에서 뺍니다.</div>` : ""}
+      ${bndFail ? `<div><b>발행 건수 · 경계 확인 실패</b> — 목록의 최근 기사는 날짜가 '3일 전'처럼 표시돼, 그날의 첫 기사·마지막 기사만 상세 페이지로 확인해 범위를 자릅니다. 그 확인이 실패하면 그날 건수를 확정하지 않고 비워 둡니다(틀린 숫자 대신 빈칸).</div>` : ""}
+      ${rank0 ? `<div><b>랭킹 0건</b> — 그날 네이버 랭킹이 비어 있거나 페이지 형식이 바뀐 경우입니다.</div>` : ""}
+    </div>
+    ${kinds.length ? `<table class="t warn-t"><thead><tr><th>원인</th><th class="r">건수</th><th>무슨 뜻인가요</th><th>개선 방법</th></tr></thead><tbody>${kinds.map(([k, n]) => { const r = REASON[k] || REASON.other; return `<tr><td style="white-space:nowrap"><b>${esc(r[0])}</b></td><td class="r num">${fmtN(n)}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`; }).join("")}</tbody></table>`
+      : `<div class="form-hint">이 경고들은 원인 분류 전에 기록됐습니다. 10/8 점검 결과 상세 확인·경계 확인 실패는 거의 모두 <b>스포츠·연예 기사</b>(네이버가 스포츠·연예 전용 페이지로 넘겨 날짜 표시가 다름) 때문이었고, 느림이나 접근 차단은 아니었습니다(표본 24건 모두 정상 응답 0.5~2초). 스포츠·연예 페이지의 입력 시각을 읽도록 고쳤으며, 다음 수집부터 원인별로 나뉘어 기록됩니다.</div>`}
+    <div class="warn-list">${errs.map((e) => `<div>${esc(e.replace(/\s*\|\s*원인:.*$/, ""))}${/원인:/.test(e) ? ` <span class="form-hint">(${esc(e.match(/원인:\s*(.+)$/)[1].split(",").map((p) => { const [k, n] = p.trim().split("×"); return `${(REASON[k] || REASON.other)[0]} ${n}`; }).join(", "))})</span>` : ""}</div>`).join("")}</div>
+    ${(run.errors_n || 0) > errs.length ? `<div class="form-hint">전체 ${fmtN(run.errors_n)}건 중 ${fmtN(errs.length)}건 표시</div>` : ""}</div>`);
+  return box;
+}
+const fmtN = (n) => Number(n || 0).toLocaleString("ko-KR");
 
 // ── 다른 화면에서 쓰는 관리자 기능 (뉴스통계 (N) > 매체 설정) ──
 export async function adminForSettings() {
