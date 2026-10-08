@@ -965,7 +965,8 @@ export async function reporters(el, R, ctx) {
   };
   // 매체 이름이 기자명 자리에 들어간 예전 수집분은 제외 (예: "서울신문", "헬스조선")
   const mediaNames = new Set(Object.values(M.media || {}));
-  const isPerson = (n) => /^[가-힣]{2,4}$/.test(n) && !mediaNames.has(n) && !/(일보|신문|뉴스|닷컴|조선|방송|미디어|경제|이미지|사진|영상)/.test(n);
+  const UIW = new Set("닫기 열기 확인 취소 수정 입력 공유 저장 삭제 이전 다음 전체 댓글 구독 로그인 메뉴 검색 알림 페이지 본문 더보기 좋아요 추천 스크랩 인쇄 복사 링크 번역 설정 기사 목록 이메일 프로필 팔로우".split(" ")); // 화면 버튼 글자가 이름으로 잡힌 경우 제외
+  const isPerson = (n) => /^[가-힣]{2,4}$/.test(n) && !mediaNames.has(n) && !UIW.has(n) && !/(일보|신문|뉴스|닷컴|조선|방송|미디어|경제|이미지|사진|영상)/.test(n);
   const split = (s) => (s || "").split("·").map((x) => x.trim()).filter(isPerson);
   let rkTotal = 0, rkNamed = 0, arTotal = 0, arNamed = 0;
   if (rk) {

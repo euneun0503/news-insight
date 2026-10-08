@@ -134,8 +134,11 @@ _NAME = r"[가-힣]{2,4}"
 _ROLE_RE = r"(?:기자|특파원|객원기자|선임기자|전문기자|수습기자|기상캐스터)"
 
 
+UI_WORDS = store.UI_WORDS  # 화면 버튼·메뉴 글자 (언론사 원문 페이지에서 '닫기 기자' 같은 글자가 잡히는 것 방지)
+
+
 def _ok_name(n):
-    return n and n not in _MEDIA_WORDS and not any(w in n for w in ("뉴스", "일보", "신문", "닷컴", "조선", "기자"))
+    return n and n not in _MEDIA_WORDS and n not in UI_WORDS and not any(w in n for w in ("뉴스", "일보", "신문", "닷컴", "조선", "기자"))
 
 
 def parse_reporter(soup, html=""):

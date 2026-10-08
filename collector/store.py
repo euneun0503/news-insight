@@ -484,8 +484,60 @@ def build_meta(status=None):
     return meta
 
 
+# ── 기자명 정리: 화면 버튼 글자 등 사람 이름이 아닌 것 제거 ─────────────
+UI_WORDS = set("""닫기 열기 확인 취소 수정 입력 공유 저장 삭제 이전 다음 전체 댓글 구독 로그인 로그아웃 메뉴 검색 알림 페이지 본문 바로가기
+더보기 좋아요 추천 스크랩 인쇄 복사 링크 번역 설정 카카오 페이스북 트위터 네이버 기사 목록 홈으로 이메일 프로필 팔로우 구독하기 제보하기""".split())
+
+
+def clean_rep(rep):
+    if not rep:
+        return rep
+    names = [n.strip() for n in rep.split("·")]
+    keep = [n for n in names if n and n not in UI_WORDS]
+    return "·".join(keep)
+
+
+def scrub_reporters(days=None):
+    """수집 파일(발행·랭킹)과 기사 정보 캐시에서 잘못 잡힌 기자명(예: '닫기')을 지운다. 고친 날짜를 돌려준다."""
+    fixed = set()
+    for sub, col in (("articles", 4), ("ranking", 5)):
+        for p in sorted((DATA / sub).glob("*.json")):
+            if days is not None and p.stem not in days:
+                continue
+            doc = read_json(p)
+            if not doc:
+                continue
+            ch = False
+            for r in doc.get("items", []):
+                if len(r) > col and r[col]:
+                    c = clean_rep(r[col])
+                    if c != r[col]:
+                        r[col] = c
+                        ch = True
+            if ch:
+                write_json(p, doc)
+                fixed.add(p.stem)
+    cp = DATA / "cache" / "article_meta.json"
+    cache = read_json(cp)
+    if cache:
+        ch = False
+        for k, v in cache.items():
+            if isinstance(v, list) and len(v) > 1 and v[1]:
+                c = clean_rep(v[1])
+                if c != v[1]:
+                    v[1] = c
+                    ch = True
+        if ch:
+            write_json(cp, cache)
+    return fixed
+
+
 def rebuild(days):
-    """변경된 날짜들이 속한 월 요약 + meta 재생성"""
+    """변경된 날짜들이 속한 월 요약 + meta 재생성 (먼저 잘못 잡힌 기자명 정리)"""
+    try:
+        scrub_reporters(set(days))
+    except Exception as e:
+        print("기자명 정리 실패:", e)
     for ym in sorted({d[:7] for d in days}):
         build_month(ym)
 
