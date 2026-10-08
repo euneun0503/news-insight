@@ -5,7 +5,7 @@ import { destroyCharts } from "./charts.js";
 import { openReportDialog } from "./report.js";
 import * as V from "./views.js";
 import { renderBanners, renderTicker, boardList, boardPost } from "./board.js";
-import { adminPage, authState, can, loginGate, currentAcct, signOut, PAGE_PERMS } from "./admin.js";
+import { adminPage, authState, can, hidden, loginGate, currentAcct, signOut, PAGE_PERMS } from "./admin.js";
 import { setupInfo } from "./info.js";
 
 const CFG = window.SITE_CONFIG || {};
@@ -97,7 +97,7 @@ async function render() {
   // 계정별 접속 권한: 허용되지 않은 메뉴는 첫 허용 메뉴로
   if (PAGE_PERMS[page] && !can(page)) {
     const first = Object.keys(PAGE_PERMS).find((k) => can(k));
-    if (first && first !== page) { toast(`‘${TITLES[page]}’ 접근 권한이 없습니다`, 2500); location.hash = `#/${first}`; return; }
+    if (first && first !== page) { if (!hidden(page)) toast(`‘${TITLES[page]}’ 접근 권한이 없습니다`, 2500); location.hash = `#/${first}`; return; } // 숨긴 메뉴는 안내 없이 넘김
     if (!first) { view.innerHTML = '<div class="card"><div class="empty">볼 수 있는 메뉴가 없습니다. 마스터에게 권한을 요청하세요.</div></div>'; $("#filterbar").hidden = true; return; }
   }
   const isData = !!DATA_PAGES[page];
@@ -250,6 +250,7 @@ function applyAccount(acct) {
   $$(".sidebar a[data-page]").forEach((a) => {
     const locked = !!PAGE_PERMS[a.dataset.page] && !can(a.dataset.page);
     a.classList.toggle("locked", locked);
+    a.hidden = locked && hidden(a.dataset.page); // 끔(숨김): 메뉴 자체를 안 보이게
     a.setAttribute("aria-disabled", locked ? "true" : "false");
     if (locked) a.title = "접근 권한이 없습니다";
   });

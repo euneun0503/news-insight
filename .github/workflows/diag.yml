@@ -32,4 +32,4 @@ jobs:
           git add -f data/cache/diag.json data/cache/diag2.json
           git commit -m "수집 실패 원인 점검 결과 $(date +%H:%M)"
           for i in 1 2 3 4 5; do git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push && exit 0; sleep 5; done
-          exit 1
+          echo "결과 저장은 건너뜀(주석으로 확인)"

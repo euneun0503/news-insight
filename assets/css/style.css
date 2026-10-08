@@ -522,3 +522,8 @@ body.gated .topbar, body.gated .layout { display: none; }
 .warn-t { font-size: 12.5px; margin-bottom: 10px; background: #fff; }
 .warn-t td { vertical-align: top; }
 .warn-list { max-height: 600px; /* 약 30줄 */ overflow-y: auto; font-size: 12.5px; line-height: 20px; color: #b91c1c; background: #fff; border: 1px solid #fde2e2; border-radius: 8px; padding: 8px 10px; }
+.menu-perm { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 16px; }
+.mp-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+.seg.sm button { padding: 3px 9px; font-size: 12px; }
+.seg.sm button[data-v="hide"].on { background: #475569; color: #fff; }
+.seg.sm button[data-v="lock"].on { background: #e2e8f0; color: #334155; }

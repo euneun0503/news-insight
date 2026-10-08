@@ -19,7 +19,8 @@ const KEEP_DAYS = 30;
 const permSummary = (p = {}) => {
   const pages = Object.keys(PAGE_PERMS).filter((k) => p[k]);
   const fx = Object.keys(FUNC_PERMS).filter((k) => p[k]);
-  return `<span class="tag ${pages.length ? "blue" : "gray"}" title="${esc(pages.map((k) => PAGE_PERMS[k]).join(", "))}">메뉴 ${pages.length === Object.keys(PAGE_PERMS).length ? "전체" : pages.length + "개"}</span> ${fx.map((k) => `<span class="tag ${k === "download" ? "green" : "orange"}">${FUNC_PERMS[k]}</span>`).join(" ")}`;
+  const hid = Object.keys(PAGE_PERMS).filter((k) => p["hide_" + k]);
+  return `<span class="tag ${pages.length ? "blue" : "gray"}" title="${esc(pages.map((k) => PAGE_PERMS[k]).join(", "))}">메뉴 ${pages.length === Object.keys(PAGE_PERMS).length ? "전체" : pages.length + "개"}</span>${hid.length ? ` <span class="tag gray" title="${esc(hid.map((k) => PAGE_PERMS[k]).join(", "))}">숨김 ${hid.length}</span>` : ""} ${fx.map((k) => `<span class="tag ${k === "download" ? "green" : "orange"}">${FUNC_PERMS[k]}</span>`).join(" ")}`;
 };
 export const PAGE_PERMS = { dashboard: "뉴스통계 (N)", keywords: "키워드 랭킹", media: "매체 비교", articles: "기사 목록", insights: "작성 인사이트", reporters: "기자 통계", board: "공지·게시판" };
 const FUNC_PERMS = { download: "엑셀 다운로드", posts: "게시글·배너·공지 관리", collect: "데이터 수집 실행" };
@@ -565,7 +566,8 @@ async function accountsView(pane) {
         ${pwOnly ? "" : `<label for="uid">아이디</label><input class="input" id="uid" maxlength="20" placeholder="2~20자 (한글·영문·숫자·._-)" value="${esc(u.id)}" ${isNew ? "" : "disabled"}>
         <label for="unm">이름</label><input class="input" id="unm" maxlength="20" placeholder="예: 김기자" value="${esc(u.name)}">
         <label>빠른 선택</label><div class="row">${Object.keys(PRESETS).map((k) => `<button class="btn sm" data-preset="${esc(k)}">${esc(k)}</button>`).join("")}</div>
-        <label>볼 수 있는 메뉴</label><div class="row">${Object.entries(PAGE_PERMS).map(([k, l]) => `<label class="check"><input type="checkbox" data-p="${k}" ${u.perms?.[k] ? "checked" : ""}> ${l}</label>`).join("")}</div>
+        <label>메뉴 접근</label><div><div class="menu-perm">${Object.entries(PAGE_PERMS).map(([k, l]) => { const st = u.perms?.[k] ? "on" : u.perms?.["hide_" + k] ? "hide" : "lock"; return `<div class="mp-row"><span>${l}</span><div class="seg sm" data-m="${k}">${[["on", "켬"], ["lock", "잠금"], ["hide", "끔(숨김)"]].map(([v, t]) => `<button type="button" data-v="${v}" class="${st === v ? "on" : ""}">${t}</button>`).join("")}</div></div>`; }).join("")}</div>
+          <div class="form-hint">켬 = 볼 수 있음 · 잠금 = 메뉴가 흐리게 보이고 누르면 ‘접근 권한이 없습니다’ · 끔(숨김) = 메뉴가 아예 안 보이고 주소로 들어와도 열리지 않음</div></div>
         <label>기능</label><div class="row">${Object.entries(FUNC_PERMS).map(([k, l]) => `<label class="check"><input type="checkbox" data-p="${k}" ${u.perms?.[k] ? "checked" : ""}> ${l}</label>`).join("")}</div>`}
         ${pwOnly || isNew ? `<label for="upw">비밀번호</label><div class="row"><input class="input" id="upw" type="text" autocomplete="off" placeholder="8자 이상" style="flex:1;min-width:160px"><button class="btn sm" id="gen">자동 생성</button></div>
         <span></span><label class="check"><input type="checkbox" id="umc" checked> 첫 로그인 때 본인이 비밀번호 바꾸기</label>` : ""}
@@ -574,7 +576,9 @@ async function accountsView(pane) {
     formSlot.append(f);
     f.scrollIntoView({ behavior: "smooth", block: "start" });
     $("#x", f).addEventListener("click", () => (formSlot.innerHTML = ""));
-    $$("button[data-preset]", f).forEach((b) => b.addEventListener("click", () => { const P = PRESETS[b.dataset.preset]; $$("input[data-p]", f).forEach((c) => (c.checked = !!P[c.dataset.p])); }));
+    const setSeg = (g, v) => $$("button", g).forEach((x) => x.classList.toggle("on", x.dataset.v === v));
+    $$(".menu-perm .seg", f).forEach((g) => $$("button", g).forEach((b) => b.addEventListener("click", (e) => { e.preventDefault(); setSeg(g, b.dataset.v); })));
+    $$("button[data-preset]", f).forEach((b) => b.addEventListener("click", () => { const P = PRESETS[b.dataset.preset]; $$("input[data-p]", f).forEach((c) => (c.checked = !!P[c.dataset.p])); $$(".menu-perm .seg", f).forEach((g) => setSeg(g, P[g.dataset.m] ? "on" : "lock")); }));
     $("#gen", f)?.addEventListener("click", () => {
       const cs = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       const r = rand(10); let s = ""; r.forEach((b) => (s += cs[b % cs.length]));
@@ -584,6 +588,7 @@ async function accountsView(pane) {
       const id = isNew ? $("#uid", f).value.trim() : u.id;
       const name = pwOnly ? u.name : $("#unm", f).value.trim() || id;
       const perms = pwOnly ? u.perms : Object.fromEntries($$("input[data-p]", f).map((c) => [c.dataset.p, c.checked]));
+      if (!pwOnly) for (const g of $$(".menu-perm .seg", f)) { const v = $("button.on", g)?.dataset.v || "lock"; perms[g.dataset.m] = v === "on"; perms["hide_" + g.dataset.m] = v === "hide"; }
       const pw = $("#upw", f)?.value;
       let err = "";
       if (isNew && !ID_RE.test(id)) err = "아이디는 2~20자 (한글·영문·숫자·._-)로 정해 주세요.";
@@ -1180,6 +1185,7 @@ export async function authState() {
   return { configured: !!doc?.master, acct: null };
 }
 export const can = (p) => !session || session.acct.role === "master" || !!session.acct.perms?.[p];
+export const hidden = (p) => !!session && session.acct.role !== "master" && !session.acct.perms?.[p] && !!session.acct.perms?.["hide_" + p];
 export const currentAcct = () => session?.acct || null;
 export async function signOut() { await logout(); location.reload(); }
 // 전체 화면 로그인 (인트로)
