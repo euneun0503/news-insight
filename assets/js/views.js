@@ -808,21 +808,22 @@ export async function insights(el, R, ctx) {
   comboChart(c2, WD_ORDER.map((w) => WD_NAME[w]), { label: "하루 평균 발행", data: wdPubAvg, backgroundColor: "#bfd3fb" }, { label: "하루 랭킹 조회수 합(평균)", data: wdAvg, borderColor: OUR_COLOR, backgroundColor: OUR_COLOR, spanGaps: true });
 
   const maxShare = Math.max(...pat.map((p) => Math.max(p.share, p.base || 0)), 0.01);
-  // 독자가 읽은 시간대 (매시간 조회수 증가량)
-  const readMedia = Object.keys(A.readH);
-  const readTotal = Array(24).fill(0);
-  readMedia.forEach((o) => A.readH[o].forEach((v, i) => (readTotal[i] += v)));
-  const readCard = h(`<div class="card"><div class="card-head"><div><h3>독자가 많이 읽은 시간대 ${info("readHour")}</h3><div class="sub">${A.readDays ? `랭킹 상위 기사 조회수가 시간마다 얼마나 늘었는지 (${A.readDays}일 하루 평균) · 막대: 수집 매체 전체 · 선: ${esc(mediaName(M.our_media))}` : "매시간 수집 기록이 쌓이면 표시됩니다"}</div></div></div>
-    ${A.readDays ? canvas("lg") : emptyBox("아직 시간대별 기록이 없습니다.<br>네이버 랭킹은 하루 누적 조회수만 보여주기 때문에, 매시간 조회수를 기록해 그 차이로 계산합니다.<br>GitHub 자동 수집(매시간)을 켜면 하루 뒤부터 이 그래프가 채워집니다. 과거 엑셀 자료로는 계산할 수 없습니다.")}</div>`);
+  // 독자가 읽은 시간대 — 30분 단위, 하루가 끝난 날만 (오늘 30분마다 쌓은 기록은 내일 확정·반영)
+  const readMedia = Object.keys(A.readAvg);
+  const slotLab = Array.from({ length: 48 }, (_, i) => `${Math.floor(i / 2)}:${i % 2 ? "30" : "00"}`);
+  const readTotal = slotLab.map((_, i) => (A.readSlotN[i] ? readMedia.reduce((t, o) => t + (A.readAvg[o][i] || 0), 0) : null));
+  const measured = A.readSlotN.filter(Boolean).length;
+  const readCard = h(`<div class="card"><div class="card-head"><div><h3>독자가 많이 읽은 시간대 ${info("readHour")}</h3><div class="sub">${A.readDays ? `30분 단위 · 확정된 ${A.readDays}일의 하루 평균 (오늘 기록은 내일 반영) · 막대: 선택 매체 랭킹 상위 기사 · 선: ${esc(mediaName(M.our_media))} · 빈 칸 = 네이버가 갱신하지 않았거나 수집이 빠진 시간` : "30분마다 쌓은 기록을 하루가 끝난 뒤 확정해 반영합니다"}</div></div></div>
+    ${A.readDays ? canvas("lg") : emptyBox("아직 확정된 날이 없습니다.<br>네이버 랭킹의 ‘오늘’ 조회수는 최근 약 1시간 동안 읽힌 수라서, 30분마다 기록해 두었다가 하루가 끝나면(다음 날) 30분 단위 시간대 통계로 확정합니다.<br>오늘 쌓은 기록은 내일부터 이 그래프에 나타납니다.")}</div>`);
   el.append(readCard);
   if (A.readDays) {
-    const ourR = (A.readH[M.our_media] || Array(24).fill(0)).map((v) => v / A.readDays);
-    comboChart($("canvas", readCard), Array.from({ length: 24 }, (_, i) => `${i}시`),
-      { label: "전체 매체 시간당 조회수", data: readTotal.map((v) => v / A.readDays), backgroundColor: "#bfd3fb" },
-      { label: `${mediaName(M.our_media)} 시간당 조회수`, data: ourR, borderColor: OUR_COLOR, backgroundColor: OUR_COLOR });
-    const peak = readTotal.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([i]) => `${i}시`);
-    const ourPeak = ourR.map((v, i) => [i, v]).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([i]) => `${i}시`);
-    $(".insight-list", el)?.insertAdjacentHTML("afterbegin", `<li><span class="ico">👀</span><span>독자가 가장 많이 읽은 시간대는 <b>${peak.join(", ")}</b>입니다${A.pubH[M.our_media] || A.readH[M.our_media] ? ` (${esc(mediaName(M.our_media))}: ${ourPeak.join(", ")})` : ""}. 발행 시간대와 비교해 출고 시점을 정해보세요.</span></li>`);
+    const ourR = A.readAvg[M.our_media] || slotLab.map(() => null);
+    comboChart($("canvas", readCard), slotLab,
+      { label: "선택 매체 30분당 조회수", data: readTotal, backgroundColor: "#bfd3fb" },
+      { label: `${mediaName(M.our_media)} 30분당 조회수`, data: ourR, borderColor: OUR_COLOR, backgroundColor: OUR_COLOR, spanGaps: false });
+    const top3 = (arr) => arr.map((v, i) => [i, v]).filter((x) => x[1] != null).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([i]) => `${slotLab[i]}~${slotLab[i + 1] || "24:00"}`);
+    const peak = top3(readTotal), ourPeak = top3(ourR);
+    if (peak.length) $(".insight-list", el)?.insertAdjacentHTML("afterbegin", `<li><span class="ico">👀</span><span>독자가 가장 많이 읽은 시간대는 <b>${peak.join(", ")}</b>입니다${ourPeak.length ? ` (${esc(mediaName(M.our_media))}: ${ourPeak.join(", ")})` : ""}. 확정된 ${A.readDays}일 · 측정된 30분 칸 ${measured}/48 기준. 발행 시간대와 비교해 출고 시점을 정해보세요.</span></li>`);
   }
 
   const pcard = h(`<div class="grid g-21">

@@ -236,37 +236,64 @@ def save_snapshot(day, per_media, now):
     write_json(snap_path(day), doc)
 
 
-def read_hours(day):
-    """스냅샷 → 매체별 시간대(0~23시) 조회수 증가 추정치. 랭킹 상위 기사 기준."""
-    doc = read_json(snap_path(day))
-    if not doc or not doc.get("snaps"):
+SLOT_MIN = 30          # 시간대 통계 단위: 30분
+SLOTS = 1440 // SLOT_MIN
+WINDOW = 60            # 네이버 랭킹의 '오늘' 조회수는 최근 약 1시간 동안의 조회수 (하루 누적 아님 — 지난 날짜만 하루 합계)
+STALE = 75             # 한 매체의 값이 75분 넘게 그대로면 네이버가 갱신을 멈춘 것(새벽 등) → 그 구간은 측정 못 함
+MIN_DAY_SLOTS = 24     # 하루 48칸 중 24칸 이상 측정된 날만 통계에 넣음
+
+
+def read_path(day):
+    return DATA / "read" / f"{day}.json"
+
+
+def read_slots(day):
+    """
+    독자가 읽은 시간대 (30분 단위) — 그날 30분마다 쌓은 기록을 하루가 끝난 뒤(다음 날) 확정해 통계에 넣는다.
+    근거: 네이버 언론사 랭킹의 '오늘' 조회수는 하루 누적이 아니라 '최근 약 1시간 조회수'로 수시로 갱신되고
+          (값이 오르내림), 지난 날짜를 열면 하루 합계가 나온다. (수집 기록으로 확인)
+    계산:
+      1) 30분마다 수집한 기록에서 매체별 상위 20건 조회수 합 = 그 시각 직전 1시간 동안 읽힌 수(시간당 속도)
+      2) 그 1시간의 가운데 시점이 속한 30분 칸에 '속도 ÷ 2'(30분치)를 넣음, 같은 칸에 여러 기록이면 평균
+      3) 매체 값이 75분 넘게 그대로면(새벽 갱신 중단) 그 기록은 버림 → 빈 칸(측정 못 함)
+      4) 하루가 지나 확정되면 data/read/{day}.json 에 저장하고, 큰 원본 기록(data/snap)은 3일 뒤 지움
+    반환: {"s": {oid: [48칸 조회수 또는 None]}, "ok": [48칸 측정 여부], "n": 측정 칸 수, "snaps": 기록 수}
+    """
+    today = today_kst()
+    d = dt.date.fromisoformat(day)
+    saved = read_json(read_path(day))
+    snap = read_json(snap_path(day))
+    if d >= today:            # 오늘은 아직 쌓는 중 → 내일 반영
         return None
-    out = defaultdict(lambda: [0.0] * 24)
-    prev_m, prev_v, baseline = 0, {}, True   # 0시 기준 조회수 = 0
-    covered = 0
-    for s in doc["snaps"]:
-        m, v = s["m"], s["v"]
-        span = m - prev_m
-        if span <= 0:
-            continue
-        for key, views in v.items():
-            if key in prev_v:
-                inc = views - prev_v[key]
-            elif baseline:
-                inc = views
-            else:
-                continue          # 이전 시각엔 상위 20위 밖 → 그 사이 증가량을 알 수 없어 제외
-            if inc <= 0:
-                continue
-            oid = key.split("_")[0]
-            per_min = inc / span
-            for h in range(prev_m // 60, min(24, (m - 1) // 60 + 1)):
-                lo, hi = max(prev_m, h * 60), min(m, h * 60 + 60)
-                if hi > lo:
-                    out[oid][h] += per_min * (hi - lo)
-        covered += span
-        prev_m, prev_v, baseline = m, v, False
-    return {"h": {o: [round(x) for x in arr] for o, arr in out.items()}, "snaps": len(doc["snaps"]), "cov": covered}
+    if not snap or not snap.get("snaps"):
+        return saved
+    pts = [x for x in sorted(snap["snaps"], key=lambda x: x["m"]) if x["m"] < 1440]   # 1440 = 다음 날 받은 하루 합계 → 제외
+    acc = defaultdict(lambda: defaultdict(list))   # oid -> slot -> [30분치 조회수 표본]
+    last_val, last_change = {}, {}
+    for sn in pts:
+        m = sn["m"]
+        per = defaultdict(dict)
+        for key, views in sn["v"].items():
+            oid, aid = key.split("_", 1)
+            per[oid][aid] = views
+        for oid, vals in per.items():
+            if last_val.get(oid) != vals:
+                last_val[oid], last_change[oid] = vals, m
+            if m - last_change[oid] > STALE:
+                continue          # 네이버가 갱신을 멈춘 상태 → 지난 값이 반복되는 것이라 버림
+            k = (m - WINDOW // 2) // SLOT_MIN
+            if 0 <= k < SLOTS:
+                acc[oid][k].append(sum(vals.values()) * SLOT_MIN / WINDOW)
+    ok = [0] * SLOTS
+    for slots in acc.values():
+        for k in slots:
+            ok[k] = 1
+    out = {"date": day, "s": {o: [round(sum(sl[k]) / len(sl[k])) if sl.get(k) else None for k in range(SLOTS)] for o, sl in acc.items()},
+           "ok": ok, "n": sum(ok), "snaps": len(pts), "slot_min": SLOT_MIN, "method": "rolling-1h"}
+    write_json(read_path(day), out)
+    if d <= today - dt.timedelta(days=3):
+        snap_path(day).unlink(missing_ok=True)   # 확정됐으니 큰 원본 기록은 정리
+    return out
 
 
 # ── 키워드 추출 ─────────────────────────────────────────────
@@ -315,9 +342,9 @@ def build_day_summary(day):
     if not rk and not ar and not cn:
         return None
     s = {}
-    rh = read_hours(day)
-    if rh:
-        s["readH"] = rh
+    rs = read_slots(day)
+    if rs and rs.get("n", 0) >= MIN_DAY_SLOTS:
+        s["readS"] = {"s": rs["s"], "ok": rs["ok"], "n": rs["n"]}
     kw = defaultdict(lambda: [0, 0, 0, 0])  # word -> [발행 기사수, 랭킹 기사수, 랭킹 조회수, 조회수 있는 랭킹 기사수]
     kwm = defaultdict(lambda: defaultdict(lambda: [0, 0, 0, 0]))  # 매체별 같은 값 → data/kw/{day}.json (매체 설정에 따라 다시 합산)
     rank_hm = defaultdict(dict)  # 매체별 발행시각 → [랭킹 기사수, 조회수]
@@ -478,7 +505,7 @@ def prune(months=None):
     cutoff = dt.date(y, m, min(t.day, calendar.monthrange(y, m)[1])).isoformat()  # 이 날짜부터 보관
     cut_ym = cutoff[:7]
     removed = 0
-    for sub in ("ranking", "articles", "counts", "snap", "search", "kw"):
+    for sub in ("ranking", "articles", "counts", "snap", "search", "kw", "read"):
         for p in (DATA / sub).glob("*.json"):
             if re.fullmatch(r"\d{4}-\d{2}-\d{2}", p.stem) and p.stem < cutoff:
                 p.unlink()

@@ -234,7 +234,7 @@ export function aggregate(days, sum, kwDocs = {}) {
     rank: {}, rankDay: {}, rankViews: 0, rankCount: 0, noView: new Set(),
     rankH: [Array(24).fill(0), Array(24).fill(0)],
     wd: { pub: Array(7).fill(0), views: Array(7).fill(0), pubDays: Array(7).fill(0), rankDays: Array(7).fill(0) },
-    readH: {}, readDays: 0, // 시간대별 조회수 증가 추정 (매시간 스냅샷)
+    readH: {}, readDays: 0, readSlot: {}, readSlotN: Array(48).fill(0), readAvg: {}, // 독자가 읽은 시간대 (30분 단위, 확정된 날만)
     kw: new Map(), // word -> {pub, rank, views, daily: {day: score}}
     rep: new Map(),
     top: [],
@@ -292,12 +292,14 @@ export function aggregate(days, sum, kwDocs = {}) {
       }
       for (const r of s.top || []) if (sel.rank.has(r[0])) a.top.push({ day: d, oid: r[0], aid: r[1], rank: r[2], views: r[3], title: r[4], reporter: r[5], pub: r[6] });
     }
-    if (s.readH && s.readH.cov >= 1200) { // 하루의 20시간 이상 기록된 날만
+    if (s.readS) { // 30분 단위 '읽힌 수' (하루가 끝난 날만, 수집 다음 날 확정)
       a.readDays++;
-      for (const [oid, arr] of Object.entries(s.readH.h)) {
+      s.readS.ok.forEach((x, i) => x && a.readSlotN[i]++);
+      for (const [oid, arr] of Object.entries(s.readS.s)) {
         if (!sel.rank.has(oid)) continue;
-        const t = (a.readH[oid] ||= Array(24).fill(0));
-        arr.forEach((v, i) => (t[i] += v));
+        const t = (a.readSlot[oid] ||= Array(48).fill(0));
+        const c = ((a.readSlotC ||= {})[oid] ||= Array(48).fill(0));
+        arr.forEach((v, i) => { if (v != null) { t[i] += v; c[i]++; } });
       }
     }
     const kd = kwDocs[d];
@@ -334,6 +336,12 @@ export function aggregate(days, sum, kwDocs = {}) {
     }
   }
   for (const oid of a.noView) delete a.rank[oid];
+  // 30분 칸별 하루 평균 (그 칸이 측정된 날 수로 나눔) + 1시간 단위 합
+  for (const [oid, t] of Object.entries(a.readSlot)) {
+    const c = a.readSlotC[oid];
+    a.readAvg[oid] = t.map((v, i) => (c[i] ? v / c[i] : null)); // 그 매체가 측정된 날만으로 평균
+    a.readH[oid] = Array.from({ length: 24 }, (_, hr) => { const x = a.readAvg[oid][hr * 2], y = a.readAvg[oid][hr * 2 + 1]; return x == null && y == null ? null : (x ?? y) + (y ?? x); });
+  }
   a.top.sort((x, y) => (y.views ?? -1) - (x.views ?? -1));
   a.pubDayCount = a.covered.pub.length;
   a.rankDayCount = a.covered.rank.length;
