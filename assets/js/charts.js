@@ -105,4 +105,15 @@ export function comboChart(canvas, labels, bar, line, opts = {}) {
   });
 }
 
+// 막대·선 여러 개 (왼쪽 축: 막대, 오른쪽 축: 선) — 데이터셋마다 type 지정
+export function multiCombo(canvas, labels, datasets, opts = {}) {
+  const o = base(opts);
+  o.scales.y1 = { position: "right", beginAtZero: true, grid: { display: false }, border: { display: false }, ticks: { font: { size: 11 }, color: "#c2410c", callback: (v) => short(v) } };
+  return make(canvas, {
+    type: "bar",
+    data: { labels, datasets: datasets.map((d) => (d.type === "line" ? { order: 1, borderWidth: 2.5, pointRadius: 2.5, tension: 0.3, yAxisID: "y1", spanGaps: true, ...d } : { type: "bar", borderRadius: 4, maxBarThickness: 16, yAxisID: "y", order: 2, ...d })) },
+    options: o,
+  });
+}
+
 export const dayLabels = (days) => days.map(dayLabel);

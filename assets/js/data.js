@@ -284,7 +284,8 @@ export function aggregate(days, sum, kwDocs = {}) {
       if (s.rankHm) { // 매체별 → 선택 매체만
         for (const [oid, hh] of Object.entries(s.rankHm)) {
           if (!sel.rank.has(oid) || a.noView.has(oid)) continue;
-          for (const [hr, [n, v]] of Object.entries(hh)) { a.rankH[0][hr] += n; a.rankH[1][hr] += v; }
+          const o = ((a.rankHo ||= {})[oid] ||= [Array(24).fill(0), Array(24).fill(0)]); // 매체별 (헬스조선·코메디닷컴 비교용)
+          for (const [hr, [n, v]] of Object.entries(hh)) { a.rankH[0][hr] += n; a.rankH[1][hr] += v; o[0][hr] += n; o[1][hr] += v; }
         }
       } else {
         s.rankH?.[0]?.forEach((v, i) => (a.rankH[0][i] += v));

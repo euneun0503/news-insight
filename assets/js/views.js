@@ -1,9 +1,9 @@
 // 분석 화면들
-import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, dayKind, DAY_COLOR, holiday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR } from "./util.js";
+import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, weekdayIdx, dayKind, DAY_COLOR, holiday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR } from "./util.js";
 import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel, Range, loadRankingDays, loadTitles } from "./data.js";
 import { openMediaSettings } from "./mediasel.js";
 import { adminForSettings, saveSeedGroups } from "./admin.js";
-import { lineChart, barChart, comboChart, dayLabels } from "./charts.js";
+import { lineChart, barChart, comboChart, multiCombo, dayLabels } from "./charts.js";
 import { boardTypeLabel, activeNotices } from "./board.js";
 import { info } from "./info.js";
 
@@ -799,13 +799,93 @@ export async function insights(el, R, ctx) {
     <ul class="insight-list">${tips.map(([i, t]) => `<li><span class="ico">${i}</span><span>${t}</span></li>`).join("") || `<li>${emptyBox("분석할 데이터가 부족합니다.")}</li>`}</ul></div>`));
 
   const charts = h(`<div class="grid g-2">
-    <div class="card"><div class="card-head"><div><h3>발행 시간대별 반응 ${info("insightHour")}</h3><div class="sub">막대: 선택 매체 발행 기사수 · 선: 그 시간에 발행된 랭킹 기사의 평균 조회수${avgByHour.every((v) => v == null) ? '<br><span style="color:#b45309">랭킹 기사의 입력시각이 아직 없어 선은 표시되지 않습니다 (엑셀에서 가져온 자료는 ‘기자명 채우기’를 하면 입력시각도 함께 채워집니다)</span>' : ""}</div></div></div>${canvas("lg")}</div>
-    <div class="card"><div class="card-head"><div><h3>요일별 반응 ${info("insightWeekday")}</h3><div class="sub">막대: 하루 평균 발행 기사수 · 선: 하루 랭킹 조회수 합의 요일 평균</div></div></div>${canvas("lg")}</div>
+    <div class="card" id="hourCard"><div class="card-head"><div><h3>발행 시간대별 반응 ${info("insightHour")}</h3><div class="sub" id="hourSub"></div></div>
+      <div class="seg" id="hourTab"><button data-t="all" class="on">선택 매체 전체</button><button data-t="cmp">${esc(mediaName(M.our_media))} · ${esc(mediaName(M.compare_media))}</button></div></div>
+      <div class="hour-tg" id="hourTg" hidden></div>${canvas("lg")}</div>
+    <div class="card" id="wdCard"><div class="card-head"><div><h3>요일별 반응 ${info("insightWeekday")}</h3><div class="sub" id="wdSub"></div></div></div>
+      <div class="hour-tg" id="wdTg"></div>${canvas("lg")}</div>
   </div>`);
   el.append(charts);
   const [c1, c2] = $$("canvas", charts);
-  comboChart(c1, Array.from({ length: 24 }, (_, i) => `${i}시`), { label: "발행 기사수", data: pubHourAll, backgroundColor: "#bfd3fb" }, { label: "랭킹 평균 조회수", data: avgByHour, borderColor: OUR_COLOR, backgroundColor: OUR_COLOR, spanGaps: true });
-  comboChart(c2, WD_ORDER.map((w) => WD_NAME[w]), { label: "하루 평균 발행", data: wdPubAvg, backgroundColor: "#bfd3fb" }, { label: "하루 랭킹 조회수 합(평균)", data: wdAvg, borderColor: OUR_COLOR, backgroundColor: OUR_COLOR, spanGaps: true });
+  // 발행 시간대별 반응: ① 선택 매체 전체  ② 헬스조선·코메디닷컴 비교 (매체별 켜고 끄기)
+  {
+    const HL = Array.from({ length: 24 }, (_, i) => `${i}시`);
+    const pubMs = Object.keys(A.pubH).filter((o) => A.pubH[o].some((v) => v));
+    const rkMs = Object.keys(A.rankHo || {}).filter((o) => A.rankHo[o][0].some((v) => v));
+    const names = (os) => os.map(mediaName).join(", ");
+    const subAll = `막대: 발행 기사수 (<span class="u-dot" title="${esc(names(pubMs))}">발행 시각을 아는 선택 매체 ${pubMs.length}곳</span>) · 선: 그 시간에 발행된 랭킹 기사의 평균 조회수 (<span class="u-dot" title="${esc(names(rkMs))}">조회수 공개 선택 매체 ${rkMs.length}곳</span> 합산) · 매체 이름은 마우스를 올리면 보입니다`;
+    const noLine = avgByHour.every((v) => v == null) ? '<br><span style="color:#b45309">랭킹 기사의 입력시각이 아직 없어 선은 표시되지 않습니다</span>' : "";
+    const our = M.our_media, cmp = M.compare_media;
+    const avgOf = (o) => (A.rankHo?.[o] ? A.rankHo[o][0].map((n, i) => (n >= 1 ? A.rankHo[o][1][i] / n : null)) : HL.map(() => null));
+    const CMP_C = "#2563eb";
+    const on = { [our]: true, [cmp]: true };
+    let chart = null;
+    const tg = $("#hourTg", charts);
+    const draw = (t) => {
+      $$("#hourTab button", charts).forEach((b) => b.classList.toggle("on", b.dataset.t === t));
+      chart?.destroy();
+      if (t === "all") {
+        tg.hidden = true;
+        $("#hourSub", charts).innerHTML = subAll + noLine;
+        chart = comboChart(c1, HL, { label: "발행 기사수", data: pubHourAll, backgroundColor: "#bfd3fb" }, { label: "랭킹 평균 조회수", data: avgByHour, borderColor: OUR_COLOR, backgroundColor: OUR_COLOR, spanGaps: true });
+        return;
+      }
+      tg.hidden = false;
+      $("#hourSub", charts).innerHTML = `막대: 시간대별 발행 기사수 · 선: 그 시간에 발행된 랭킹 기사의 평균 조회수 (각 매체 랭킹 상위 20건 기준) · 버튼으로 매체를 켜고 끌 수 있습니다`;
+      const ds = [
+        { label: `${mediaName(our)} 발행`, data: A.pubH[our] || HL.map(() => 0), backgroundColor: "#fdba74", _o: our },
+        { label: `${mediaName(cmp)} 발행`, data: A.pubH[cmp] || HL.map(() => 0), backgroundColor: "#93c5fd", _o: cmp },
+        { type: "line", label: `${mediaName(our)} 평균 조회수`, data: avgOf(our), borderColor: OUR_COLOR, backgroundColor: OUR_COLOR, _o: our },
+        { type: "line", label: `${mediaName(cmp)} 평균 조회수`, data: avgOf(cmp), borderColor: CMP_C, backgroundColor: CMP_C, _o: cmp },
+      ];
+      chart = multiCombo(c1, HL, ds);
+      const sync = () => {
+        ds.forEach((d, i) => chart.setDatasetVisibility(i, !!on[d._o]));
+        chart.update();
+        $$("button", tg).forEach((b) => b.classList.toggle("on", !!on[b.dataset.o]));
+      };
+      tg.innerHTML = [our, cmp].map((o) => `<button class="tg-btn" data-o="${o}" style="--c:${o === our ? OUR_COLOR : CMP_C}"><i></i>${esc(mediaName(o))}</button>`).join("");
+      $$("button", tg).forEach((b) => b.addEventListener("click", () => {
+        on[b.dataset.o] = !on[b.dataset.o];
+        if (!on[our] && !on[cmp]) on[b.dataset.o === our ? cmp : our] = true; // 둘 다 끄면 다른 쪽을 켬
+        sync();
+      }));
+      sync();
+    };
+    $$("#hourTab button", charts).forEach((b) => b.addEventListener("click", () => draw(b.dataset.t)));
+    draw("all");
+  }
+  // 요일별 반응: 막대 = 선택 매체 랭킹 조회수 합(하루 평균), 그 앞에 헬스조선 몫(붉은 막대) 겹침 · 선 = 하루 평균 발행 · 켜고 끄기
+  {
+    const our = M.our_media;
+    const rkMs = Object.keys(A.rank); // 조회수 공개 선택 랭킹 매체
+    const ourWd = WD_ORDER.map((w) => { let t = 0, n = 0; for (const d of A.covered.rank) if (weekdayIdx(d) === w && A.rankDay[d]?.[our] != null) { t += A.rankDay[d][our]; n++; } return n ? t / n : null; });
+    $("#wdSub", charts).innerHTML = `막대: 랭킹 조회수 합의 요일별 하루 평균 — <span class="u-dot" title="${esc(rkMs.map(mediaName).join(", "))}">조회수를 공개하는 선택 랭킹 매체 ${rkMs.length}곳</span>의 매체별 랭킹 상위 20건 조회수를 더한 값 · <b style="color:#dc2626">붉은 막대</b> = 그중 ${esc(mediaName(our))} · 선: 하루 평균 발행 기사수`;
+    const ds = [
+      { label: "선택 매체 랭킹 조회수 합 (하루 평균)", data: wdAvg, backgroundColor: "#bfd3fb", grouped: false, order: 3, barPercentage: 0.75, _k: "all" },
+      { label: `${mediaName(our)} 랭킹 조회수 (하루 평균)`, data: ourWd, backgroundColor: "#dc2626", grouped: false, order: 2, barPercentage: 0.45, _k: "our" },
+      { type: "line", label: "하루 평균 발행", data: wdPubAvg, borderColor: "#64748b", backgroundColor: "#64748b", _k: "pub" },
+    ];
+    const ch2 = multiCombo(c2, WD_ORDER.map((w) => WD_NAME[w]), ds);
+    if (ch2) {
+      ch2.options.scales.y1.ticks.color = "#64748b";
+      ch2.options.plugins.tooltip.callbacks.label = (c) => {
+        if (c.dataset._k === "our" && wdAvg[c.dataIndex]) return ` ${c.dataset.label}: ${fmt(c.raw)} (점유율 ${pct(c.raw / wdAvg[c.dataIndex])})`;
+        return ` ${c.dataset.label}: ${fmt(c.raw)}`;
+      };
+      ch2.update();
+    }
+    const on = { all: true, our: true, pub: true };
+    const tg = $("#wdTg", charts);
+    tg.innerHTML = [["all", "랭킹 조회수 합", "#93b4f5"], ["our", mediaName(our), "#dc2626"], ["pub", "발행 기사수", "#64748b"]].map(([k, l, c]) => `<button class="tg-btn on" data-k="${k}" style="--c:${c}"><i></i>${esc(l)}</button>`).join("");
+    $$("button", tg).forEach((b) => b.addEventListener("click", () => {
+      on[b.dataset.k] = !on[b.dataset.k];
+      if (!Object.values(on).some(Boolean)) on[b.dataset.k] = true;
+      ds.forEach((d, i) => ch2?.setDatasetVisibility(i, on[d._k]));
+      ch2?.update();
+      $$("button", tg).forEach((x) => x.classList.toggle("on", on[x.dataset.k]));
+    }));
+  }
 
   const maxShare = Math.max(...pat.map((p) => Math.max(p.share, p.base || 0)), 0.01);
   // 독자가 읽은 시간대 — 30분 단위, 하루가 끝난 날만 (오늘 30분마다 쌓은 기록은 내일 확정·반영)

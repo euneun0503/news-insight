@@ -511,3 +511,9 @@ body.gated .topbar, body.gated .layout { display: none; }
 .rp-cv-m{position:absolute;left:96px;top:560px;font-size:14px;color:#94a3b8;line-height:1.7}
 .rp-cv-logo{position:absolute;right:80px;top:96px;width:72px;height:72px;border-radius:16px;background:#f97316;color:#fff;font-size:40px;font-weight:800;display:flex;align-items:center;justify-content:center}
 .ours-kpi.gray { background: linear-gradient(180deg, #f7f8fa 0%, #fff 70%); border-color: #eceef2; }
+.hour-tg { display: flex; gap: 6px; margin: -4px 0 8px; }
+.tg-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 12px; font-size: 12.5px; cursor: pointer; color: var(--muted); }
+.tg-btn i { width: 10px; height: 10px; border-radius: 3px; background: #cbd5e1; }
+.tg-btn.on { color: var(--text); border-color: var(--c); font-weight: 600; }
+.tg-btn.on i { background: var(--c); }
+.u-dot { border-bottom: 1px dotted currentColor; cursor: help; }
