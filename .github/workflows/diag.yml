@@ -14,6 +14,16 @@ jobs:
           python-version: "3.11"
       - run: pip install -r collector/requirements.txt
       - run: python collector/diag.py && python collector/diag2.py
+      - name: 결과 요약(주석)
+        run: |
+          python - <<'PY'
+          import json
+          d = json.load(open("data/cache/diag.json"))
+          ok = sum(1 for r in d["detail"] if r.get("fixed") and r["fixed"][0] not in (None, "error"))
+          print(f"::notice::상세 확인 {ok}/{len(d['detail'])} 성공 · 예: " + "; ".join(f"{r['oid']}_{r['aid']}={r.get('fixed')}" for r in d["detail"][:6]))
+          for b in d["boundary"]:
+              print(f"::notice::경계 {b.get('oid')} {b.get('day')} n={b.get('n')} sure={b.get('sure')} {b.get('error','')}")
+          PY
       - name: 결과 저장
         run: |
           git config user.name "news-collector[bot]"
