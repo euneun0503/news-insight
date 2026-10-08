@@ -507,50 +507,44 @@ function dailyPages(m) {
   const { k, A, PA, tr, p } = m;
   const pw = "전일";
   const kpi = (l, v, d, sub, cls = "") => `<div class="a4-k ${cls}"><span>${esc(l)}</span><b>${esc(v)}</b><em class="${d.tone}">${esc(d.t)}</em><i>${esc(sub || "")}</i></div>`;
-  const rows = m.rl.slice(0, 8).map((o, i) => { const r = A.rank[o], pr = PA.rank[o]; const d = dl(ch(r.views, pr?.views)); return `<tr class="${o === k.our ? "our" : o === k.cmp ? "cmp" : ""}"><td class="c">${i + 1}</td><td>${esc(mediaName(o))}</td><td class="r">${fmt(r.views)}</td><td class="r ${d.tone}">${esc(d.t)}</td><td class="r">${pct(r.views / A.rankViews)}</td><td class="r">${A.pub[o] != null ? fmt(A.pub[o]) : "-"}</td></tr>`; }).join("");
+  const rows = m.rl.slice(0, 7).map((o, i) => { const r = A.rank[o], pr = PA.rank[o]; const d = dl(ch(r.views, pr?.views)); return `<tr class="${o === k.our ? "our" : o === k.cmp ? "cmp" : ""}"><td class="c">${i + 1}</td><td>${esc(mediaName(o))}</td><td class="r">${fmt(r.views)}</td><td class="r ${d.tone}">${esc(d.t)}</td><td class="r">${pct(r.views / A.rankViews)}</td><td class="r">${A.pub[o] != null ? fmt(A.pub[o]) : "-"}</td></tr>`; }).join("");
   const news = (list, n, wide) => list.slice(0, n).map((a, i) => `<div class="a4-n"><span class="no ${i < 3 ? "top" : ""}">${i + 1}</span><span class="md" style="color:${a.oid === k.our ? C.our : a.oid === k.cmp ? C.cmp : C.sub}">${esc(mediaName(a.oid))}</span><span class="tt">${esc(cut(a.title, wide ? 58 : 34))}${a.reporter ? ` <i>${esc(a.reporter)}</i>` : ""}</span><span class="vw">${fmt(a.views)}</span></div>`).join("") || '<div class="a4-empty">자료 없음</div>';
-  const kwTop = m.kw.slice().sort((a, b) => b.score - a.score).slice(0, 10);
+  const kwTop = m.kw.slice().sort((a, b) => b.score - a.score).slice(0, 8);
   const chip = (w, extra = "") => `<span class="a4-chip">${esc(w)}${extra}</span>`;
   // 공동 바이라인(예: 김영경·신예림)은 각 기자에게 나눠 담음
   const rm = new Map();
   for (const r of A.rep.values()) if (r.oid === k.our) for (const n of r.name.split("·").map((x) => x.trim()).filter(Boolean)) { const x = rm.get(n) || { name: n, pub: 0, rank: 0, views: 0 }; x.pub += r.pub; x.rank += r.rank; x.views += r.views; rm.set(n, x); }
   const reps = [...rm.values()].filter((r) => r.views > 0).sort((a, b) => b.views - a.views).slice(0, 5);
-  const g = (m.S?.google || []).slice(0, 10);
-  const head = (no) => `<div class="a4-hd"><div><div class="t">뉴스 인사이트 <b>일간 리포트</b></div><div class="d">${esc(label("day", p))}${holiday(p.s) ? " · " + esc(holiday(p.s)) : ""}</div></div><div class="r">${esc(k.ourN)} · 비교 ${esc(k.cmpN)}<br>${no} / 2</div></div>`;
-  const foot = `<div class="a4-ft">랭킹 조회수 = 네이버 언론사별 랭킹(상위 20건) 하루 합계 · 선택 매체 ${m.rl.length}곳 기준 · 조회수 미공개 매체 제외 · 작성 ${esc(kstDateTime(m.generated))}</div>`;
-  const p1 = `<div class="a4">${head(1)}
-    <div class="a4-sec">핵심 지표 <span>${pw} 대비</span></div>
-    <div class="a4-kpis">
+  const g = (m.S?.google || []).slice(0, 8);
+  const head = (no) => `<div class="a4-hd"><div><div class="t">NEWS INSIGHT · DAILY REPORT</div><div class="d">${esc(label("day", p))}${holiday(p.s) ? ` <small>${esc(holiday(p.s))}</small>` : ""}</div></div><div class="r"><b>${esc(k.ourN)}</b> 일간 리포트<br><span>비교 매체 ${esc(k.cmpN)} · ${no} / 2</span></div></div>`;
+  const foot = `<div class="a4-ft"><span>랭킹 조회수 = 네이버 언론사별 랭킹(상위 20건) 하루 합계 · 선택 매체 ${m.rl.length}곳 기준 · 조회수 미공개 매체 제외</span><span>작성 ${esc(kstDateTime(m.generated))}</span></div>`;
+  const card = (no, title, sub, body, cls = "") => `<section class="a4-card ${cls}"><div class="a4-ct"><span class="n">${no}</span><b>${title}</b>${sub ? `<em>${sub}</em>` : ""}</div>${body}</section>`;
+  const p1 = `<div class="a4">${head(1)}<div class="a4-body">
+    ${card("01", "핵심 지표", `${pw} 대비`, `<div class="a4-kpis">
       ${kpi(`${k.ourN} 랭킹 조회수`, fmt(k.v), dl(ch(k.v, k.pv)), `${pw} ${fmt(k.pv)}`, "our")}
       ${kpi("조회수 점유율", pct(k.sh), dlp(k.sh, k.psh), `선택 매체 ${k.nMedia}곳 중`, "our")}
       ${kpi("매체 순위", k.rank ? `${k.rank}위` : "-", dRank(k.rank, k.prank), `${pw} ${k.prank ? k.prank + "위" : "-"}`, "our")}
       ${kpi("발행 · 랭킹 진입", `${fmt(k.p)} · ${fmt(k.ent)}`, dl(ch(k.p, k.pp)), `진입률 ${pct(k.rate, 0)}`, "our")}
       ${kpi(`${k.cmpN} 랭킹 조회수`, fmt(k.cv), dl(ch(k.cv, k.pcv)), `${pw} ${fmt(k.pcv)}`, "cmp")}
       ${kpi(`${k.cmpN} 발행`, fmt(k.cp), dl(ch(k.cp, k.pcp)), `진입 ${fmt(k.cent)}건`, "cmp")}
-      ${kpi(`${k.ourN} vs ${k.cmpN}`, k.v != null && k.cv != null ? (k.v >= k.cv ? "우위" : "열세") : "-", dl(ch(k.v, k.cv)), "조회수 기준", "")}
-      ${kpi("최다 조회 기사", k.top ? fmt(k.top.views) : "-", { t: k.top ? `최고 ${k.top.best}위` : "", tone: "" }, k.top ? cut(k.top.title, 18) : "", "")}
+      ${kpi(`${k.ourN} vs ${k.cmpN}`, k.v != null && k.cv != null ? (k.v >= k.cv ? "조회수 우위" : "조회수 열세") : "-", dl(ch(k.v, k.cv)), `차이 ${fmt(Math.abs((k.v || 0) - (k.cv || 0)))}회`)}
+      ${kpi("최다 조회 기사", k.top ? fmt(k.top.views) : "-", { t: k.top ? `최고 ${k.top.best}위` : "", tone: "" }, k.top ? cut(k.top.title, 20) : "")}
+    </div>`)}
+    ${card("02", "핵심 포인트", "", `<ul class="a4-ul">${m.ins.slice(0, 5).map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`)}
+    ${card("03", "최근 14일 추이", "마지막 날이 보고일", `<div class="a4-2"><div><div class="bt">랭킹 조회수</div><canvas data-a4="v" width="330" height="150" style="width:330px;height:150px"></canvas></div>
+      <div><div class="bt">발행 기사 수</div><canvas data-a4="p" width="330" height="150" style="width:330px;height:150px"></canvas></div></div>`)}
+    ${card("04", "매체별 성과", "선택 매체 랭킹 조회수 순", `<table class="a4-t"><thead><tr><th class="c">#</th><th>매체</th><th class="r">랭킹 조회수</th><th class="r">${pw} 대비</th><th class="r">점유율</th><th class="r">발행</th></tr></thead><tbody>${rows}</tbody></table>`)}
+    </div>${foot}</div>`;
+  const p2 = `<div class="a4">${head(2)}<div class="a4-body">
+    ${card("05", `${esc(k.ourN)} 많이 읽힌 기사`, "TOP 8 · 랭킹 조회수", `<div class="a4-list">${news(m.our1, 8, true)}</div>`)}
+    ${card("06", "오늘의 주요 뉴스", "네이버 전체 매체 TOP 4", `<div class="a4-list">${news(m.allNews, 4, true)}</div>`)}
+    <div class="a4-2 gap">
+      ${card("07", "키워드", `${pw} 대비 급상승 포함`, `<div class="a4-kl">많이 쓰인</div><div class="a4-chips">${kwTop.map((r) => chip(r.word, ` <i>${fmt(r.score)}</i>`)).join("") || '<div class="a4-empty">자료 없음</div>'}</div>
+        <div class="a4-kl">급상승</div><div class="a4-chips">${m.rising.slice(0, 6).map((r) => chip(r.word, r.isNew ? ' <i class="new">NEW</i>' : ` <i class="up">${dl(r.change).t}</i>`)).join("") || '<div class="a4-empty">비교 자료 부족</div>'}</div>`)}
+      ${card("08", "구글 급상승 검색어", "TOP 8", `<div class="a4-g">${g.map((x, i) => `<div><span class="no">${i + 1}</span><b>${esc(cut(x.title, 16))}</b><i>${x.traffic ? fmt(x.traffic) + "+" : ""}</i></div>`).join("") || '<div class="a4-empty">자료 없음</div>'}</div>`)}
     </div>
-    <div class="a4-sec">핵심 포인트</div>
-    <ul class="a4-ul">${m.ins.slice(0, 6).map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
-    <div class="a4-sec">최근 14일 추이 <span>마지막 날이 이번 보고일</span></div>
-    <div class="a4-2"><div class="a4-box"><div class="bt">랭킹 조회수</div><canvas data-a4="v" width="352" height="170" style="width:352px;height:170px"></canvas></div>
-      <div class="a4-box"><div class="bt">발행 기사 수</div><canvas data-a4="p" width="352" height="170" style="width:352px;height:170px"></canvas></div></div>
-    <div class="a4-sec">매체별 성과 <span>선택 매체 랭킹 조회수 순</span></div>
-    <table class="a4-t"><thead><tr><th class="c">#</th><th>매체</th><th class="r">랭킹 조회수</th><th class="r">${pw} 대비</th><th class="r">점유율</th><th class="r">발행</th></tr></thead><tbody>${rows}</tbody></table>
-    ${foot}</div>`;
-  const p2 = `<div class="a4">${head(2)}
-    <div class="a4-sec">${esc(k.ourN)} 많이 읽힌 기사 TOP 10</div>
-    <div class="a4-list">${news(m.our1, 10, true)}</div>
-    <div class="a4-sec">오늘의 주요 뉴스 <span>네이버 전체 매체 랭킹 조회수 TOP 5</span></div>
-    <div class="a4-list">${news(m.allNews, 5, true)}</div>
-    <div class="a4-2">
-      <div><div class="a4-sec">많이 쓰인 키워드</div><div class="a4-chips">${kwTop.map((r) => chip(r.word, ` <i>${fmt(r.score)}</i>`)).join("") || '<div class="a4-empty">자료 없음</div>'}</div>
-        <div class="a4-sec" style="margin-top:10px">급상승 키워드 <span>${pw} 대비</span></div><div class="a4-chips">${m.rising.slice(0, 10).map((r) => chip(r.word, r.isNew ? ' <i class="new">NEW</i>' : ` <i class="up">${dl(r.change).t}</i>`)).join("") || '<div class="a4-empty">비교 자료 부족</div>'}</div></div>
-      <div><div class="a4-sec">구글 급상승 검색어 TOP 10</div><div class="a4-g">${g.map((x, i) => `<div><span class="no">${i + 1}</span><b>${esc(cut(x.title, 16))}</b><i>${x.traffic ? fmt(x.traffic) + "+" : ""}</i></div>`).join("") || '<div class="a4-empty">자료 없음</div>'}</div></div>
-    </div>
-    <div class="a4-sec">${esc(k.ourN)} 기자 TOP 5 <span>랭킹 조회수 기준</span></div>
-    <table class="a4-t"><thead><tr><th class="c">#</th><th>기자</th><th class="r">발행</th><th class="r">랭킹 진입(일별)</th><th class="r">랭킹 조회수</th></tr></thead><tbody>${reps.map((r, i) => `<tr><td class="c">${i + 1}</td><td>${esc(r.name)}</td><td class="r">${fmt(r.pub)}</td><td class="r">${fmt(r.rank)}</td><td class="r">${fmt(r.views)}</td></tr>`).join("") || '<tr><td colspan="5" class="c">자료 없음</td></tr>'}</tbody></table>
-    ${foot}</div>`;
+    ${card("09", `${esc(k.ourN)} 기자 TOP 5`, "랭킹 조회수 기준", `<table class="a4-t"><thead><tr><th class="c">#</th><th>기자</th><th class="r">발행</th><th class="r">랭킹 진입(일별)</th><th class="r">랭킹 조회수</th></tr></thead><tbody>${reps.map((r, i) => `<tr><td class="c">${i + 1}</td><td>${esc(r.name)}</td><td class="r">${fmt(r.pub)}</td><td class="r">${fmt(r.rank)}</td><td class="r">${fmt(r.views)}</td></tr>`).join("") || '<tr><td colspan="5" class="c">자료 없음</td></tr>'}</tbody></table>`)}
+    </div>${foot}</div>`;
   return [p1, p2];
 }
 function renderDaily(root, m) {
