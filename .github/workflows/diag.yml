@@ -13,23 +13,13 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r collector/requirements.txt
-      - run: python collector/diag.py && python collector/diag2.py
-      - name: 결과 요약(주석)
-        run: |
-          python - <<'PY'
-          import json
-          d = json.load(open("data/cache/diag.json"))
-          ok = sum(1 for r in d["detail"] if r.get("fixed") and r["fixed"][0] not in (None, "error"))
-          print(f"::notice::상세 확인 {ok}/{len(d['detail'])} 성공 · 예: " + "; ".join(f"{r['oid']}_{r['aid']}={r.get('fixed')}" for r in d["detail"][:6]))
-          for b in d["boundary"]:
-              print(f"::notice::경계 {b.get('oid')} {b.get('day')} n={b.get('n')} sure={b.get('sure')} {b.get('error','')}")
-          PY
+      - run: python collector/diag3.py
       - name: 결과 저장
         run: |
           git config user.name "news-collector[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git status --short | head -20
-          git add -f data/cache/diag.json data/cache/diag2.json
+          git add -f data/cache/diag.json data/cache/diag2.json 2>/dev/null || true
           git commit -m "수집 실패 원인 점검 결과 $(date +%H:%M)"
           for i in 1 2 3 4 5; do git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push && exit 0; sleep 5; done
           echo "결과 저장은 건너뜀(주석으로 확인)"
