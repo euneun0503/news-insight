@@ -72,10 +72,8 @@ def fetch_one(session, oid, aid):
             "q": f"NEWS[ne_{oid}_{aid}]|NEWS_MAIN[ne_{oid}_{aid}]"})
         if r.ok:
             re_, rc = split_reactions(r.json())
-            if re_:
-                out["re"] = re_
-            if rc:
-                out["rc"] = rc
+            out["re"] = re_  # 아무도 누르지 않은 기사는 빈 값({}) = 0
+            out["rc"] = rc
     except Exception:
         pass
     return out

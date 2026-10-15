@@ -350,7 +350,9 @@ function splitEngage(e) {
   const all = { ...(e.re || {}), ...(e.rc || {}) };
   const re = {}, rc = {};
   for (const [k, n] of Object.entries(all)) (RC_LABEL[k] ? rc : re)[k] = n;
-  return { ...e, re: Object.keys(re).length ? re : null, rc: Object.keys(rc).length ? rc : null, _split: true, _any: Object.keys(all).length > 0 };
+  // 반응 응답을 받았거나(빈 값 포함) 댓글 수를 받았으면 '수집됨': 아무도 누르지 않은 기사는 0
+  const got = "re" in e || "rc" in e || e.cm != null;
+  return { ...e, re: Object.keys(re).length ? re : null, rc: Object.keys(rc).length ? rc : got ? {} : null, _split: true, _any: got };
 }
 function engageCells(a) {
   const e = a.engage;
