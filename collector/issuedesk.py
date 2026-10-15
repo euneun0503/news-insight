@@ -24,7 +24,26 @@ MAX_PER_CAT = 8
 
 HEALTH = re.compile(r"건강|다이어트|살\s?빼|체중|비만|마운자로|위고비|병원|의사|간호|약국|약\b|처방|암\b|질환|증상|식단|영양|백신|독감|코로나|감기|수술|성형|운동|헬스|수면|커피|혈압|당뇨|치매|우울|정신과|탈모|임신|출산|생리|피부과|식약처|건보")
 CULTURE = re.compile(r"드라마|영화|예능|방송|시청률|넷플릭스|공연|전시|뮤지컬|책\b|소설|웹툰|여행|맛집|음식|식당|카페|메뉴|케이팝|K-?팝|노래|음원|앨범|패션|트렌드|광고|유행")
-EXCLUDE = re.compile(r"\.gif|\.mp4|ㅋㅋㅋ|짤|레전드\s*$|후방|ㄷㄷㄷㄷ|언더붑|노출|ㅗ")
+EXCLUDE = re.compile(r"\.gif|\.mp4|ㅋㅋㅋ|짤|레전드\s*$|후방|ㄷㄷㄷㄷ|언더붑|노출|ㅗ|새끼|씨발|시발|ㅅㅂ|병신|존나|ㅈㄴ|성욕|야동|섹스|19금|\bav\b|av배우|코스피|주식|비트코인|홍명보|국대|축구|야구", re.I)
+STOP = {"근황","이유","논란","해명글","올린","jpg","jpeg","png","mp4","gif","진짜","요즘","오늘","최근","ㄷㄷ","관련","이후","뒤","벌어진","일"}
+
+
+def tokens(t):
+    t = re.sub(r"\[[^\]]*\]|\([^)]*\)", " ", t)
+    return {w for w in re.findall(r"[가-힣A-Za-z0-9]{2,}", t) if w.lower() not in STOP}
+
+
+def same_issue(a, b):
+    ta, tb = tokens(a), tokens(b)
+    if not ta or not tb:
+        return False
+    def like(x, y):  # 같은 낱말이거나 앞 두 글자 이상이 같으면 같은 낱말로 봄 (성심당/성심당서, 사과/사과방송)
+        n = 0
+        while n < min(len(x), len(y)) and x[n] == y[n]:
+            n += 1
+        return x == y or n >= 2
+    common = sum(1 for x in ta if any(like(x, y) for y in tb))
+    return common >= 2 and common >= 0.5 * min(len(ta), len(tb))
 
 
 def now_kst():
@@ -154,7 +173,20 @@ def main():
 
     cands.sort(key=lambda c: -c[0])
     per_cat, new = {}, []
+    def attach(p):  # 이미 있는 이슈와 같은 글이면 그 항목의 관련 글로 붙임
+        for it in doc["items"] + new:
+            if same_issue(it["title"], p["title"]):
+                rel = it.setdefault("press", [])
+                if len(rel) < 5 and all(r.get("url") != p["url"] for r in rel):
+                    rel.append({"title": f'{p.get("source_label") or ""}: {p["title"].strip()}', "url": p["url"]})
+                return True
+        return False
+
+    merged = 0
     for hval, p, d in cands:
+        if attach(p):
+            merged += 1
+            continue
         cat = classify(p)
         if per_cat.get(cat, 0) >= MAX_PER_CAT or len(new) >= MAX_NEW or hval < 1:
             continue
@@ -180,7 +212,7 @@ def main():
     days = sorted(set(idx.get("days", [])) | {today})
     idx.update({"days": days, "updatedAt": doc["generatedAt"]})
     idx_path.write_text(json.dumps(idx, ensure_ascii=False), "utf-8")
-    print(f"{today}: 새 항목 {len(new)}건 추가, 기존 {updated}건 수치 갱신, Claude 앵글 {'사용' if used_claude else '미사용'}")
+    print(f"{today}: 같은 이슈 {merged}건은 기존 항목에 묶음, 기존 {updated}건 수치 갱신, Claude 앵글 {'사용' if used_claude else '미사용'}")
 
 
 if __name__ == "__main__":

@@ -320,7 +320,12 @@
    "angle": "인터넷 방송인 논란 대응과 사과 과정을 정리하는 기사. 1인 방송 위기 대응 문제로 확장.",
    "check": "어떤 스트리머·어떤 논란인지 원 방송과 사과문을 직접 확인.",
    "covered": false,
-   "press": [],
+   "press": [
+    {
+     "title": "FMKorea: 포텐간 스트리머 사과방송",
+     "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10445850756"
+    }
+   ],
    "date": "2026-10-14"
   },
   {
@@ -471,7 +476,12 @@
    "angle": "학교 내 성 관련 신고가 무고로 드러났을 때 아동이 겪는 피해와 회복 절차의 공백을 다루는 기사.",
    "check": "학교·교육청 처리 결과 확인. 아동이 특정될 정보는 모두 빼기. 원글 제목의 혐오 표현은 인용하지 않기.",
    "covered": false,
-   "press": [],
+   "press": [
+    {
+     "title": "디시인사이드: [주갤] 성추행범 누명 쓴 초등학생",
+     "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470255&list_num=100&_dcbest=1&page=1"
+    }
+   ],
    "date": "2026-10-14"
   },
   {
@@ -659,38 +669,6 @@
    "date": "2026-10-15"
   },
   {
-   "category": "이슈",
-   "title": "이 글 처음 퍼트린 새끼 증오한다.jpg",
-   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10445895550",
-   "source": "FMKorea",
-   "views": null,
-   "likes": 4494,
-   "comments": 1318,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-14",
-   "auto": true
-  },
-  {
-   "category": "이슈",
-   "title": "성심당 싹쓸이 논란 해명글 올린 이지혜 인스타.jpg",
-   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10446834208",
-   "source": "FMKorea",
-   "views": null,
-   "likes": 2463,
-   "comments": 1348,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-14",
-   "auto": true
-  },
-  {
    "category": "건강",
    "title": "마운자로 갤러리 이용자들이 폭발해버린 이유 ㄷㄷ",
    "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10448062953",
@@ -698,38 +676,6 @@
    "views": null,
    "likes": 1226,
    "comments": 1096,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "이슈",
-   "title": "9400까지갓던 코스피 근황",
-   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10448177882",
-   "source": "FMKorea",
-   "views": null,
-   "likes": 1217,
-   "comments": 1070,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "이슈",
-   "title": "[주갤] 성추행범 누명 쓴 초등학생",
-   "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470255&list_num=100&_dcbest=1&page=1",
-   "source": "디시인사이드",
-   "views": 47765,
-   "likes": 483,
-   "comments": 881,
    "score": 5,
    "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
    "check": "",
@@ -787,38 +733,6 @@
    "auto": true
   },
   {
-   "category": "문화",
-   "title": "포텐간 스트리머 사과방송",
-   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10445850756",
-   "source": "FMKorea",
-   "views": null,
-   "likes": 1623,
-   "comments": 739,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-14",
-   "auto": true
-  },
-  {
-   "category": "이슈",
-   "title": "[해갤] 홍명보를 국대 감독으로 선임했던 진짜 이유...jpg",
-   "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470379&list_num=100&_dcbest=1&page=1",
-   "source": "디시인사이드",
-   "views": 28818,
-   "likes": 1112,
-   "comments": 647,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
    "category": "건강",
    "title": "관세청이 마운자로 짝퉁이라고 발표한 뒤 벌어진 일.jpg",
    "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10447246009",
@@ -830,7 +744,12 @@
    "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
    "check": "",
    "covered": false,
-   "press": [],
+   "press": [
+    {
+     "title": "디시인사이드: [마갤] (통녹O) 관세청에서 인도 마운자로 짝퉁이라고 발표한거 관련해서 전화함",
+     "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470439&list_num=100&_dcbest=1&page=1"
+    }
+   ],
    "date": "2026-10-14",
    "auto": true
   },
@@ -899,38 +818,6 @@
    "auto": true
   },
   {
-   "category": "건강",
-   "title": "[마갤] (통녹O) 관세청에서 인도 마운자로 짝퉁이라고 발표한거 관련해서 전화함",
-   "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470439&list_num=100&_dcbest=1&page=1",
-   "source": "디시인사이드",
-   "views": 11165,
-   "likes": 195,
-   "comments": 300,
-   "score": 4,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "연예인",
-   "title": "성심당서 싹쓸이 했다고 욕 먹는 여자연예인!!",
-   "url": "https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&no=10152213",
-   "source": "뽐뿌",
-   "views": 37434,
-   "likes": 50,
-   "comments": 107,
-   "score": 3,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
    "category": "문화",
    "title": "대구 임금체불 심하다 까던 여성 방송인 근황",
    "url": "https://bbs.ruliweb.com/best/board/300143/read/77029555?orderby=regdate&range=24h&view=list&m=humor&t=hit",
@@ -954,22 +841,6 @@
    "views": 16175,
    "likes": 208,
    "comments": 165,
-   "score": 3,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "연예인",
-   "title": "남av배우가 꼽은 여av배우성욕.jpe",
-   "url": "https://bbs.ruliweb.com/best/board/300143/read/77029192?orderby=regdate&range=24h&view=list&m=humor&t=hit",
-   "source": "루리웹",
-   "views": 34051,
-   "likes": 149,
-   "comments": 34,
    "score": 3,
    "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
    "check": "",

@@ -59,7 +59,7 @@ export async function issuedesk(el, r, ctx) {
         <div class="tools"><div class="seg" id="idkTab"><button data-t="issue">커뮤니티 이슈</button><button data-t="press">보도자료</button></div><button class="btn sm primary" id="idkRun">지금 다시 조회</button></div></div>
       <div class="idk-run" id="idkRunMsg" hidden></div>
       ${latest?.note ? `<div class="idk-note">${esc(latest.note)}</div>` : ""}
-      <div class="idk-dl"><span>엑셀 내려받기</span><input class="input" type="date" id="idkFrom" min="${all[0]}" max="${all[all.length - 1]}" value="${days[days.length - 1]}"><span>~</span><input class="input" type="date" id="idkTo" min="${all[0]}" max="${all[all.length - 1]}" value="${days[0]}"><button class="btn sm" id="idkDlRange">기간 내려받기</button><button class="btn sm" id="idkDlAll">전체</button><span class="form-hint">보고서가 있는 날짜: ${dotDate(all[0])} ~ ${dotDate(all[all.length - 1])}</span></div>
+      <div class="idk-dl"><span id="idkDlLabel">커뮤니티 이슈 엑셀</span><input class="input" type="date" id="idkFrom" min="${all[0]}" max="${all[all.length - 1]}" value="${days[days.length - 1]}"><span>~</span><input class="input" type="date" id="idkTo" min="${all[0]}" max="${all[all.length - 1]}" value="${days[0]}"><button class="btn sm" id="idkDlRange">기간 내려받기</button><button class="btn sm" id="idkDlAll">전체</button><span class="form-hint">보고서가 있는 날짜: ${dotDate(all[0])} ~ ${dotDate(all[all.length - 1])}</span></div>
       <div class="idk-chips" id="idkChips"></div>
       <div class="idk-legend"><span><i class="idk-dot new"></i>어제·오늘 자료</span><span><i class="idk-dot"></i>그 이전 자료</span><span id="idkLegendExtra"></span></div>
       <div id="idkBody"></div>
@@ -117,6 +117,7 @@ export async function issuedesk(el, r, ctx) {
 
   function draw() {
     wrap.querySelectorAll("#idkTab button").forEach((b) => b.classList.toggle("on", b.dataset.t === tab));
+    $w("#idkDlLabel").textContent = tab === "press" ? "보도자료 엑셀" : "커뮤니티 이슈 엑셀";
     tab === "press" ? drawPress() : drawIssues();
   }
   wrap.querySelectorAll("#idkTab button").forEach((b) => b.addEventListener("click", () => { tab = b.dataset.t; filter = "전체"; ctx.setQuery({ tab: tab === "press" ? "press" : "" }); draw(); }));
@@ -127,10 +128,12 @@ export async function issuedesk(el, r, ctx) {
     const docs = (await loadDocs(list)).sort((a, b) => (a.day < b.day ? -1 : 1));
     const f = flatten(docs);
     const span = list.length > 1 ? `${list[0]}~${list[list.length - 1]}` : list[0];
-    ctx.exportSheets(`이슈데스크_${span}`, [
+    const sheets = [
       { name: "커뮤니티 이슈", rows: f.issues.map((i) => ({ 보고서날짜: i.day, 게시일: i.date || "", 신규: i._new ? "신규" : "", 분야: i.category, 추천도: i.score, 제목: i.title, 출처: i.source, 조회: i.views ?? "", 추천: i.likes ?? "", 댓글: i.comments ?? "", 구분: i.auto ? "자동 수집" : i.covered ? "기보도" : "미보도 추정", 기사앵글: i.auto ? "" : i.angle, 확인할것: i.check || "", 링크: i.url, 관련보도: (i.press || []).map((p) => `${p.title} ${p.url}`).join(" | ") })) },
       { name: "보도자료", rows: f.press.map((i) => ({ 보고서날짜: i.day, 자료일자: i.date || "", 신규: i._new ? "신규" : "", 기관: i.agency, 추천도: i.score, 제목: i.title, 출처: i.source || "", 기사앵글: i.angle || "", 링크: i.url, 기관게시판: i.home || "" })) },
-    ]);
+    ];
+    // 지금 보고 있는 탭의 시트만 내려받기
+    ctx.exportSheets(`이슈데스크_${tab === "press" ? "보도자료" : "커뮤니티이슈"}_${span}`, [tab === "press" ? sheets[1] : sheets[0]]);
   }
   $w("#idkDlRange").addEventListener("click", () => {
     let a = $w("#idkFrom").value, b = $w("#idkTo").value;
