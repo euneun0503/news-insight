@@ -18,25 +18,30 @@ from store import CONFIG, DATA, now_kst, today_kst  # noqa: E402
 
 
 def debug(keys):
-    """문제 기사 확인용: 기사 주소 이동 결과와 댓글·반응 응답 원문 일부를 출력"""
+    """문제 기사 확인용: 기사 주소 이동 결과와 댓글·반응 응답 원문 일부를 data/cache/engage_debug.txt 에 저장"""
     session = make_session(2)
     lines = []
-    _p = print
-    def print(*a):  # noqa: A001  화면과 파일(data/cache/engage_debug.txt) 양쪽에
+    def say(*a):
         lines.append(" ".join(str(x) for x in a))
-        _p(*a)
+        print(*a)
     for k in keys:
         oid, aid = k.split("_")
-        r = session.get(engage._article_url(oid, aid), timeout=12)
-        print("==", k, "→", r.url, r.status_code)
-        for t in engage.COMMENT_TICKETS:
-            c = session.get(engage.COMMENT_API, timeout=10, headers={"Referer": r.url}, params={**t, "lang": "ko", "country": "KR", "objectId": f"news{oid},{aid}", "pageSize": 1, "indexSize": 1, "page": 1, "sort": "FAVORITE", "initialize": "true", "_callback": "cb"})
-            print("  댓글", t["ticket"], c.status_code, c.text[:300].replace("\n", " "))
-        q = "|".join(f"{s}[ne_{oid}_{aid}]" for s in ["NEWS", "NEWS_MAIN", "ENTERTAIN", "ENTERTAIN_MAIN", "SPORTS", "SPORTS_MAIN"])
-        l = session.get(engage.LIKE_API, timeout=10, headers={"Referer": r.url}, params={"suppress_response_codes": "true", "q": q})
-        print("  반응", l.status_code, l.text[:600])
-        for m in sorted(set(re.findall(r'data-cid="([^"]+)"|"objectId"\s*:\s*"([^"]+)"|(ENTERTAIN\[[^\]]+\]|NEWS\[[^\]]+\]|SPORTS\[[^\]]+\])', r.text))):
-            print("  페이지 표식", m)
+        try:
+            r = session.get(engage._article_url(oid, aid), timeout=12)
+            say("==", k, "→", r.url, r.status_code)
+            for t in engage.COMMENT_TICKETS:
+                c = session.get(engage.COMMENT_API, timeout=10, headers={"Referer": r.url}, params={**t, "lang": "ko", "country": "KR", "objectId": f"news{oid},{aid}", "pageSize": 1, "indexSize": 1, "page": 1, "sort": "FAVORITE", "initialize": "true", "_callback": "cb"})
+                say("  댓글", t["ticket"], c.status_code, c.text[:400].replace("\n", " "))
+            q = "|".join(f"{x}[ne_{oid}_{aid}]" for x in ["NEWS", "NEWS_MAIN", "ENTERTAIN", "ENTERTAIN_MAIN", "SPORTS", "SPORTS_MAIN"])
+            l = session.get(engage.LIKE_API, timeout=10, headers={"Referer": r.url}, params={"suppress_response_codes": "true", "q": q})
+            say("  반응", l.status_code, l.text[:800])
+            marks = set()
+            for pat in [r'data-cid="([^"]+)"', r'(?:NEWS|NEWS_MAIN|ENTERTAIN|SPORTS)\[[^\]]+\]', r'_reactionModule[^>]{0,200}', r'u_likeit[^>]{0,200}', r'cbox[^"\']{0,80}']:
+                marks.update(m if isinstance(m, str) else str(m) for m in re.findall(pat, r.text)[:8])
+            for m in sorted(marks)[:30]:
+                say("  페이지 표식", m[:200])
+        except Exception as e:
+            say("  오류", k, e)
     (DATA / "cache").mkdir(parents=True, exist_ok=True)
     (DATA / "cache" / "engage_debug.txt").write_text("\n".join(lines), "utf-8")
 
