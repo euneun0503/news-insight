@@ -3,6 +3,7 @@
 // 매일 오전 7시 기본 수집, '지금 다시 조회'는 GitHub Actions(issuedesk.yml)로 실행 후 이 화면에서 바로 갱신
 import { esc, h, dotDate, toast, kstDateTime } from "./util.js";
 import { canRunIssuedesk, runIssuedesk, issuedeskLastRun } from "./admin.js";
+import { info } from "./info.js";
 
 const CAT_COLOR = { 건강: "#0f9d74", "제약·바이오": "#0e7490", 문화: "#b7791f", 연예인: "#c2417f", 스포츠: "#ea580c", 이슈: "#2563eb" };
 const TOP_N = 20; // 분야별 추천 상위 N건은 연한 회색 배경
@@ -68,7 +69,7 @@ export async function issuedesk(el, r, ctx) {
       ${latest?.note ? `<div class="idk-note">${esc(latest.note)}</div>` : ""}
       <div class="idk-dl"><span id="idkDlLabel">커뮤니티 이슈 엑셀</span><input class="input" type="date" id="idkFrom" min="${all[0]}" max="${all[all.length - 1]}" value="${days[days.length - 1]}"><span>~</span><input class="input" type="date" id="idkTo" min="${all[0]}" max="${all[all.length - 1]}" value="${days[0]}"><button class="btn sm" id="idkDlRange">기간 내려받기</button><button class="btn sm" id="idkDlAll">전체</button><span class="form-hint">보고서가 있는 날짜: ${dotDate(all[0])} ~ ${dotDate(all[all.length - 1])}</span></div>
       <div class="idk-chips" id="idkChips"></div>
-      <div class="idk-legend"><span><i class="idk-dot new"></i>어제·오늘 자료</span><span><i class="idk-dot"></i>그 이전 자료</span><span id="idkLegendExtra"></span></div>
+      <div class="idk-legend"><span><i class="idk-dot new"></i>어제·오늘 자료</span><span><i class="idk-dot"></i>그 이전 자료 ${info("idkNew")}</span><span>★ 추천도 ${info("idkScore")}</span><span id="idkLegendExtra"></span></div>
       <div id="idkBody"></div>
     </div>
     <div class="idk-foot">추천도(★)는 반응 규모·새로움·확인 가능성·공익성을 본 데스크 판단입니다. '자동 수집' 표시 항목은 다시 조회로 추가된 글로, 기사 앵글이 아직 없습니다. 커뮤니티 글은 검증 전 제보이므로 기사화 전 원글·당사자·기관 확인이 필요합니다.</div>
@@ -91,14 +92,14 @@ export async function issuedesk(el, r, ctx) {
     const counts = {}, nc = {};
     issues.forEach((i) => { counts[i.category] = (counts[i.category] || 0) + 1; if (i._new) nc[i.category] = (nc[i.category] || 0) + 1; });
     chips(groups, counts, nc);
-    $w("#idkLegendExtra").innerHTML = `<i class="idk-sw"></i>연한 회색 배경 = 분야별 추천 상위 ${TOP_N}건`;
+    $w("#idkLegendExtra").innerHTML = `<i class="idk-sw"></i>연한 회색 배경 = 분야별 추천 상위 ${TOP_N}건 ${info("idkTop")}`;
     const list = issues.filter((i) => filter === "전체" || i.category === filter).sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : (b._top ? 1 : 0) - (a._top ? 1 : 0) || (b.score || 0) - (a.score || 0) || heat(b) - heat(a)));
     if (!list.length) return ($w("#idkBody").innerHTML = `<div class="empty">해당 분야 항목이 없습니다.</div>`);
     $w("#idkBody").innerHTML = `<div class="idk-list">${list.map((i) => {
       const nums = [["조회", num(i.views)], ["추천", num(i.likes)], ["댓글", num(i.comments)]].filter((x) => x[1]).map((x) => `${x[0]} ${x[1]}`).join(" · ");
       const prs = (i.press || []).map((p) => `<a href="${esc(safe(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>`).join("");
       return `<article class="idk-item ${i._new ? "" : "old"} ${i._top ? "top" : ""}">
-        <div class="idk-top"><span class="idk-cat" style="color:${CAT_COLOR[i.category] || "var(--muted)"}">${esc(i.category)}</span><span class="idk-src">${esc(i.source || "")}</span><span class="idk-src">${dotDate(i.date || i.day)}${i.date_note ? " (게시일 미확인)" : ""}</span>${i.auto ? '<span class="idk-pill auto">자동 수집</span>' : i.covered ? '<span class="idk-pill cov">기보도·후속</span>' : '<span class="idk-pill">미보도 추정</span>'}${i._top ? '<span class="idk-pill top">분야 추천 상위</span>' : ""}<span class="idk-score">${stars(i.score)}</span></div>
+        <div class="idk-top"><span class="idk-cat" style="color:${CAT_COLOR[i.category] || "var(--muted)"}">${esc(i.category)}</span><span class="idk-src">${esc(i.source || "")}</span><span class="idk-src">${dotDate(i.date || i.day)}${i.date_note ? " (게시일 미확인)" : ""}</span>${i.auto ? '<span class="idk-pill auto">자동 수집</span>' : i.covered ? '<span class="idk-pill cov">기보도·후속</span>' : '<span class="idk-pill">미보도 추정</span>'}${i._top ? '<span class="idk-pill top" title="이 분야에서 추천도(★)가 높은 상위 20건">분야 추천 상위</span>' : ""}<span class="idk-score">${stars(i.score)}</span></div>
         <h4><i class="idk-dot ${i._new ? "new" : ""}"></i><a href="${esc(safe(i.url))}" target="_blank" rel="noopener">${esc(i.title)}</a></h4>
         ${nums ? `<div class="idk-nums num">${nums}</div>` : ""}
         ${i.auto ? "" : `<dl><dt>기사 앵글</dt><dd>${esc(i.angle || "")}</dd>${i.check ? `<dt>확인할 것</dt><dd>${esc(i.check)}</dd>` : ""}${prs ? `<dt>관련 보도</dt><dd class="idk-press">${prs}</dd>` : ""}</dl>`}
