@@ -340,29 +340,34 @@ function statusCard() {
 }
 
 // overall: 숫자를 주면 '순위' = 전체 조회수 순위(시작 번호), 매체 안 순위는 매체 옆에 작게 표시
-const RE_LABEL = { like: "좋아요", warm: "훈훈해요", sad: "슬퍼요", angry: "화나요", want: "후속기사 원해요" };
-const RC_LABEL = { useful: "쏠쏠정보", wow: "흥미진진", touched: "공감백배", analytical: "분석탁월", recommend: "후속강추" };
+// 네이버 기사 반응 버튼(기사 위·아래 같은 숫자)의 종류. 지금 기사는 5종(REACT), 예전 기사 일부에 옛 감정 반응(OLD_REACT)이 남아 있음
+const REACT = { useful: "쏠쏠정보", wow: "흥미진진", touched: "공감백배", analytical: "분석탁월", recommend: "후속강추" };
+const OLD_REACT = { like: "좋아요", warm: "훈훈해요", sad: "슬퍼요", angry: "화나요", want: "후속기사 원해요" };
 const sumOf = (o) => (o ? Object.values(o).reduce((a, b) => a + b, 0) : null);
-const breakdown = (o, L) => (o ? Object.entries(o).filter(([, n]) => n).map(([k, n]) => `${L[k] || k} ${n.toLocaleString("ko-KR")}`).join(" · ") : "");
-// 저장 위치와 상관없이 종류로 다시 나눔: 추천 5종(쏠쏠정보 등) / 감정 반응(좋아요 등)
+// 저장된 re/rc 를 한 묶음으로: {cm, r: {종류: 수}, tot, other(옛 감정 반응 합), _any}
 function splitEngage(e) {
   if (!e || e._split) return e;
-  const all = { ...(e.re || {}), ...(e.rc || {}) };
-  const re = {}, rc = {};
-  for (const [k, n] of Object.entries(all)) (RC_LABEL[k] ? rc : re)[k] = n;
-  // 반응 응답을 받았거나(빈 값 포함) 댓글 수를 받았으면 '수집됨': 아무도 누르지 않은 기사는 0
-  const got = "re" in e || "rc" in e || e.cm != null;
-  return { ...e, re: Object.keys(re).length ? re : null, rc: Object.keys(rc).length ? rc : got ? {} : null, _split: true, _any: got };
+  const r = { ...(e.re || {}), ...(e.rc || {}) };
+  const got = "re" in e || "rc" in e || e.cm != null; // 응답을 받았으면 아무도 누르지 않은 기사는 0
+  const other = Object.entries(r).filter(([k]) => !REACT[k]).reduce((a, [, n]) => a + n, 0);
+  return { ...e, r, tot: got ? sumOf(r) || 0 : null, other, _split: true, _any: got };
 }
-const allRe = (a) => (a.engage?._any ? sumOf({ ...(a.engage.re || {}), ...(a.engage.rc || {}) }) || 0 : null);
+const allRe = (a) => a.engage?.tot ?? null;
+const typeOf = (a, k) => (a.engage?._any ? a.engage.r?.[k] || 0 : null);
+const ENGAGE_COLS = 7; // 댓글 · 반응 합계 · 5종
+function engageHead() {
+  return `<th class="r">댓글</th><th class="r">반응 ${info("engage")}</th>${Object.values(REACT).map((l) => `<th class="r eg-t">${l}</th>`).join("")}`;
+}
 function engageCells(a) {
   const e = a.engage;
-  if (!e) return '<td class="r num"><span class="form-hint">-</span></td><td class="r num"><span class="form-hint">-</span></td><td class="r num"><span class="form-hint">-</span></td>';
-  const re = sumOf({ ...(e.re || {}), ...(e.rc || {}) }), rc = sumOf(e.rc); // 반응 = 모든 반응 합(감정 반응 + 추천 5종)
+  const dash = '<td class="r num"><span class="form-hint">-</span></td>';
+  if (!e) return dash.repeat(ENGAGE_COLS);
   const at = e.at ? `${e.at.slice(5, 10).replace("-", ".")} ${e.at.slice(11, 16)} 수집` : "";
-  return `<td class="r num" title="${esc(at)}">${e.cm == null ? '<span class="form-hint">미수집</span>' : fmt(e.cm)}</td>
-    <td class="r num" title="${esc(breakdown({ ...(e.re || {}), ...(e.rc || {}) }, { ...RE_LABEL, ...RC_LABEL }) || at)}">${e._any ? fmt(re || 0) : '<span class="form-hint">미수집</span>'}</td>
-    <td class="r num" title="${esc(breakdown(e.rc, RC_LABEL) || at)}">${rc == null ? '<span class="form-hint">미수집</span>' : fmt(rc)}</td>`;
+  const miss = '<span class="form-hint">미수집</span>';
+  const oldNote = e.other ? ` · 옛 감정 반응 ${Object.entries(e.r).filter(([k]) => !REACT[k]).map(([k, n]) => `${OLD_REACT[k] || k} ${n}`).join(" · ")}` : "";
+  return `<td class="r num" title="${esc(at)}">${e.cm == null ? miss : fmt(e.cm)}</td>
+    <td class="r num" title="${esc(at + oldNote)}"><b>${e._any ? fmt(e.tot) : miss}</b></td>
+    ${Object.keys(REACT).map((k) => `<td class="r num eg-t">${e._any ? fmt(e.r[k] || 0) : miss}</td>`).join("")}`;
 }
 
 function articleTable(el, items, { showDay = true, showRank = true, showViews = true, showTime = false, overall = null, showEngage = false } = {}) {
@@ -371,7 +376,7 @@ function articleTable(el, items, { showDay = true, showRank = true, showViews = 
     return;
   }
   el.innerHTML = `<div class="table-wrap"><table class="t"><thead><tr>
-    ${overall != null ? '<th class="c">순위</th>' : ""}${showDay ? "<th>날짜</th>" : ""}${showRank && overall == null ? '<th class="c">순위</th>' : ""}<th>매체${overall != null && showRank ? ' <span class="form-hint">(매체 랭킹)</span>' : ""}</th><th>제목</th><th>기자</th>${showTime ? "<th>발행</th>" : ""}${showViews ? '<th class="r">조회수</th>' : ""}${showEngage ? `<th class="r">댓글</th><th class="r">반응 ${info("engage")}</th><th class="r">추천</th>` : ""}
+    ${overall != null ? '<th class="c">순위</th>' : ""}${showDay ? "<th>날짜</th>" : ""}${showRank && overall == null ? '<th class="c">순위</th>' : ""}<th>매체${overall != null && showRank ? ' <span class="form-hint">(매체 랭킹)</span>' : ""}</th><th>제목</th><th>기자</th>${showTime ? "<th>발행</th>" : ""}${showViews ? '<th class="r">조회수</th>' : ""}${showEngage ? engageHead() : ""}
   </tr></thead><tbody>${items
     .map(
       (a, i) => `<tr class="${isOur(a.oid) ? "ours" : ""}">
@@ -669,8 +674,8 @@ export async function articles(el, R, ctx) {
   el.append(card);
 
   const SORTS = {
-    rank: [["views", "조회수 높은 순 (전체 순위)"], ["cm", "댓글 많은 순"], ["re", "반응 많은 순"], ["rc", "추천 많은 순"]],
-    pub: [["date", "최신 발행 순"], ["old", "오래된 순"], ["cm", "댓글 많은 순"], ["re", "반응 많은 순"], ["rc", "추천 많은 순"], ["title", "제목 가나다"]],
+    rank: [["views", "조회수 높은 순 (전체 순위)"], ["cm", "댓글 많은 순"], ["re", "반응 합계 많은 순"], ...Object.entries(REACT).map(([k, l]) => ["t:" + k, `${l} 많은 순`])],
+    pub: [["date", "최신 발행 순"], ["old", "오래된 순"], ["cm", "댓글 많은 순"], ["re", "반응 합계 많은 순"], ...Object.entries(REACT).map(([k, l]) => ["t:" + k, `${l} 많은 순`]), ["title", "제목 가나다"]],
   };
   let data = [];
   let filtered = [];
@@ -723,7 +728,7 @@ export async function articles(el, R, ctx) {
       s === "views" ? (b.views ?? -1) - (a.views ?? -1)
         : s === "cm" ? (b.engage?.cm ?? -1) - (a.engage?.cm ?? -1) || (b.views ?? -1) - (a.views ?? -1)
         : s === "re" ? (allRe(b) ?? -1) - (allRe(a) ?? -1) || (b.views ?? -1) - (a.views ?? -1)
-        : s === "rc" ? (sumOf(b.engage?.rc) ?? -1) - (sumOf(a.engage?.rc) ?? -1) || (b.views ?? -1) - (a.views ?? -1)
+        : s.startsWith("t:") ? (typeOf(b, s.slice(2)) ?? -1) - (typeOf(a, s.slice(2)) ?? -1) || (allRe(b) ?? -1) - (allRe(a) ?? -1)
         : s === "title" ? a.title.localeCompare(b.title, "ko")
         : s === "old" ? (a.day + (a.time || "")).localeCompare(b.day + (b.time || ""))
         : state.src === "rank" ? b.day.localeCompare(a.day) || a.oid.localeCompare(b.oid) || a.rank - b.rank
@@ -757,8 +762,8 @@ export async function articles(el, R, ctx) {
         날짜: a.day, 매체: mediaName(a.oid), ...(state.src === "rank" ? { 순위: a.rank, 조회수: a.views } : {}),
         제목: a.title, 기자: a.reporter || "", 발행시각: a.time || (a.pub || "").slice(11, 16),
         ...({
-          댓글: a.engage?.cm ?? "", 반응합계: allRe(a) ?? "", ...Object.fromEntries(Object.entries(RE_LABEL).map(([k, l]) => [l, a.engage?.re?.[k] ?? ""])),
-          추천합계: sumOf(a.engage?.rc) ?? "", ...Object.fromEntries(Object.entries(RC_LABEL).map(([k, l]) => [l, a.engage?.rc?.[k] ?? ""])),
+          댓글: a.engage?.cm ?? "", 반응합계: allRe(a) ?? "", ...Object.fromEntries(Object.entries(REACT).map(([k, l]) => [l, typeOf(a, k) ?? ""])),
+          "옛 감정 반응(좋아요 등)": a.engage?._any ? a.engage.other : "",
           반응수집시각: a.engage?.at ? a.engage.at.slice(0, 16).replace("T", " ") : "",
         }),
         링크: articleUrl(a.oid, a.aid),
