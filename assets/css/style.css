@@ -587,8 +587,7 @@ body.gated .topbar, body.gated .layout { display: none; }
 .a4-ft { position: absolute; left: 24px; right: 24px; bottom: 12px; font-size: 9.5px; color: #94a3b8; display: flex; justify-content: space-between; }
 
 /* ── 이슈데스크 ───────────────────────── */
-.sidebar a.nav-sub { padding-left: 26px; font-size: 13px; }
-.sidebar a.nav-sub i { color: var(--line); }
+.nav-sep { height: 1px; background: var(--line); margin: 8px 12px; }
 .idk { display: flex; flex-direction: column; gap: 12px; }
 .idk-note { background: var(--blue-soft); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 12px; }
 .idk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
