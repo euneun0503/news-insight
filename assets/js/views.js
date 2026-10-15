@@ -689,7 +689,7 @@ export async function articles(el, R, ctx) {
         $("#count", card).textContent = "";
       }
       data = data.filter((a) => a.views != null); // 조회수를 공개하지 않는 매체(조선일보 등)는 순위를 매길 수 없어 제외
-      // 헬스조선·코메디닷컴 랭킹 기사: 댓글·공감 반응·추천 (수집 시점 값)
+      // 랭킹 기사(조회수 공개 매체): 댓글·공감 반응·추천 (수집 시점 값)
       const eg = await loadEngage(R.days);
       data = data.map((a) => ({ ...a, engage: splitEngage(eg[`${a.oid}_${a.aid}`]) || null }));
       // 조회수 순위는 정렬이 바뀌어도 유지

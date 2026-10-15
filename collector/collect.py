@@ -428,12 +428,12 @@ def collect_ranking(session, days, media, cache, workers):
         final = day < today_kst().isoformat()
         store.save_ranking(day, per_media, now_kst().isoformat(timespec="seconds"), final)
         store.save_snapshot(day, per_media, now_kst())
-        # 우리 매체(헬스조선·코메디닷컴) 랭킹 기사의 댓글·공감 반응·추천 수
-        em = CONFIG.get("engage_media", ["346", "296"])
-        ekeys = [(r[0], r[1]) for oid in em for r in (per_media.get(oid) or [])]
+        # 랭킹 기사의 댓글·공감 반응·추천 수 (조회수를 공개하는 매체의 기사만)
+        em = CONFIG.get("engage_media")  # 매체 코드 목록을 적으면 그 매체만, 비우면 조회수 공개 매체 전부
+        ekeys = [(r[0], r[1]) for oid, items in per_media.items() if (not em or oid in em) for r in (items or []) if r[3] is not None]
         if ekeys:
             try:
-                ok, n = engage.collect(session, ekeys, now_kst().isoformat(timespec="seconds"), DATA / "engage" / f"{day}.json")
+                ok, n = engage.collect(session, ekeys, now_kst().isoformat(timespec="seconds"), DATA / "engage" / f"{day}.json", workers=max(8, workers))
                 log(f"   💬 댓글·반응 {ok}/{n}건")
                 if n and ok == 0:
                     err(f"댓글·반응 {day}: 0/{n}건 (네이버 구조 변경 가능성)")
