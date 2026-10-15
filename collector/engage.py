@@ -44,11 +44,11 @@ def split_reactions(j):
     """좋아요 API 응답 → (감정 반응 dict, 추천 dict). 모르는 종류도 그대로 둠."""
     re_, rc = {}, {}
     for c in (j or {}).get("contents") or []:
-        target = rc if c.get("serviceId") == "NEWS_MAIN" else re_
         for r in c.get("reactions") or []:
             t, n = r.get("reactionType"), r.get("count")
             if t and isinstance(n, int):
-                target[t] = target.get(t, 0) + n
+                target = rc if t in RECOMMEND_LABEL else re_  # 종류로 나눔 (네이버는 지금 추천 5종만 씀)
+                target[t] = max(target.get(t, 0), n)
     return re_, rc
 
 

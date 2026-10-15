@@ -344,13 +344,21 @@ const RE_LABEL = { like: "좋아요", warm: "훈훈해요", sad: "슬퍼요", an
 const RC_LABEL = { useful: "쏠쏠정보", wow: "흥미진진", touched: "공감백배", analytical: "분석탁월", recommend: "후속강추" };
 const sumOf = (o) => (o ? Object.values(o).reduce((a, b) => a + b, 0) : null);
 const breakdown = (o, L) => (o ? Object.entries(o).filter(([, n]) => n).map(([k, n]) => `${L[k] || k} ${n.toLocaleString("ko-KR")}`).join(" · ") : "");
+// 저장 위치와 상관없이 종류로 다시 나눔: 추천 5종(쏠쏠정보 등) / 감정 반응(좋아요 등)
+function splitEngage(e) {
+  if (!e || e._split) return e;
+  const all = { ...(e.re || {}), ...(e.rc || {}) };
+  const re = {}, rc = {};
+  for (const [k, n] of Object.entries(all)) (RC_LABEL[k] ? rc : re)[k] = n;
+  return { ...e, re: Object.keys(re).length ? re : null, rc: Object.keys(rc).length ? rc : null, _split: true, _any: Object.keys(all).length > 0 };
+}
 function engageCells(a) {
   const e = a.engage;
   if (!e) return '<td class="r num"><span class="form-hint">-</span></td><td class="r num"><span class="form-hint">-</span></td><td class="r num"><span class="form-hint">-</span></td>';
   const re = sumOf(e.re), rc = sumOf(e.rc);
   const at = e.at ? `${e.at.slice(5, 10).replace("-", ".")} ${e.at.slice(11, 16)} 수집` : "";
   return `<td class="r num" title="${esc(at)}">${e.cm == null ? '<span class="form-hint">미수집</span>' : fmt(e.cm)}</td>
-    <td class="r num" title="${esc(breakdown(e.re, RE_LABEL) || at)}">${re == null ? '<span class="form-hint">미수집</span>' : fmt(re)}</td>
+    <td class="r num" title="${esc(breakdown(e.re, RE_LABEL) || at)}">${re == null ? (e._any ? "0" : '<span class="form-hint">미수집</span>') : fmt(re)}</td>
     <td class="r num" title="${esc(breakdown(e.rc, RC_LABEL) || at)}">${rc == null ? '<span class="form-hint">미수집</span>' : fmt(rc)}</td>`;
 }
 
@@ -681,7 +689,7 @@ export async function articles(el, R, ctx) {
       data = data.filter((a) => a.views != null); // 조회수를 공개하지 않는 매체(조선일보 등)는 순위를 매길 수 없어 제외
       // 헬스조선·코메디닷컴 랭킹 기사: 댓글·공감 반응·추천 (수집 시점 값)
       const eg = await loadEngage(R.days);
-      data = data.map((a) => ({ ...a, engage: eg[`${a.oid}_${a.aid}`] || null }));
+      data = data.map((a) => ({ ...a, engage: splitEngage(eg[`${a.oid}_${a.aid}`]) || null }));
       // 조회수 순위는 정렬이 바뀌어도 유지
       data.slice().sort((x, y) => (y.views ?? -1) - (x.views ?? -1)).forEach((a, i) => (a.overall = i + 1));
     } else {
