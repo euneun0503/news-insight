@@ -1065,7 +1065,22 @@ export async function reporters(el, R, ctx) {
   }
   for (const r of map.values()) r.rank = r.rankSet.size; // 랭킹 진입 = 랭킹에 오른 서로 다른 기사 수 (같은 기사가 며칠 올라도 1건)
   if (!rk) for (const x of A.rep.values()) for (const n of split(x.name)) { const r = get(n, x.oid); r.rank += x.rank; r.views += x.views; r.viewN += x.rank; }
-  const rows = [...map.values()].map((r) => ({ ...r, bestViews: r.best ? r.best.views : null, avg: r.viewN ? r.views / r.viewN : null, enter: ar && r.covPub ? r.enterSet.size : null, rate: ar && r.covPub ? r.enterSet.size / r.covPub : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
+  // 댓글·반응 (전날 기사 기준 하루 1회 수집된 값): 기자가 쓴 기사(랭킹 + 발행)를 한 번씩만 합산
+  const EG = await loadEngage([...new Set([...R.days, ...extraDays])]);
+  for (const r of map.values()) {
+    const e = { n: 0, cm: 0, tot: 0, t: {}, bestCm: null, bestRe: null };
+    const items = new Map([...r.rkItems, ...r.pubItems].map((a) => [a.oid + "_" + a.aid, a]));
+    for (const [k, a] of items) {
+      const g = splitEngage(EG[k]);
+      if (!g?._any) continue;
+      e.n++; e.cm += g.cm || 0; e.tot += g.tot || 0;
+      for (const [t, n] of Object.entries(g.r)) e.t[t] = (e.t[t] || 0) + n;
+      if (!e.bestCm || (g.cm || 0) > e.bestCm.cm) e.bestCm = { ...a, cm: g.cm || 0 };
+      if (!e.bestRe || g.tot > e.bestRe.tot) e.bestRe = { ...a, tot: g.tot };
+    }
+    r.eg = e;
+  }
+  const rows = [...map.values()].map((r) => ({ ...r, egCm: r.eg.n ? r.eg.cm : null, egRe: r.eg.n ? r.eg.tot : null, egAvg: r.eg.n ? r.eg.tot / r.eg.n : null, bestViews: r.best ? r.best.views : null, avg: r.viewN ? r.views / r.viewN : null, enter: ar && r.covPub ? r.enterSet.size : null, rate: ar && r.covPub ? r.enterSet.size / r.covPub : null, pubDay: r.pub / Math.max(1, A.pubDayCount) }));
 
   if (!rows.length) {
     el.append(h(`<div class="card">${emptyBox("이 기간 기사에는 아직 기자명이 없습니다.<br>엑셀에서 가져온 과거 자료는 기자명이 비어 있어요. 자동 수집으로 새로 받은 기사부터 기자명이 들어갑니다.")}</div>`));
@@ -1123,6 +1138,9 @@ export async function reporters(el, R, ctx) {
       { key: "top1", label: "1위", cls: "r num", html: (r) => (r.top1 ? `<span class="tag orange">${r.top1}</span>` : "-") },
       { key: "views", label: `취합 조회수 합계 ${info("repViews")}`, cls: "r num", val: (r) => (r.viewN ? r.views : -1), html: (r) => (r.viewN ? fmt(r.views) : '<span class="form-hint" title="네이버가 이 매체의 조회수를 공개하지 않습니다">미공개</span>') },
       { key: "bestViews", label: "최고 조회수", cls: "r num", html: (r) => (r.best ? fmt(r.best.views) : "-") },
+      { key: "egCm", label: `댓글 ${info("engage")}`, cls: "r num", val: (r) => r.egCm ?? -1, html: (r) => (r.egCm == null ? "-" : `<span title="${esc(r.eg.bestCm ? `댓글 최다: ${r.eg.bestCm.title} (${fmt(r.eg.bestCm.cm)})` : "")}">${fmt(r.egCm)}</span>`) },
+      { key: "egRe", label: "반응", cls: "r num", val: (r) => r.egRe ?? -1, html: (r) => (r.egRe == null ? "-" : `<span title="${esc(Object.entries(REACT).map(([k, l]) => `${l} ${fmt(r.eg.t[k] || 0)}`).join(" · ") + (r.eg.bestRe ? ` / 반응 최다: ${r.eg.bestRe.title} (${fmt(r.eg.bestRe.tot)})` : ""))}">${fmt(r.egRe)}</span>`) },
+      { key: "egAvg", label: "기사당 반응", cls: "r num", val: (r) => r.egAvg ?? -1, html: (r) => (r.egAvg == null ? "-" : fmt1(r.egAvg)) },
       { key: "rate", label: "진입률", cls: "r num", html: (r) => (r.rate == null ? "-" : pct(r.rate)) },
       { key: "best", label: "최고 조회 기사", sort: false, html: (r) => (r.best ? `<a href="${articleUrl(r.best.oid, r.best.aid)}" target="_blank" rel="noopener">${esc(r.best.title.slice(0, 34))}${r.best.title.length > 34 ? "…" : ""}</a> <span class="form-hint num">${short(r.best.views)}</span>` : "-") },
     ], cur, { sort: rows.some((r) => r.viewN) ? "views" : "pub", pageSize, rankCol: true, rowClass: (r) => (isOur(r.oid) ? "ours" : "") });
@@ -1133,18 +1151,20 @@ export async function reporters(el, R, ctx) {
     if (!r) return;
     detail.innerHTML = "";
     const box = h(`<div class="card kw-detail"><div class="card-head"><div><h3>${esc(r.name)} · ${esc(r.mname)}</h3>
-      <div class="sub">발행 ${fmt(r.pub)}건 · 랭킹 진입 ${fmt(r.rank)}건 · 1위 ${fmt(r.top1)}회 · 취합 조회수 합계 ${r.viewN ? fmt(r.views) : "미공개"} · 최고 조회수 ${r.best ? fmt(r.best.views) : "-"}</div></div><button class="btn sm" id="rc">닫기</button></div>
+      <div class="sub">발행 ${fmt(r.pub)}건 · 랭킹 진입 ${fmt(r.rank)}건 · 1위 ${fmt(r.top1)}회 · 취합 조회수 합계 ${r.viewN ? fmt(r.views) : "미공개"} · 최고 조회수 ${r.best ? fmt(r.best.views) : "-"}${r.eg.n ? ` · 댓글 ${fmt(r.eg.cm)} · 반응 ${fmt(r.eg.tot)} (${Object.entries(REACT).map(([k, l]) => `${l} ${fmt(r.eg.t[k] || 0)}`).join(" · ")}) · 반응 수집 기사 ${fmt(r.eg.n)}건` : ""}</div></div><button class="btn sm" id="rc">닫기</button></div>
       <h4 style="font-size:13px;margin:4px 0 8px">랭킹에 오른 기사</h4><div id="rr"></div>
       ${r.pubItems.length ? `<h4 style="font-size:13px;margin:16px 0 8px">발행 기사 (${fmt(r.pubItems.length)}건)</h4><div id="rp"></div>` : ""}</div>`);
     detail.append(box);
     $("#rc", box).addEventListener("click", () => (detail.innerHTML = ""));
-    articleTable($("#rr", box), [...r.rkItems].sort((a, b) => (b.views ?? -1) - (a.views ?? -1)).slice(0, 50), { showDay: true, overall: 0 });
-    if (r.pubItems.length) articleTable($("#rp", box), [...r.pubItems].sort((a, b) => (b.day + b.time).localeCompare(a.day + a.time)).slice(0, 100), { showRank: false, showViews: false, showTime: true });
+    const withEg = (list) => list.map((a) => ({ ...a, engage: splitEngage(EG[a.oid + "_" + a.aid]) || null }));
+    articleTable($("#rr", box), withEg([...r.rkItems].sort((a, b) => (b.views ?? -1) - (a.views ?? -1)).slice(0, 50)), { showDay: true, overall: 0, showEngage: true });
+    if (r.pubItems.length) articleTable($("#rp", box), withEg([...r.pubItems].sort((a, b) => (b.day + b.time).localeCompare(a.day + a.time)).slice(0, 100)), { showRank: false, showViews: false, showTime: true, showEngage: true });
     box.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   $("#rm", card).addEventListener("change", draw);
   $("#rq", card).addEventListener("input", debounce(draw, 150));
-  $("#rx", card).addEventListener("click", () => ctx.exportSheets(`기자통계_${R.s}_${R.e}`, [{ name: "기자", rows: cur.map((r) => ({ 기자: r.name, 매체: r.mname, 발행: r.pub, 랭킹진입: r.rank, "1위": r.top1, 취합조회수합계: r.viewN ? r.views : "미공개", 최고조회수: r.best?.views ?? "", 발행중20위진입: r.enter ?? "", 진입률: r.rate == null ? "" : +(r.rate * 100).toFixed(1), 최고기사: r.best?.title || "" })) }]));
+  $("#rx", card).addEventListener("click", () => ctx.exportSheets(`기자통계_${R.s}_${R.e}`, [{ name: "기자", rows: cur.map((r) => ({ 기자: r.name, 매체: r.mname, 발행: r.pub, 랭킹진입: r.rank, "1위": r.top1, 취합조회수합계: r.viewN ? r.views : "미공개", 최고조회수: r.best?.views ?? "", 발행중20위진입: r.enter ?? "", 진입률: r.rate == null ? "" : +(r.rate * 100).toFixed(1), 최고기사: r.best?.title || "",
+    댓글합계: r.egCm ?? "", 반응합계: r.egRe ?? "", 기사당반응: r.egAvg == null ? "" : +r.egAvg.toFixed(1), ...Object.fromEntries(Object.entries(REACT).map(([k, l]) => [l, r.eg.n ? r.eg.t[k] || 0 : ""])), 반응수집기사수: r.eg.n, 댓글최다기사: r.eg.bestCm?.title || "", 반응최다기사: r.eg.bestRe?.title || "" })) }]));
   draw();
 }
 
