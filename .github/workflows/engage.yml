@@ -1,0 +1,72 @@
+name: 전날 기사 반응 수집
+
+# 매일 02:30(한국시간) 전날 랭킹 기사의 댓글·공감 반응·추천을 한 번 모아 data/engage/어제.json 에 저장합니다.
+# 다른 수집과 따로 돌아 줄 서지 않습니다. 수동 실행 때 날짜를 비우면 어제.
+on:
+  schedule:
+    - cron: "30 17 * * *"   # 02:30 KST
+  workflow_dispatch:
+    inputs:
+      day:
+        description: "날짜 YYYY-MM-DD (비우면 어제)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: engage
+  cancel-in-progress: false
+
+jobs:
+  engage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: collector/requirements.txt
+      - run: pip install -r collector/requirements.txt
+      - name: 전날 기사 반응 수집
+        run: python collector/engage_daily.py "${{ github.event.inputs.day }}"
+      - name: 저장소에 커밋
+        run: |
+          git config user.name "news-collector[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/engage
+          if git diff --cached --quiet; then echo "변경 없음"; exit 0; fi
+          git commit -m "전날 기사 반응 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') KST"
+          git checkout -- . && git clean -fdq
+          for i in 1 2 3 4 5; do
+            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep $((i * 5))
+          done
+          exit 1
+
+  deploy:
+    needs: engage
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - name: 새 버전이 바로 보이도록 (브라우저 캐시 무효화)
+        run: |
+          V=${GITHUB_SHA::7}-$(date +%s)
+          sed -i -E "s#(from \"\./[a-z]+\.js)\"#\1?v=$V\"#g" assets/js/*.js
+          sed -i -E "s#assets/js/main\.js\"#assets/js/main.js?v=$V\"#; s#assets/css/style\.css\"#assets/css/style.css?v=$V\"#" index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

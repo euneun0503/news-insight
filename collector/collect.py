@@ -34,7 +34,6 @@ from urllib3.util.retry import Retry
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
 import store  # noqa: E402
-import engage  # noqa: E402
 from store import CONFIG, DATA, clean_text, article_key, now_kst, today_kst  # noqa: E402
 
 HEADERS = {
@@ -428,17 +427,7 @@ def collect_ranking(session, days, media, cache, workers):
         final = day < today_kst().isoformat()
         store.save_ranking(day, per_media, now_kst().isoformat(timespec="seconds"), final)
         store.save_snapshot(day, per_media, now_kst())
-        # 랭킹 기사의 댓글·공감 반응·추천 수 (조회수를 공개하는 매체의 기사만)
-        em = CONFIG.get("engage_media")  # 매체 코드 목록을 적으면 그 매체만, 비우면 조회수 공개 매체 전부
-        ekeys = [(r[0], r[1]) for oid, items in per_media.items() if (not em or oid in em) for r in (items or []) if r[3] is not None]
-        if ekeys:
-            try:
-                ok, n = engage.collect(session, ekeys, now_kst().isoformat(timespec="seconds"), DATA / "engage" / f"{day}.json", workers=max(8, workers))
-                log(f"   💬 댓글·반응 {ok}/{n}건")
-                if n and ok == 0:
-                    err(f"댓글·반응 {day}: 0/{n}건 (네이버 구조 변경 가능성)")
-            except Exception as e:
-                err(f"댓글·반응 {day}: {e}")
+        # 댓글·공감 반응·추천은 매일 02:30 engage.yml(engage_daily.py)이 전날 기사만 한 번 수집
         summary[day] = {oid: (len(v) if v is not None else "error") for oid, v in per_media.items()}
         log("   " + ", ".join(f"{CONFIG['media'].get(o, o)} {n}" for o, n in summary[day].items()))
     return summary
