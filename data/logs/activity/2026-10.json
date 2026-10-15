@@ -188,7 +188,16 @@
    "ev": "확인된 기자 데이터 받기",
    "detail": "0건",
    "ua": "Chrome · Windows"
+  },
+  {
+   "t": "2026-10-15T07:05:27.436Z",
+   "id": "health",
+   "name": "마스터",
+   "role": "master",
+   "ev": "기자 이메일 과거 채우기",
+   "detail": "2026-09-01 ~ 어제",
+   "ua": "Chrome · Windows"
   }
  ],
- "updated_at": "2026-10-15T07:05:21.634Z"
+ "updated_at": "2026-10-15T07:05:27.896Z"
 }
