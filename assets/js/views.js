@@ -1,8 +1,8 @@
 // 분석 화면들
-import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, weekdayIdx, dayKind, DAY_COLOR, holiday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR } from "./util.js";
+import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, weekdayIdx, dayKind, DAY_COLOR, holiday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR, toast } from "./util.js";
 import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel, Range, loadRankingDays, loadTitles, loadEngage } from "./data.js";
 import { openMediaSettings } from "./mediasel.js";
-import { adminForSettings, saveSeedGroups } from "./admin.js";
+import { adminForSettings, saveSeedGroups, isMaster, contactsKeyState, setupContactsKey, runContactsBackfill, loadContacts } from "./admin.js";
 import { lineChart, barChart, comboChart, multiCombo, dayLabels } from "./charts.js";
 import { boardTypeLabel, activeNotices } from "./board.js";
 import { info } from "./info.js";
@@ -971,15 +971,52 @@ export async function insights(el, R, ctx) {
 // ═══════════════════════════════════════════════════════
 // 6. 기자 통계 — 기사 원본(랭킹·발행)에서 직접 계산
 // ═══════════════════════════════════════════════════════
+// 마스터 전용: 기자 이메일(암호화 저장) 설정·과거 채우기·엑셀 받기
+async function contactsTools(box, ctx) {
+  const ok = await contactsKeyState().catch(() => null);
+  const draw = (has) => {
+    box.innerHTML = has
+      ? `<button class="btn primary" id="ctDl" title="마스터 전용 · 바이라인에서 확인된 기자의 소속·이름·이메일">⬇ 확인된 기자 데이터 받기</button><button class="btn sm" id="ctFill" title="이미 수집한 기사를 다시 열어 이메일을 채웁니다">메일 과거 채우기</button> ${info("contacts")}`
+      : `<button class="btn primary" id="ctSet" title="마스터 전용 · 한 번만 설정">🔒 기자 메일 수집 시작(암호화 설정)</button> ${info("contacts")}`;
+    $("#ctSet", box)?.addEventListener("click", async (e) => {
+      e.target.disabled = true;
+      try {
+        await setupContactsKey();
+        await runContactsBackfill("2026-09-01", "", 7).catch(() => {});
+        toast("암호화를 설정하고 과거 기사 메일 채우기를 시작했습니다. 30분~1시간 뒤 받을 수 있습니다.", 6000);
+        draw(true);
+      } catch (err) { toast(err.message, 5000); e.target.disabled = false; }
+    });
+    $("#ctFill", box)?.addEventListener("click", async (e) => {
+      e.target.disabled = true;
+      try { await runContactsBackfill("2026-09-01", "", 7); toast("메일 과거 채우기를 시작했습니다. 30분~1시간 걸립니다.", 5000); }
+      catch (err) { toast(err.message, 5000); }
+      e.target.disabled = false;
+    });
+    $("#ctDl", box)?.addEventListener("click", async (e) => {
+      e.target.disabled = true;
+      toast("기자 데이터를 푸는 중…");
+      try {
+        const list = (await loadContacts()).sort((a, b) => mediaName(a.oid).localeCompare(mediaName(b.oid), "ko") || a.name.localeCompare(b.name, "ko"));
+        if (!list.length) toast("아직 모인 기자 메일이 없습니다. 과거 채우기가 끝난 뒤 다시 받아 주세요.", 5000);
+        else await ctx.exportSheets(`확인된기자_${new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10)}`, [{ name: "기자", rows: list.map((c) => ({ 소속: mediaName(c.oid), 이름: c.name, 이메일: c.email, "처음 확인": c.first || "", "마지막 확인": c.last || "", "확인 횟수": c.count, "확인 기사": articleUrl(c.oid, c.aid) })) }]);
+      } catch (err) { toast(err.message, 5000); }
+      e.target.disabled = false;
+    });
+  };
+  draw(!!ok);
+}
+
 export async function reporters(el, R, ctx) {
   const A = R.agg;
   const M = meta();
   const SEL = mediaSel();
   const head = h(`<div class="page-head"><div><h1>기자 통계 ${info("reporters")}</h1><p>네이버 기사 페이지의 바이라인에서 확인한 기자별 발행량과 랭킹 성과입니다. 기자를 누르면 기사 목록이 열립니다.</p>
     <div class="rep-media" id="repMedia"><span class="form-hint">적용 매체 확인 중…</span></div></div>
-    <button class="btn" id="msBtn">⚙ 매체 추가·삭제</button></div>`);
+    <div class="tools" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span id="repContacts"></span><button class="btn" id="msBtn">⚙ 매체 추가·삭제</button></div></div>`);
   const msSlot = h(`<div></div>`);
   el.append(head, msSlot);
+  if (isMaster()) contactsTools($("#repContacts", head), ctx);
   $("#msBtn", head).addEventListener("click", () => openMediaSettings(msSlot));
   if (!A.rankDayCount && !A.pubDayCount) return el.append(h(noData(R)));
   const loading = h('<div class="card"><div class="loading">기자별 기사를 모으는 중…</div></div>');

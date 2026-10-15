@@ -34,6 +34,7 @@ from urllib3.util.retry import Retry
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
 import store  # noqa: E402
+import contacts  # noqa: E402
 from store import CONFIG, DATA, clean_text, article_key, now_kst, today_kst  # noqa: E402
 
 HEADERS = {
@@ -319,6 +320,10 @@ def fetch_article_meta(session, oid, aid):
         tag = soup.select_one("em.date, span.date, .article_info .date")
         if tag:
             pub = _norm_dt(tag.get_text(" ", strip=True).replace(".", "-"))
+    try:
+        contacts.record(oid, aid, pub, contacts.extract(soup, r.text))  # 기자 이메일 (암호화 저장)
+    except Exception:
+        pass
     if not pub and page_kind(r.url) in ("sports", "entertain"):   # 스포츠·연예 기사
         pub, rep2 = sports_meta(r.text, session, oid, aid)
         if pub:
@@ -775,6 +780,10 @@ def main():
         status["prune"] = store.prune()   # 보관 기간(24개월) 지난 데이터 순차 삭제
     except Exception as e:
         err(f"오래된 데이터 정리 실패: {e}")
+    try:
+        contacts.flush(log)
+    except Exception as e:
+        err(f"기자 이메일 저장 실패: {e}")
     store.build_meta(status)
     log(f"\n✅ 완료 ({status['elapsed']}초, 경고 {len(_errors)}건)")
 

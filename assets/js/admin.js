@@ -1227,3 +1227,61 @@ export async function issuedeskLastRun() {
   const r = await gh(`/repos/${owner}/${repo}/actions/workflows/issuedesk.yml/runs?per_page=1`);
   return r.workflow_runs?.[0] || null;
 }
+
+// ── 기자 연락처(이메일) — 마스터 전용, 암호화 ──────────────────
+// 수집기는 data/contacts/public_key.json 공개키로 암호화만 하고, 개인키는 금고 열쇠로 잠가 private_key.json 에 둡니다.
+// 저장소가 공개여도 이메일 평문은 남지 않고, 풀기는 마스터 계정 화면에서만 합니다.
+export const isMaster = () => session?.acct?.role === "master";
+export async function contactsKeyState() {
+  if (!session?.token) return null;
+  const { text } = await getFile("data/contacts/public_key.json");
+  return !!text;
+}
+export async function setupContactsKey() {
+  if (!isMaster()) throw new Error("마스터 계정만 설정할 수 있습니다.");
+  if (!session?.token || !session.k) throw new Error("다시 로그인한 뒤 시도해 주세요.");
+  const kp = await crypto.subtle.generateKey({ name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["encrypt", "decrypt"]);
+  const spki = toB64(new Uint8Array(await crypto.subtle.exportKey("spki", kp.publicKey)));
+  const pem = `-----BEGIN PUBLIC KEY-----\n${spki.match(/.{1,64}/g).join("\n")}\n-----END PUBLIC KEY-----\n`;
+  const pkcs8 = new Uint8Array(await crypto.subtle.exportKey("pkcs8", kp.privateKey));
+  const sealed = await seal(await aesKey(fromB64(session.k)), pkcs8);
+  const cur = await getFile("data/contacts/private_key.json");
+  await putFile("data/contacts/private_key.json", b64encode(JSON.stringify({ ...sealed, created: new Date().toISOString(), by: who() })), cur.sha, `기자 이메일 암호화 열쇠 설정 — ${who()}`);
+  const pub = await getFile("data/contacts/public_key.json");
+  await putFile("data/contacts/public_key.json", b64encode(JSON.stringify({ pem, created: new Date().toISOString() })), pub.sha, `기자 이메일 공개키 — ${who()}`);
+  logAct("기자 이메일 암호화 설정");
+}
+export async function runContactsBackfill(start, end, rankingDays = "7") {
+  if (!isMaster()) throw new Error("마스터 계정만 실행할 수 있습니다.");
+  const { owner, repo, branch } = session.R;
+  await gh(`/repos/${owner}/${repo}/actions/workflows/contacts.yml/dispatches`, { method: "POST", body: JSON.stringify({ ref: branch, inputs: { start, end: end || "", ranking_days: String(rankingDays) } }) });
+  logAct("기자 이메일 과거 채우기", `${start} ~ ${end || "어제"}`);
+}
+// 암호문을 풀어 [{oid, name, email, first, last, count, aid}] (같은 매체·이름·이메일은 하나로)
+export async function loadContacts() {
+  if (!isMaster()) throw new Error("마스터 계정만 받을 수 있습니다.");
+  const pk = await getFile("data/contacts/private_key.json");
+  if (!pk.text) throw new Error("아직 암호화 열쇠가 없습니다. '기자 메일 암호화 설정'을 먼저 해 주세요.");
+  const raw = await unseal(await aesKey(fromB64(session.k)), JSON.parse(pk.text));
+  const priv = await crypto.subtle.importKey("pkcs8", raw, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["decrypt"]);
+  const idx = JSON.parse((await getFile("data/contacts/index.json")).text || '{"files":[]}');
+  const seen = JSON.parse((await getFile("data/contacts/seen.json")).text || "{}");
+  const out = new Map();
+  for (const f of idx.files || []) {
+    const { text } = await getFile(`data/contacts/${f}`);
+    for (const line of (text || "").split("\n").filter(Boolean)) {
+      try {
+        const L = JSON.parse(line);
+        const key = await crypto.subtle.importKey("raw", await crypto.subtle.decrypt({ name: "RSA-OAEP" }, priv, fromB64(L.k)), "AES-GCM", false, ["decrypt"]);
+        const rows = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(L.iv) }, key, fromB64(L.ct))));
+        for (const r of rows) {
+          const h = hex(await crypto.subtle.digest("SHA-256", te.encode(`${r.o}|${r.n}|${r.e}`))).slice(0, 20);
+          const s = seen[h] || {};
+          out.set(h, { oid: r.o, name: r.n, email: r.e, aid: r.a, first: s.f || r.d, last: s.l || r.d, count: s.c || 1 });
+        }
+      } catch (e) { console.warn("연락처 한 줄을 풀지 못함", e); }
+    }
+  }
+  logAct("확인된 기자 데이터 받기", `${out.size}건`);
+  return [...out.values()];
+}
