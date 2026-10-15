@@ -1138,10 +1138,10 @@ export async function reporters(el, R, ctx) {
       { key: "top1", label: "1위", cls: "r num", html: (r) => (r.top1 ? `<span class="tag orange">${r.top1}</span>` : "-") },
       { key: "views", label: `취합 조회수 합계 ${info("repViews")}`, cls: "r num", val: (r) => (r.viewN ? r.views : -1), html: (r) => (r.viewN ? fmt(r.views) : '<span class="form-hint" title="네이버가 이 매체의 조회수를 공개하지 않습니다">미공개</span>') },
       { key: "bestViews", label: "최고 조회수", cls: "r num", html: (r) => (r.best ? fmt(r.best.views) : "-") },
-      { key: "egCm", label: `댓글 ${info("engage")}`, cls: "r num", val: (r) => r.egCm ?? -1, html: (r) => (r.egCm == null ? "-" : `<span title="${esc(r.eg.bestCm ? `댓글 최다: ${r.eg.bestCm.title} (${fmt(r.eg.bestCm.cm)})` : "")}">${fmt(r.egCm)}</span>`) },
-      { key: "egRe", label: "반응", cls: "r num", val: (r) => r.egRe ?? -1, html: (r) => (r.egRe == null ? "-" : `<span title="${esc(Object.entries(REACT).map(([k, l]) => `${l} ${fmt(r.eg.t[k] || 0)}`).join(" · ") + (r.eg.bestRe ? ` / 반응 최다: ${r.eg.bestRe.title} (${fmt(r.eg.bestRe.tot)})` : ""))}">${fmt(r.egRe)}</span>`) },
-      { key: "egAvg", label: "기사당 반응", cls: "r num", val: (r) => r.egAvg ?? -1, html: (r) => (r.egAvg == null ? "-" : fmt1(r.egAvg)) },
-      { key: "rate", label: "진입률", cls: "r num", html: (r) => (r.rate == null ? "-" : pct(r.rate)) },
+      { key: "egCm", label: `댓글 ${info("repEgCm")}`, cls: "r num", val: (r) => r.egCm ?? -1, html: (r) => (r.egCm == null ? "-" : `<span title="${esc(r.eg.bestCm ? `댓글 최다: ${r.eg.bestCm.title} (${fmt(r.eg.bestCm.cm)})` : "")}">${fmt(r.egCm)}</span>`) },
+      { key: "egRe", label: `반응 ${info("repEgRe")}`, cls: "r num", val: (r) => r.egRe ?? -1, html: (r) => (r.egRe == null ? "-" : `<span title="${esc(Object.entries(REACT).map(([k, l]) => `${l} ${fmt(r.eg.t[k] || 0)}`).join(" · ") + (r.eg.bestRe ? ` / 반응 최다: ${r.eg.bestRe.title} (${fmt(r.eg.bestRe.tot)})` : ""))}">${fmt(r.egRe)}</span>`) },
+      { key: "egAvg", label: `기사당 반응 ${info("repEgAvg")}`, cls: "r num", val: (r) => r.egAvg ?? -1, html: (r) => (r.egAvg == null ? "-" : fmt1(r.egAvg)) },
+      { key: "rate", label: `진입률 ${info("repRateCol")}`, cls: "r num", html: (r) => (r.rate == null ? "-" : pct(r.rate)) },
       { key: "best", label: "최고 조회 기사", sort: false, html: (r) => (r.best ? `<a href="${articleUrl(r.best.oid, r.best.aid)}" target="_blank" rel="noopener">${esc(r.best.title.slice(0, 34))}${r.best.title.length > 34 ? "…" : ""}</a> <span class="form-hint num">${short(r.best.views)}</span>` : "-") },
     ], cur, { sort: rows.some((r) => r.viewN) ? "views" : "pub", pageSize, rankCol: true, rowClass: (r) => (isOur(r.oid) ? "ours" : "") });
     $$("a[data-rep]", card).forEach((a) => a.addEventListener("click", () => openRep(a.dataset.rep)));
