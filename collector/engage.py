@@ -48,28 +48,42 @@ def split_reactions(j):
             t, n = r.get("reactionType"), r.get("count")
             if t and isinstance(n, int):
                 target = rc if t in RECOMMEND_LABEL else re_  # 종류로 나눔 (네이버는 지금 추천 5종만 씀)
-                target[t] = max(target.get(t, 0), n)
+                target[t] = target.get(t, 0) + n  # 뉴스·연예·스포츠 중 실제로 쓰인 곳의 값을 더함 (나머지는 0)
     return re_, rc
+
+
+# 연예·스포츠 기사는 네이버 연예/스포츠 화면이라 댓글·반응 저장소 이름이 다름 → 뉴스에서 0이면 차례로 확인
+COMMENT_TICKETS = [
+    {"ticket": "news", "templateId": "default_society", "pool": "cbox5"},
+    {"ticket": "entertain", "templateId": "default_entertain", "pool": "cbox5"},
+    {"ticket": "sports", "templateId": "default_sports", "pool": "cbox2"},
+]
 
 
 def fetch_one(session, oid, aid):
     out = {}
     ref = {"Referer": _article_url(oid, aid)}
+    best = None
+    for t in COMMENT_TICKETS:
+        try:
+            r = session.get(COMMENT_API, timeout=10, headers=ref, params={
+                **t, "lang": "ko", "country": "KR", "objectId": f"news{oid},{aid}", "pageSize": 1, "indexSize": 1,
+                "page": 1, "sort": "FAVORITE", "initialize": "true", "_callback": "cb"})
+            if r.ok:
+                n = comment_count(parse_jsonp(r.text))
+                if n is not None:
+                    best = max(best or 0, n)
+                    if n > 0:
+                        break
+        except Exception:
+            pass
+    if best is not None:
+        out["cm"] = best
     try:
-        r = session.get(COMMENT_API, timeout=10, headers=ref, params={
-            "ticket": "news", "templateId": "default_society", "pool": "cbox5", "lang": "ko", "country": "KR",
-            "objectId": f"news{oid},{aid}", "pageSize": 1, "indexSize": 1, "page": 1, "sort": "FAVORITE",
-            "initialize": "true", "_callback": "cb"})
-        if r.ok:
-            n = comment_count(parse_jsonp(r.text))
-            if n is not None:
-                out["cm"] = n
-    except Exception:
-        pass
-    try:
+        k = f"ne_{oid}_{aid}"
         r = session.get(LIKE_API, timeout=10, headers=ref, params={
             "suppress_response_codes": "true",
-            "q": f"NEWS[ne_{oid}_{aid}]|NEWS_MAIN[ne_{oid}_{aid}]"})
+            "q": f"NEWS[{k}]|NEWS_MAIN[{k}]|ENTERTAIN[{k}]|ENTERTAIN_MAIN[{k}]|SPORTS[{k}]|SPORTS_MAIN[{k}]"})
         if r.ok:
             re_, rc = split_reactions(r.json())
             out["re"] = re_  # 아무도 누르지 않은 기사는 빈 값({}) = 0
