@@ -1,0 +1,905 @@
+{
+ "date": "2026-10-15",
+ "generatedAt": "2026-10-15T11:20:00+09:00",
+ "note": "건강은 비만치료제 직구·부작용과 자궁경부암(HPV) 오해, 연예인은 이지혜 '성심당 싹쓸이' 논란이 4개 커뮤니티에 동시에 올라 가장 뜨겁습니다. 문화는 K팝 세대 논쟁과 일본 인플루언서 스타벅스 광고 철회, 이슈는 성추행 누명 초등학생과 화장품 대표 직원 폭행 글에 댓글이 몰렸습니다.",
+ "items": [
+  {
+   "category": "건강",
+   "title": "자궁경부암 성병인거 알고있긔?",
+   "url": "https://pann.nate.com/talk/375668440",
+   "source": "네이트판",
+   "views": 75771,
+   "likes": 193,
+   "comments": 202,
+   "score": 5,
+   "angle": "자궁경부암과 HPV를 둘러싼 오해와 낙인을 짚는 팩트체크. 남성 HPV 접종과 무료접종 대상 확대 논의로 연결.",
+   "check": "산부인과 전문의·질병관리청 자료로 감염 경로와 접종 권고 연령 확인. 글의 단정적 표현을 그대로 옮기지 않기.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "건강",
+   "title": "마운자로 직구 식약처 입장 + 위고비·마운자로 맞고 병원행 1만3천여 건",
+   "url": "https://www.instiz.net/pt/7913608",
+   "source": "인스티즈",
+   "views": 23221,
+   "likes": 4,
+   "comments": 11,
+   "score": 5,
+   "angle": "비만치료제 해외 직구 실태와 식약처 입장, 췌장염 등 부작용 집계를 묶은 '살 빼는 주사' 안전 기사.",
+   "check": "식약처 입장 원문과 부작용 집계 출처(국회 자료 여부), 직구 처벌 규정 확인.",
+   "covered": true,
+   "press": [
+    {
+     "title": "인벤 공유글: 마운자로·위고비 맞고 병원행 1만3천여 건",
+     "url": "https://www.inven.co.kr/board/webzine/2097/2740402"
+    }
+   ]
+  },
+  {
+   "category": "건강",
+   "title": "진심 최악이라는 커피습관 6가지",
+   "url": "https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&no=10152275",
+   "source": "뽐뿌",
+   "views": 32138,
+   "likes": 5,
+   "comments": 46,
+   "score": 4,
+   "angle": "SNS에 도는 '나쁜 커피 습관' 목록을 전문가가 하나씩 검증하는 팩트체크형 건강 기사.",
+   "check": "각 항목의 근거 연구를 찾고 영양학·소화기내과 전문의 코멘트 받기.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "건강",
+   "title": "정보석이 15년째 먹는 아침 식단",
+   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10446853837",
+   "source": "에펨코리아",
+   "views": null,
+   "likes": 1045,
+   "comments": 951,
+   "score": 4,
+   "angle": "같은 아침을 15년 먹는 중년 배우 식단에 쏠린 관심을 계기로 아침 식단의 영양 균형을 짚는 정보 기사. MLB파크에도 올라 조회 1만3천.",
+   "check": "원출처 방송·인터뷰 확인, 영양사 코멘트 추가.",
+   "covered": false,
+   "press": [
+    {
+     "title": "MLB파크: 정보석이 15년째 먹는다는 아침 식단",
+     "url": "https://mlbpark.donga.com/mp/b.php?b=bullpen&id=202610140119435025&m=view"
+    }
+   ]
+  },
+  {
+   "category": "건강",
+   "title": "시어머니가 애한테 또 꿀물 먹이셨어요",
+   "url": "https://pann.nate.com/talk/375668577",
+   "source": "네이트판",
+   "views": 20964,
+   "likes": 2,
+   "comments": 39,
+   "score": 4,
+   "angle": "돌 전 영아에게 꿀을 먹이면 안 되는 이유(영아 보툴리누스증)를 세대 간 육아 상식 차이와 함께 푸는 정보 기사.",
+   "check": "소아청소년과 전문의 코멘트와 국내 보고 사례 확인.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "건강",
+   "title": "성시경 갑자기 살이 너무 빠진 이유가",
+   "url": "https://www.82cook.com/entiz/read.php?num=4249348",
+   "source": "82쿡",
+   "views": 8595,
+   "likes": 0,
+   "comments": 23,
+   "score": 3,
+   "angle": "연예인 급격한 체중 감량에 대한 관심을 계기로 중년 체중 관리와 급감량 위험 신호를 다루는 기사.",
+   "check": "본인이 방송·SNS에서 밝힌 내용만 인용하고 건강 상태 추측은 쓰지 않기.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "건강",
+   "title": "중년에도 코성형 할 만하네요, 친구 대박났어요",
+   "url": "https://www.82cook.com/entiz/read.php?num=4249208",
+   "source": "82쿡",
+   "views": 11524,
+   "likes": 0,
+   "comments": 39,
+   "score": 3,
+   "angle": "40~50대 성형 수요 증가와 중년 성형의 부작용·회복 기간을 짚는 트렌드 기사.",
+   "check": "성형외과 학회 통계와 전문의 코멘트 확인. 특정 병원 홍보성 내용 배제.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "건강",
+   "title": "일요일밤마다 듣는 와이프 다이어트 선언",
+   "url": "https://pann.nate.com/talk/375668384",
+   "source": "네이트판",
+   "views": 20503,
+   "likes": 25,
+   "comments": 40,
+   "score": 2,
+   "angle": "'월요일부터 다이어트'가 반복되는 심리와 요요를 다루는 가벼운 생활 건강 기사.",
+   "check": "사연은 짧게 소개하고 전문가 코멘트로 균형.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "건강",
+   "title": "또 간호사가 자살했어요",
+   "url": "https://www.82cook.com/entiz/read.php?num=4249080",
+   "source": "82쿡",
+   "views": 15813,
+   "likes": 0,
+   "comments": 49,
+   "score": 3,
+   "angle": "간호사 근무환경과 직장 내 괴롭힘(태움)을 구조적으로 다루는 기사.",
+   "check": "병원·경찰에 사실 확인 먼저. 자살보도 권고기준(방법·장소 묘사 금지, 상담전화 안내) 준수.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "문화",
+   "title": "케이팝이 재미없다고 느낀 건 그냥 나이 들었기 때문",
+   "url": "https://theqoo.net/hot/4376063831",
+   "source": "더쿠",
+   "views": 56458,
+   "likes": 0,
+   "comments": 500,
+   "score": 5,
+   "angle": "댓글 500개가 붙은 'K팝 세대 단절' 논쟁. 4~5세대 아이돌 음악에 대한 세대별 반응 차이와 음원 차트 소비 연령 데이터로 기사화.",
+   "check": "음원 플랫폼 연령별 이용 통계와 대중음악 평론가 코멘트 확보.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "문화",
+   "title": "한국 스타벅스 광고했다가 게시글 내린 토모토모",
+   "url": "https://www.instiz.net/pt/7913581",
+   "source": "인스티즈",
+   "views": 35728,
+   "likes": 0,
+   "comments": 83,
+   "score": 4,
+   "angle": "일본 인플루언서의 한국 스타벅스 광고 게시글이 반발로 삭제된 경위. 한일 인플루언서 마케팅의 민감 지점을 짚는 기사.",
+   "check": "게시글 삭제 사실과 반발 이유, 스타벅스코리아 입장 확인.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "문화",
+   "title": "젓가락 내려놓게 만든 텐동집 정수기 상태",
+   "url": "https://bbs.ruliweb.com/best/board/300143/read/77028890?orderby=regdate&range=24h&view=list&m=humor&t=hit",
+   "source": "루리웹",
+   "views": 27340,
+   "likes": 75,
+   "comments": 30,
+   "score": 4,
+   "angle": "식당 정수기 위생 관리 실태와 필터 교체 의무 규정을 다루는 생활 위생 기사.",
+   "check": "가게 특정 금지. 식품위생법상 정수기 관리 기준과 지자체 점검 현황 확인.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "문화",
+   "title": "일본 규동이 한국에서 힘을 못 쓰는 이유",
+   "url": "https://bbs.ruliweb.com/best/board/300143/read/77028723?orderby=regdate&range=24h&view=list&m=humor&t=hit",
+   "source": "루리웹",
+   "views": 26474,
+   "likes": 118,
+   "comments": 70,
+   "score": 3,
+   "angle": "일본 덮밥 체인의 한국 시장 부진 이유를 외식 트렌드·가격 구조로 분석하는 기사.",
+   "check": "요시노야·스키야 등 국내 매장 수 변화와 외식업 통계 확인.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "문화",
+   "title": "\"주스 포장에 전범기\" 폴란드 음료 회사 근황",
+   "url": "https://www.todayhumor.co.kr/board/view.php?table=bestofbest&no=483982&s_no=483982&page=1",
+   "source": "오늘의유머",
+   "views": 4158,
+   "likes": 61,
+   "comments": 7,
+   "score": 3,
+   "angle": "해외 제품의 욱일기 디자인 논란과 항의 후 수정 사례. 서경덕 교수 측 대응 등과 묶기 좋음.",
+   "check": "회사 공식 입장·디자인 변경 여부 확인.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "문화",
+   "title": "이혼숙려캠프에 나온 '최악의 아내' 반응",
+   "url": "https://www.etoland.co.kr/hit/etohumor07/view/이숙캠에-나온-최악의-아내-9500843",
+   "source": "이토랜드",
+   "views": 21212,
+   "likes": 200,
+   "comments": 138,
+   "score": 3,
+   "angle": "부부 갈등 예능의 자극적 편집과 출연자 악플 문제를 짚는 방송 비평 기사.",
+   "check": "방송 회차와 내용 확인. 일반인 출연자 신상 노출 금지.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "문화",
+   "title": "김선호·김희애·차승원 모였는데 '봉주르빵집' 최종 0.8% 퇴장",
+   "url": "https://sports.khan.co.kr/article/202610150714003/",
+   "source": "스포츠경향 보도",
+   "views": null,
+   "likes": null,
+   "comments": null,
+   "score": 3,
+   "angle": "톱배우 캐스팅에도 저조한 시청률로 끝난 예능을 계기로 '스타 예능' 공식의 한계를 짚는 후속 기사.",
+   "check": "닐슨 시청률과 OTT 동시 공개 성적 함께 확인.",
+   "covered": true,
+   "press": []
+  },
+  {
+   "category": "문화",
+   "title": "드라마 화제성 1~2위 '닥터X' 김지원·손현주, '100일의 거짓말' 추격",
+   "url": "https://www.topstarnews.net/news/articleView.html?idxno=16247222",
+   "source": "톱스타뉴스 보도",
+   "views": null,
+   "likes": null,
+   "comments": null,
+   "score": 2,
+   "angle": "이번 주 드라마 화제성 순위와 SNS 반응을 정리하는 주간 기사.",
+   "check": "굿데이터 펀덱스 원자료 확인.",
+   "covered": true,
+   "press": []
+  },
+  {
+   "category": "연예인",
+   "title": "성심당 싹쓸이 논란 해명글 올린 이지혜",
+   "url": "https://www.instiz.net/pt/7913501",
+   "source": "인스티즈 외 3곳",
+   "views": 72500,
+   "likes": 2190,
+   "comments": 1172,
+   "score": 5,
+   "angle": "에펨코리아·개드립·뽐뿌까지 동시에 퍼진 '성심당 대량 구매' 논란과 해명. 매장 구매 제한 정책과 소비자 반응으로 확장.",
+   "check": "본인 SNS 해명 원문과 성심당 1인 구매 제한 정책 확인. 수치는 커뮤니티별 최대값(조회 인스티즈, 추천·댓글 에펨코리아).",
+   "covered": false,
+   "press": [
+    {
+     "title": "에펨코리아",
+     "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10446834208"
+    },
+    {
+     "title": "뽐뿌: 성심당서 싹쓸이 했다고 욕 먹는 여자연예인",
+     "url": "https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&no=10152213"
+    }
+   ]
+  },
+  {
+   "category": "연예인",
+   "title": "[단독] 가수 솔비♥배우 이규한 커플 탄생, 내년 결혼",
+   "url": "https://theqoo.net/hot/4376124728",
+   "source": "더쿠",
+   "views": 41097,
+   "likes": 0,
+   "comments": 269,
+   "score": 4,
+   "angle": "단독 보도 이후 반응 정리와 양측 소속사 입장 후속.",
+   "check": "원 단독 보도 매체와 소속사 공식 입장 확인.",
+   "covered": true,
+   "press": []
+  },
+  {
+   "category": "연예인",
+   "title": "방금 사과한 스트리머가 어제 한 대처",
+   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10445882557",
+   "source": "에펨코리아",
+   "views": null,
+   "likes": 2684,
+   "comments": 729,
+   "score": 4,
+   "angle": "인터넷 방송인 논란 대응과 사과 과정을 정리하는 기사. 1인 방송 위기 대응 문제로 확장.",
+   "check": "어떤 스트리머·어떤 논란인지 원 방송과 사과문을 직접 확인.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "연예인",
+   "title": "정형돈 최근 근황 + 정형돈이 차린 돈까스집",
+   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10447374382",
+   "source": "에펨코리아",
+   "views": null,
+   "likes": 1324,
+   "comments": 806,
+   "score": 4,
+   "angle": "방송 활동을 줄인 정형돈의 근황과 외식 사업. 연예인 외식 창업 흐름으로 묶기 가능.",
+   "check": "근황 출처(방송·SNS)와 매장 운영 사실 확인.",
+   "covered": false,
+   "press": [
+    {
+     "title": "SLR클럽: 정형돈이 차린 돈까스집",
+     "url": "https://www.slrclub.com/bbs/vx2.php?id=best_article&no=675237"
+    }
+   ]
+  },
+  {
+   "category": "연예인",
+   "title": "\"참석한 연예인도 한심\" 장원영부터 조세호까지 비난 여론",
+   "url": "https://www.siminilbo.co.kr/news/newsview.php?ncode=1160313128061098",
+   "source": "시민일보 보도",
+   "views": null,
+   "likes": null,
+   "comments": null,
+   "score": 4,
+   "angle": "특정 행사 참석 연예인에게 쏟아진 비난 여론. 행사 성격과 연예인 참석 책임 범위를 짚는 후속.",
+   "check": "어떤 행사인지, 각 소속사 입장 확인.",
+   "covered": true,
+   "press": []
+  },
+  {
+   "category": "연예인",
+   "title": "민희진, '하이브 시간끌기' 비판하며 변론재개 신청… 선고 연기",
+   "url": "https://sports.khan.co.kr/article/202610150750003",
+   "source": "스포츠경향 보도",
+   "views": null,
+   "likes": null,
+   "comments": null,
+   "score": 4,
+   "angle": "민희진-하이브 소송 선고 연기 배경과 향후 일정 정리.",
+   "check": "법원 기일과 양측 입장문 확인.",
+   "covered": true,
+   "press": []
+  },
+  {
+   "category": "연예인",
+   "title": "이수만이 만든 여자 아이돌 난리네요",
+   "url": "https://www.82cook.com/entiz/read.php?num=4249312",
+   "source": "82쿡",
+   "views": 12990,
+   "likes": 0,
+   "comments": 59,
+   "score": 3,
+   "angle": "SM 떠난 이수만의 신규 걸그룹 데뷔 반응과 센터 멤버 화제성.",
+   "check": "데뷔 일정·소속사(A2O 등) 공식 자료 확인.",
+   "covered": false,
+   "press": [
+    {
+     "title": "와이고수: 이수만 걸그룹 센터",
+     "url": "https://ygosu.com/board/real_article/yeobgi/2151590/?type=group0&list_context=real_article&page=1"
+    }
+   ]
+  },
+  {
+   "category": "연예인",
+   "title": "하정우 결혼 소식",
+   "url": "https://www.82cook.com/entiz/read.php?num=4249176",
+   "source": "82쿡",
+   "views": 12306,
+   "likes": 0,
+   "comments": 24,
+   "score": 3,
+   "angle": "결혼 발표 반응 정리. 웃긴대학에는 '하정우·카더가든 12월 13일 결혼'으로 올라와 날짜가 겹친 두 결혼 소식으로 묶을 수 있음.",
+   "check": "소속사 공식 발표와 결혼 날짜 각각 확인.",
+   "covered": true,
+   "press": [
+    {
+     "title": "웃긴대학: 하정우·카더가든 12월13일 결혼",
+     "url": "https://web.humoruniv.com/board/humor/read.html?table=pds&number=1428805"
+    }
+   ]
+  },
+  {
+   "category": "연예인",
+   "title": "\"아이스크림 한 컵이 밥값\" 정준하 새 매장 가격 갑론을박",
+   "url": "https://sports.khan.co.kr/article/202610141545003/",
+   "source": "스포츠경향 보도",
+   "views": null,
+   "likes": null,
+   "comments": null,
+   "score": 3,
+   "angle": "연예인 매장 가격 논란을 계기로 디저트 물가와 '셀럽 프리미엄'을 다루는 후속.",
+   "check": "동종 매장 가격 비교 데이터 확보.",
+   "covered": true,
+   "press": []
+  },
+  {
+   "category": "연예인",
+   "title": "이서진 금융권 재력가 집안이었다는데",
+   "url": "https://www.82cook.com/entiz/read.php?num=4249275",
+   "source": "82쿡",
+   "views": 10412,
+   "likes": 0,
+   "comments": 41,
+   "score": 2,
+   "angle": "연예인 집안 배경 화제성 기사. 단독 기사보다 예능 발언과 묶는 편이 안전.",
+   "check": "본인이 공개적으로 밝힌 내용만 사용.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "연예인",
+   "title": "서장훈 \"나도 그런 선수가 돼보고 싶었어요\"",
+   "url": "https://www.bobaedream.co.kr/view?code=best&No=1039908&vdate=h",
+   "source": "보배드림",
+   "views": 9829,
+   "likes": 65,
+   "comments": 9,
+   "score": 2,
+   "angle": "방송 발언 화제성 기사.",
+   "check": "방송 회차와 발언 맥락 확인.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "이슈",
+   "title": "'성추행범' 누명 쓴 초등학생 근황",
+   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10444878327",
+   "source": "에펨코리아",
+   "views": null,
+   "likes": 3164,
+   "comments": 1165,
+   "score": 5,
+   "angle": "학교 내 성 관련 신고가 무고로 드러났을 때 아동이 겪는 피해와 회복 절차의 공백을 다루는 기사.",
+   "check": "학교·교육청 처리 결과 확인. 아동이 특정될 정보는 모두 빼기. 원글 제목의 혐오 표현은 인용하지 않기.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "이슈",
+   "title": "화장품 대표, 한남동 차 매장에서 직원 폭행",
+   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10445633977",
+   "source": "에펨코리아",
+   "views": null,
+   "likes": 2349,
+   "comments": 949,
+   "score": 5,
+   "angle": "매장 직원 폭행 의혹과 감정노동자 보호 문제. 경찰 신고·수사 여부가 핵심.",
+   "check": "영상·보도 원출처와 경찰 신고 여부, 회사 입장 확인 전까지 실명 보도 금지.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "이슈",
+   "title": "미국 수출 굴 전량 폐기",
+   "url": "https://bbs.ruliweb.com/best/board/300143/read/77028887?orderby=regdate&range=24h&view=list&m=humor&t=hit",
+   "source": "루리웹",
+   "views": 35789,
+   "likes": 122,
+   "comments": 71,
+   "score": 5,
+   "angle": "한국산 수출 굴 폐기 사유(노로바이러스 등)와 수산물 위생 관리, 어민 피해를 짚는 경제·식품안전 기사.",
+   "check": "FDA 리콜 공지와 해양수산부·식약처 입장 확인.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "이슈",
+   "title": "임대차 시장이 송두리째 뒤집어질 판결",
+   "url": "https://www.dogdrip.net/dogdrip/729631420?sort_index=popular&page=1",
+   "source": "개드립",
+   "views": null,
+   "likes": 95,
+   "comments": 145,
+   "score": 4,
+   "angle": "부동산 유튜버가 소개한 임대차 관련 판결의 실제 내용과 세입자·집주인에게 미칠 영향 해설.",
+   "check": "판결 사건번호와 법원 판결문 원문 확인, 부동산 전문 변호사 코멘트.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "이슈",
+   "title": "병무청, 중증 자폐증을 \"정상\"으로 판정 중",
+   "url": "https://www.dogdrip.net/dogdrip/729593465?sort_index=popular&page=1",
+   "source": "개드립",
+   "views": null,
+   "likes": 261,
+   "comments": 152,
+   "score": 4,
+   "angle": "병역판정검사의 발달장애 판정 기준과 절차가 현실에 맞는지 묻는 기사.",
+   "check": "병무청 신체등급 판정 기준과 공식 입장, 장애인단체 의견. 사례 당사자 특정 금지.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "이슈",
+   "title": "남편이 출산하는 영상을 몰래 회사 단톡방에 올렸어요",
+   "url": "https://www.instiz.net/pt/7913595",
+   "source": "인스티즈",
+   "views": 24841,
+   "likes": 0,
+   "comments": 26,
+   "score": 4,
+   "angle": "배우자 동의 없는 출산 영상 공유가 사생활 침해나 처벌 대상이 되는지 짚는 생활법률 기사.",
+   "check": "성폭력처벌법·개인정보 조항 적용 여부를 변호사에게 확인. 원글 사실 여부는 확인 불가로 표기.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "이슈",
+   "title": "\"'나솔' 출연자, 우리 부모님 돈 떼먹은 집 자식\" 폭로글 연좌제 논쟁",
+   "url": "https://www.fnnews.com/news/202610150739179731",
+   "source": "파이낸셜뉴스 보도",
+   "views": null,
+   "likes": null,
+   "comments": null,
+   "score": 3,
+   "angle": "부모 채무를 자녀에게 묻는 '연좌제' 논쟁과 예능 출연자 검증 범위를 다루는 후속.",
+   "check": "출연자 신상 특정 금지. 제작진 입장과 채무 상속 범위 확인.",
+   "covered": true,
+   "press": [
+    {
+     "title": "머니투데이",
+     "url": "https://www.mt.co.kr/society/2026/10/14/2026101408274582592"
+    },
+    {
+     "title": "문화일보",
+     "url": "https://www.munhwa.com/article/11623541"
+    }
+   ]
+  },
+  {
+   "category": "이슈",
+   "title": "\"모자이크 없이 피범벅\" 인천 칼부림 피의자 얼굴 사진 확산",
+   "url": "https://www.mt.co.kr/society/2026/10/15/2026101508053646228",
+   "source": "머니투데이 보도",
+   "views": null,
+   "likes": null,
+   "comments": null,
+   "score": 3,
+   "angle": "사건 현장 사진의 무분별한 유포가 처벌 대상이 될 수 있다는 점을 짚는 후속.",
+   "check": "사진 재사용 금지. 정보통신망법·명예훼손 적용 가능성 확인.",
+   "covered": true,
+   "press": [
+    {
+     "title": "헤럴드경제",
+     "url": "https://biz.heraldcorp.com/article/10902859"
+    }
+   ]
+  },
+  {
+   "category": "이슈",
+   "title": "차량 절반이 '뜯겨 나가'… 50대 여성 사망",
+   "url": "https://www.82cook.com/entiz/read.php?num=4249146",
+   "source": "82쿡",
+   "views": 19044,
+   "likes": 0,
+   "comments": 36,
+   "score": 3,
+   "angle": "사고 원인과 도로 구조 문제를 짚는 후속 기사.",
+   "check": "원 보도와 경찰 조사 결과 확인. SLR클럽 '통영대전 사망사고' 글과 같은 사고인지 확인.",
+   "covered": true,
+   "press": [
+    {
+     "title": "SLR클럽: 통영대전 사망사고",
+     "url": "https://www.slrclub.com/bbs/vx2.php?id=best_article&no=675234"
+    }
+   ]
+  },
+  {
+   "category": "이슈",
+   "title": "근데 하객들이 왜 식대를 신경 써야 함?",
+   "url": "https://www.instiz.net/pt/7913566",
+   "source": "인스티즈",
+   "views": 26373,
+   "likes": 1,
+   "comments": 49,
+   "score": 3,
+   "angle": "치솟는 예식장 식대와 축의금 적정선 논쟁. 웨딩 물가 통계와 묶기.",
+   "check": "한국소비자원 등 예식 비용 조사 수치 확인.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "이슈",
+   "title": "효자 남편의 대리효도 7년치 정리해봤어요",
+   "url": "https://pann.nate.com/talk/375668686",
+   "source": "네이트판",
+   "views": 32769,
+   "likes": 8,
+   "comments": 73,
+   "score": 3,
+   "angle": "'대리효도' 갈등 사연과 반응. 명절 전후 시가·처가 갈등 시리즈로 묶기 좋음.",
+   "check": "사연 인용은 짧게, 가족상담 전문가 코멘트 추가.",
+   "covered": false,
+   "press": []
+  },
+  {
+   "category": "이슈",
+   "title": "요즘 교권이 땅에 떨어지긴 했구나",
+   "url": "https://bbs.ruliweb.com/best/board/300143/read/77028923?orderby=regdate&range=24h&view=list&m=humor&t=hit",
+   "source": "루리웹",
+   "views": 22888,
+   "likes": 62,
+   "comments": 13,
+   "score": 2,
+   "angle": "교권 침해 사례 공유글. 교육부 교권보호위원회 통계와 엮으면 기사화 가능.",
+   "check": "글 속 사례의 원출처와 사실 여부 확인.",
+   "covered": false,
+   "press": []
+  }
+ ],
+ "press": {
+  "generatedAt": "2026-10-15T11:35:00+09:00",
+  "note": "기관 홈페이지(식약처·복지부·건보공단·질병청)는 자동 수집을 막아 두어, 기관 발표를 전한 보도와 정부 사이트에서 확인된 자료로 채웠습니다. 각 기관 제목 옆 '원문 게시판'에서 최신 보도자료를 직접 확인할 수 있습니다. 국정감사 기간이라 응급실 진료제한·비만주사 부작용 같은 기관 제출자료 기사가 많습니다. 빨간 점은 10월 14~15일 자료, 회색 점은 그 이전이거나 날짜를 확인하지 못한 자료입니다.",
+  "agencies": [
+   {
+    "name": "식약처",
+    "home": "https://www.mfds.go.kr/brd/m_99/list.do",
+    "items": [
+     {
+      "title": "'그릭요거트 카페라떼' 대장균군 기준 초과…판매 중단·회수",
+      "url": "https://foodtoday.or.kr/news/article.html?no=208809",
+      "date": null,
+      "source": "푸드투데이 보도",
+      "score": 4,
+      "angle": "제품명과 제조일자가 나온 회수 건이라 소비자 안내 기사로 바로 쓸 수 있음. 최근 유제품 음료 회수 사례와 묶기.",
+      "fresh": false
+     },
+     {
+      "title": "잔류농약 기준 초과 '고춧가루' 회수 조치 [보도참고]",
+      "url": "https://www.ksw-news.com/news/articleView.html?idxno=3047096",
+      "date": null,
+      "source": "식약처 보도참고자료 전재",
+      "score": 4,
+      "angle": "김장철 앞두고 고춧가루 안전 기사. '홍초고춧가루' 일부 회수 건과 같은 제품인지 확인해 묶기.",
+      "fresh": false
+     },
+     {
+      "title": "'데빌초코케이크' 일부 제품 회수…달걀 표시 누락",
+      "url": "https://vegannews.co.kr/news/article.html?no=392297",
+      "date": null,
+      "source": "비건뉴스 보도",
+      "score": 2,
+      "angle": "알레르기 유발물질 표시 누락 회수. 알레르기 표시제 위반 증가 추세 기사 재료.",
+      "fresh": false
+     },
+     {
+      "title": "해외직구 식품 '올바로' 웹앱 사용자 테스트 개시",
+      "url": "https://news.jkn.co.kr/post/1024062",
+      "date": null,
+      "source": "재경일보 보도",
+      "score": 3,
+      "angle": "마운자로 직구 논란과 연결: 직구 식품·의약품 위해 정보 확인 수단을 소개하는 실용 기사.",
+      "fresh": false
+     },
+     {
+      "title": "AI·리얼월드데이터 활용 의약품 개발 지침 61종 마련 추진",
+      "url": "https://www.medipana.com/news/articleView.html?idxno=419321",
+      "date": null,
+      "source": "메디파나뉴스 보도",
+      "score": 2,
+      "angle": "제약·바이오 업계 기사. 일반 독자용으로는 우선순위 낮음.",
+      "fresh": false
+     },
+     {
+      "title": "국제인증표준품 종합안내서 발간",
+      "url": "https://www.fnnews.com/news/202610120920189169",
+      "date": "2026-10-12",
+      "source": "파이낸셜뉴스 보도",
+      "score": 1,
+      "angle": "업계 단신.",
+      "fresh": false
+     }
+    ]
+   },
+   {
+    "name": "건강보험공단",
+    "home": "https://www.nhis.or.kr/nhis/together/wbhaea01600m01.do",
+    "items": [
+     {
+      "title": "\"2030년 부채비율 100% 돌파?\"…건보공단 \"준비금 29조원, 재정 안정적\"",
+      "url": "https://www.newspim.com/news/view/20261015000521",
+      "date": "2026-10-15",
+      "source": "뉴스핌 보도",
+      "score": 5,
+      "angle": "국감 지적과 공단 해명이 맞선 건보 재정 논쟁. 보험료 인상 압박 보도와 함께 '내 건보료 오르나' 해설로.",
+      "fresh": true
+     },
+     {
+      "title": "보험료 매년 올려도 수조원 적자…건보, 추가 인상 압박 커진다",
+      "url": "https://www.seoul.co.kr/news/society/2026/10/13/20261013500102",
+      "date": "2026-10-13",
+      "source": "서울신문 보도",
+      "score": 4,
+      "angle": "위 재정 논쟁의 배경 자료.",
+      "fresh": false
+     },
+     {
+      "title": "[2026국감] 비만주사 처방 뒤 안과질환 4096명·담석증 등 9476명 진료",
+      "url": "https://view.asiae.co.kr/article/2026101411133963631",
+      "date": "2026-10-14",
+      "source": "아시아경제 보도",
+      "score": 5,
+      "angle": "커뮤니티 이슈 탭의 마운자로 직구 글과 묶을 핵심 수치. 위고비·마운자로 부작용 기획 기사로.",
+      "fresh": true
+     },
+     {
+      "title": "임신·출산 진료비 지원 카드사 확대",
+      "url": "https://www.khanews.com/news/articleView.html?idxno=251297",
+      "date": null,
+      "source": "병원신문 보도",
+      "score": 2,
+      "angle": "생활 정보 단신.",
+      "fresh": false
+     },
+     {
+      "title": "건보공단·질병청 보건의료 빅데이터 분석센터 개소",
+      "url": "https://www.fnnews.com/news/202609101106279411",
+      "date": "2026-09-10",
+      "source": "파이낸셜뉴스 보도",
+      "score": 1,
+      "angle": "지난 자료. 빅데이터 활용 기사 배경용.",
+      "fresh": false
+     }
+    ]
+   },
+   {
+    "name": "보건복지부",
+    "home": "https://www.mohw.go.kr/board.es?mid=a10503000000&bid=0027",
+    "items": [
+     {
+      "title": "복지부-WHO '2026 세계 바이오 서밋' 21~22일 개최",
+      "url": "https://www.medipana.com/news/articleView.html?idxno=419313",
+      "date": null,
+      "source": "메디파나뉴스 보도",
+      "score": 3,
+      "angle": "다음 주 행사 예고. AI 헬스케어 의제 중심 사전 기사.",
+      "fresh": false
+     },
+     {
+      "title": "소아응급실 압수수색에 의료계 반발…응급진료 중 강제수사 논란",
+      "url": "https://apsk.co.kr/news/articleView.html?idxno=540749",
+      "date": null,
+      "source": "메디팜스투데이 보도",
+      "score": 4,
+      "angle": "응급의료 현장 갈등. 복지부 입장 확인해 후속.",
+      "fresh": false
+     },
+     {
+      "title": "생명 살리고, 돌봄 넓히고, 지역의료 키운다 「보건복지부 업무계획」",
+      "url": "https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027&act=view&list_no=1491331&tag=&nPage=1",
+      "date": null,
+      "source": "복지부 보도자료 원문",
+      "score": 1,
+      "angle": "연초 업무계획. 국감 지적과 대조할 때 참고용.",
+      "fresh": false
+     }
+    ]
+   },
+   {
+    "name": "응급의료통계",
+    "home": "https://www.e-gen.or.kr",
+    "items": [
+     {
+      "title": "응급실 진료제한 44만 건…올해 10건 중 7건은 '인력 부족'",
+      "url": "https://www.bosa.co.kr/news/articleView.html?idxno=3013159",
+      "date": null,
+      "source": "의학신문 보도",
+      "score": 5,
+      "angle": "응급실 뺑뺑이 지속을 수치로 보여주는 핵심 통계. 지역별·진료과별로 다시 쪼개면 지역 기사 가능.",
+      "fresh": false
+     },
+     {
+      "title": "응급진료 막힌 진료과 1위는 소아청소년과",
+      "url": "https://www.heraldk.com/article/2026100314002796695",
+      "date": "2026-10-03",
+      "source": "헤럴드경제 보도",
+      "score": 4,
+      "angle": "소아응급 공백. 소아응급실 압수수색 논란과 함께 다루기.",
+      "fresh": false
+     },
+     {
+      "title": "[2026 국감] 제한 없이 환자 받는 응급실 13.5% 불과",
+      "url": "https://www.newsworks.co.kr/news/articleView.html?idxno=856254",
+      "date": null,
+      "source": "뉴스웍스 보도",
+      "score": 4,
+      "angle": "응급실 수용 능력 통계. 의원실 자료 원본 요청 권장.",
+      "fresh": false
+     },
+     {
+      "title": "상급종합병원 47곳 중 14곳 권역응급센터 미지정 [2026 국감]",
+      "url": "https://www.kukinews.com/article/view/kuk202610070231",
+      "date": "2026-10-07",
+      "source": "쿠키뉴스 보도",
+      "score": 3,
+      "angle": "응급의료 전달체계 구조 문제 기사.",
+      "fresh": false
+     },
+     {
+      "title": "복지부-국립중앙의료원, 2026 응급의료 포럼 개최",
+      "url": "https://www.monews.co.kr/news/articleView.html?idxno=413634",
+      "date": null,
+      "source": "메디칼업저버 보도",
+      "score": 2,
+      "angle": "포럼 발표 자료에 최신 응급의료 통계가 있을 가능성. 자료집 확보.",
+      "fresh": false
+     }
+    ]
+   },
+   {
+    "name": "국가건강정보포털",
+    "home": "https://health.kdca.go.kr/healthinfo/index.jsp",
+    "items": [
+     {
+      "title": "이 달의 주목할 건강정보: 음주·알코올 간질환",
+      "url": "https://health.kdca.go.kr/healthinfo/index.jsp",
+      "date": "2026-10",
+      "source": "국가건강정보포털",
+      "score": 3,
+      "angle": "연말 술자리 시즌 앞둔 음주 건강 기사의 공식 근거 자료.",
+      "fresh": false
+     },
+     {
+      "title": "어르신 독감 예방접종 6일부터, 코로나19 접종은 12일 시작",
+      "url": "https://www.korea.kr/news/policyNewsView.do?newsId=148972954",
+      "date": null,
+      "source": "정책브리핑(질병관리청)",
+      "score": 4,
+      "angle": "독감 유행이 한 달 빨라졌다는 보도와 묶어 무료접종 대상·일정 안내 기사.",
+      "fresh": false
+     },
+     {
+      "title": "국가건강정보포털 건강정보, AI가 활용하기 쉽게 정비",
+      "url": "https://www.ksen.co.kr/news/article.html?no=222661",
+      "date": null,
+      "source": "한국사회적경제신문 보도",
+      "score": 2,
+      "angle": "AI 챗봇 건강정보 신뢰도 이슈와 연결 가능.",
+      "fresh": false
+     },
+     {
+      "title": "손상·응급의료 데이터 하나로 묶는다…질병청·국립중앙의료원 협약",
+      "url": "https://medinics.kr/news/a-6612",
+      "date": null,
+      "source": "메디닉스 보도",
+      "score": 2,
+      "angle": "응급의료통계 항목과 함께 참고.",
+      "fresh": false
+     }
+    ]
+   },
+   {
+    "name": "공공데이터포털",
+    "home": "https://www.data.go.kr",
+    "items": [
+     {
+      "title": "국립중앙의료원_전국 응급의료기관 정보 조회 서비스(API)",
+      "url": "https://www.data.go.kr/data/15000563/openapi.do",
+      "date": null,
+      "source": "공공데이터포털",
+      "score": 4,
+      "angle": "응급실 실시간 병상 정보로 지역별 '응급실 지도' 데이터 기사 가능.",
+      "fresh": false
+     },
+     {
+      "title": "서울특별시_응급실 월별 이용 현황 통계",
+      "url": "https://www.data.go.kr/data/15071710/fileData.do",
+      "date": "2024-12-31 기준",
+      "source": "공공데이터포털",
+      "score": 3,
+      "angle": "응급실 이용 추이 그래픽 기사 재료.",
+      "fresh": false
+     },
+     {
+      "title": "공공데이터포털 목록 개방 현황 (2026-09-30 기준)",
+      "url": "https://www.data.go.kr/data/15062804/fileData.do",
+      "date": "2026-09-30 기준",
+      "source": "공공데이터포털",
+      "score": 2,
+      "angle": "새로 열린 보건·복지 데이터셋을 찾을 때 쓰는 목록.",
+      "fresh": false
+     },
+     {
+      "title": "치매 데이터 등 공공데이터 100개 조기 개방",
+      "url": "https://m.news.nate.com/view/20260827n31930",
+      "date": "2026-08-27",
+      "source": "네이트뉴스(행안부 발표)",
+      "score": 2,
+      "angle": "치매 데이터 개방 여부 확인 후 데이터 기사 기획.",
+      "fresh": false
+     }
+    ]
+   }
+  ]
+ }
+}

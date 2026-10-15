@@ -7,10 +7,11 @@ import * as V from "./views.js";
 import { renderBanners, renderTicker, boardList, boardPost } from "./board.js";
 import { adminPage, authState, can, hidden, loginGate, currentAcct, signOut, PAGE_PERMS } from "./admin.js";
 import { setupInfo } from "./info.js";
+import { issuedesk } from "./issuedesk.js";
 
 const CFG = window.SITE_CONFIG || {};
 const DATA_PAGES = { dashboard: V.dashboard, keywords: V.keywords, media: V.media, articles: V.articles, insights: V.insights, reporters: V.reporters };
-const TITLES = { dashboard: "뉴스통계 (N)", keywords: "키워드 랭킹", media: "매체 비교", articles: "기사 목록", insights: "작성 인사이트", reporters: "기자 통계", board: "공지·게시판", admin: "관리자" };
+const TITLES = { dashboard: "뉴스통계 (N)", keywords: "키워드 랭킹", issuedesk: "이슈데스크", media: "매체 비교", articles: "기사 목록", insights: "작성 인사이트", reporters: "기자 통계", board: "공지·게시판", admin: "관리자" };
 
 let BOARD = { posts: [] };
 let lastFinal = kstToday();
@@ -47,7 +48,7 @@ function setupFilter() {
     if (!s || !e) return toast("시작일과 종료일을 입력해 주세요");
     if (s > e) return toast("시작일이 종료일보다 늦습니다");
     const { page, q } = parseHash();
-    const target = DATA_PAGES[page] ? page : "dashboard";
+    const target = DATA_PAGES[page] || page === "issuedesk" ? page : "dashboard";
     const keep = target === page ? q : {};
     location.hash = buildHash(target, { ...keep, s, e, k: "" });
   };
@@ -101,7 +102,7 @@ async function render() {
     if (!first) { view.innerHTML = '<div class="card"><div class="empty">볼 수 있는 메뉴가 없습니다. 마스터에게 권한을 요청하세요.</div></div>'; $("#filterbar").hidden = true; return; }
   }
   const isData = !!DATA_PAGES[page];
-  $("#filterbar").hidden = !isData;
+  $("#filterbar").hidden = !(isData || page === "issuedesk");
   renderBanners($("#bannerSlot"), BOARD, page === "dashboard" || (page === "board" && !param));
 
   const ctx = {
@@ -133,6 +134,16 @@ async function render() {
       const endMissing = !(M2.ranking_days || []).includes(R.e);
       $("#rangeNote").innerHTML = `조회 기간: <b>${rangeLabel(R)}</b>${missing > 0 ? ` · <span class="warn">수집되지 않은 날 ${missing}일 포함</span>` : ""}${endMissing ? ` · <span class="warn">${R.e.replace(/-/g, ".")} 랭킹은 아직 수집 전${lastRank ? ` (가장 최근 수집: ${lastRank.replace(/-/g, ".")})` : ""}</span>` : ""}${R.agg.kwAllDays ? ` · <span class="warn">${LIMITS.articleDays}일 넘는 기간의 키워드·기자 통계는 매체 설정과 관계없이 수집 매체 전체 기준</span>` : ""}${R.n > LIMITS.articleDays ? ` · 기사 단위 목록은 ${LIMITS.articleDays}일(랭킹은 ${LIMITS.rankingDays}일) 이하에서 전체 제공` : ""}`;
       await DATA_PAGES[page](view, R, ctx);
+    } else if (page === "issuedesk") {
+      const r = currentRange(q);
+      syncFilter(r);
+      $("#rangeNote").innerHTML = `조회 기간: <b>${r.s.replace(/-/g, ".")} ~ ${r.e.replace(/-/g, ".")}</b> · 이슈데스크 보고서는 매일 아침 쌓입니다`;
+      view.innerHTML = '<div class="loading">이슈데스크 불러오는 중…</div>';
+      const box = document.createElement("div");
+      await issuedesk(box, r, ctx);
+      if (seq !== renderSeq) return;
+      view.innerHTML = "";
+      view.append(...box.childNodes);
     } else if (page === "board") {
       if (param) boardPost(view, BOARD, param);
       else boardList(view, BOARD, ctx);
