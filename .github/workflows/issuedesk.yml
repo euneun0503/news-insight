@@ -1,0 +1,65 @@
+name: 이슈데스크 다시 조회
+
+# 사이트의 이슈데스크 '지금 다시 조회' 버튼으로 실행됩니다.
+# 커뮤니티 인기글을 다시 모아 오늘 보고서(data/issuedesk/오늘.json)에 더하고 사이트를 다시 배포합니다.
+# 저장소 Secrets에 ANTHROPIC_API_KEY 가 있으면 새 항목의 기사 앵글을 Claude가 작성합니다(없으면 수치만).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: issuedesk
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: 이슈데스크 수집
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python collector/issuedesk.py
+      - name: 저장소에 커밋
+        run: |
+          git config user.name "news-collector[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/issuedesk
+          if git diff --cached --quiet; then echo "변경 없음"; exit 0; fi
+          git commit -m "이슈데스크 다시 조회 $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') KST"
+          git checkout -- . && git clean -fdq
+          for i in 1 2 3 4 5; do
+            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep $((i * 5))
+          done
+          exit 1
+
+  deploy:
+    needs: collect
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - name: 새 버전이 바로 보이도록 (브라우저 캐시 무효화)
+        run: |
+          V=${GITHUB_SHA::7}-$(date +%s)
+          sed -i -E "s#(from \"\./[a-z]+\.js)\"#\1?v=$V\"#g" assets/js/*.js
+          sed -i -E "s#assets/js/main\.js\"#assets/js/main.js?v=$V\"#; s#assets/css/style\.css\"#assets/css/style.css?v=$V\"#" index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

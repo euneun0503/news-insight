@@ -1207,3 +1207,23 @@ export async function saveSeedGroups(groups) {
   const { owner, repo, branch } = session.R;
   try { await gh(`/repos/${owner}/${repo}/actions/workflows/search.yml/dispatches`, { method: "POST", body: JSON.stringify({ ref: branch, inputs: { force: "yes" } }) }); } catch (e) { console.warn(e); }
 }
+
+// ── 이슈데스크 다시 조회 (GitHub Actions: issuedesk.yml) ──
+export const canRunIssuedesk = () => !!session?.token;
+export async function runIssuedesk() {
+  if (!session?.token) throw new Error("로그인 후 다시 조회할 수 있습니다.");
+  const { owner, repo, branch } = session.R;
+  try {
+    await gh(`/repos/${owner}/${repo}/actions/workflows/issuedesk.yml/dispatches`, { method: "POST", body: JSON.stringify({ ref: branch }) });
+  } catch (e) {
+    if (e.status === 403 || e.status === 404) throw new Error("저장소 토큰에 Actions 실행(Read and write) 권한이 필요합니다.");
+    throw e;
+  }
+  logAct("이슈데스크 다시 조회");
+}
+export async function issuedeskLastRun() {
+  if (!session?.token) return null;
+  const { owner, repo } = session.R;
+  const r = await gh(`/repos/${owner}/${repo}/actions/workflows/issuedesk.yml/runs?per_page=1`);
+  return r.workflow_runs?.[0] || null;
+}
