@@ -20,6 +20,11 @@ from store import CONFIG, DATA, now_kst, today_kst  # noqa: E402
 def debug(keys):
     """문제 기사 확인용: 기사 주소 이동 결과와 댓글·반응 응답 원문 일부를 출력"""
     session = make_session(2)
+    lines = []
+    _p = print
+    def print(*a):  # noqa: A001  화면과 파일(data/cache/engage_debug.txt) 양쪽에
+        lines.append(" ".join(str(x) for x in a))
+        _p(*a)
     for k in keys:
         oid, aid = k.split("_")
         r = session.get(engage._article_url(oid, aid), timeout=12)
@@ -32,6 +37,8 @@ def debug(keys):
         print("  반응", l.status_code, l.text[:600])
         for m in sorted(set(re.findall(r'data-cid="([^"]+)"|"objectId"\s*:\s*"([^"]+)"|(ENTERTAIN\[[^\]]+\]|NEWS\[[^\]]+\]|SPORTS\[[^\]]+\])', r.text))):
             print("  페이지 표식", m)
+    (DATA / "cache").mkdir(parents=True, exist_ok=True)
+    (DATA / "cache" / "engage_debug.txt").write_text("\n".join(lines), "utf-8")
 
 
 def main():
