@@ -1,0 +1,53 @@
+== 296_0000105915 → https://n.news.naver.com/mnews/article/296/0000105915 200
+  댓글 news 200 cb({"success":true,"code":"1000","message":"요청을 성공적으로 처리하였습니다.","lang":"ko","country":"KR","result":{"commentList":[],"userInfo":{},"pageModel":{"page":1,"pageSize":20,"indexSize":10,"startRow":1,"endRow":20,"totalRows":0,"startIndex":0,"totalPages":1,"firstPage":1,"prevPage":0,"nextPage":0,"lastPage":1,"current":null,"threshold":null,"moveToLastPage":false,"moveToComment":false,"moveToLastPrev":f
+  댓글 entertain 200 cb({"success":false,"code":"4001","message":"Wrong ticket.","lang":null,"country":"KR","result":{},"date":"2026-10-15T06:31:27+0000","mode":0});
+  댓글 sports 200 cb({"success":false,"code":"4001","message":"Wrong ticket.","lang":null,"country":"KR","result":{},"date":"2026-10-15T06:31:27+0000","mode":0});
+  반응 200 {"contents":[{"serviceId":"NEWS","contentsId":"ne_296_0000105915","isDisplay":true,"categoryId":null,"countType":"DEFAULT","reactions":[],"reactionMap":{},"reactionTextMap":{"ko":{"touched":"공감백배","warm":"훈훈해요","analytical":"분석탁월","like":"좋아요","sad":"슬퍼요","want":"후속기사원해요","recommend":"후속강추","angry":"화나요","useful":"쏠쏠정보","wow":"흥미진진"},"zh-hant":{"touched":"感動","warm":"warm","analytical":"analytical","like":"讚","sad":"sad","want":"want","recommend":"recommend","angry":"angry","useful":"useful","wow":"驚"},"zh-tw":{"touched":"touched","warm":"warm","analytical":"analytical","like":"like","sad":"sad","want":"want","recommend":"recommend","angry":"angry","useful":"useful","wow":"wow"},"zh-hans":{"touched":"感动","warm":"warm","analytical":"analytical","like":"喜欢","sad":"sad","want":"want","recomme
+  페이지 표식 cbox_module
+  페이지 표식 cbox_wrapper
+== 296_0000105914 → https://n.news.naver.com/mnews/article/296/0000105914 200
+  댓글 news 200 cb({"success":true,"code":"1000","message":"요청을 성공적으로 처리하였습니다.","lang":"ko","country":"KR","result":{"commentList":[{"ticket":"news","objectId":"news296,0000105914","categoryId":"*","templateId":"view_life_m1","commentNo":"907570836733427751","parentCommentNo":"907570836733427751","replyLevel":1,"replyCount":1,"replyAllCount":1,"replyPreviewNo":null,"replyList":null,"imageCount":0,"imageList":null
+  댓글 entertain 200 cb({"success":false,"code":"4001","message":"Wrong ticket.","lang":null,"country":"KR","result":{},"date":"2026-10-15T06:31:29+0000","mode":0});
+  댓글 sports 200 cb({"success":false,"code":"4001","message":"Wrong ticket.","lang":null,"country":"KR","result":{},"date":"2026-10-15T06:31:29+0000","mode":0});
+  반응 200 {"contents":[{"serviceId":"NEWS","contentsId":"ne_296_0000105914","isDisplay":true,"categoryId":null,"countType":"DEFAULT","reactions":[{"reactionType":"useful","count":1,"isReacted":false,"periodUser":null,"reactionTypeCode":{"name":"useful","messageCode":"reaction.type.useful","description":"유익해요"}},{"reactionType":"recommend","count":2,"isReacted":false,"periodUser":null,"reactionTypeCode":{"name":"recommend","messageCode":"reaction.type.recommend","description":"추천해요"}},{"reactionType":"touched","count":3,"isReacted":false,"periodUser":null,"reactionTypeCode":{"name":"touched","messageCode":"reaction.type.touched","description":"감동받았어요"}}],"reactionMap":{"com.naver.react.core.nbasearc.common.ReactionType@7ec95918":{"reactionType":"useful","count":1,"isReacted":false,"periodUser":null,"
+  페이지 표식 _reactionModule u_likeit nv_notrans" data-sid="NEWS" data-cid="ne_296_0000105914" data-like-nlog-prefix="content.reaction_top"
+  페이지 표식 _reactionModule u_likeit" data-sid="NEWS" data-cid="ne_296_0000105914" id="likeItCountViewDiv" data-like-nlog-prefix="content.reaction_bottom" style="visibility: visible;"
+  페이지 표식 cbox
+  페이지 표식 cbox/js/cbox.core.js
+  페이지 표식 cbox5
+  페이지 표식 cbox_guide_emphasis\
+  페이지 표식 cbox_module
+  페이지 표식 cbox_msg_point\
+  페이지 표식 cbox_wrapper
+  페이지 표식 ne_296_0000105914
+  페이지 표식 u_likeit nv_notrans" data-sid="NEWS" data-cid="ne_296_0000105914" data-like-nlog-prefix="content.reaction_top"
+  페이지 표식 u_likeit_button _face _LIKE_BUTTON" data-label="recommend" aria-haspopup="true" aria-pressed="false" data-clk="RTL.face"
+  페이지 표식 u_likeit_icon __reaction__zeroface"
+  페이지 표식 u_likeit_icons _icons"
+  페이지 표식 u_likeit_layer _faceLayer" role="menu"
+  페이지 표식 u_likeit_list useful" role="menuitem"
+  페이지 표식 u_likeit_list_button _button off" data-type="useful" data-log="RTL.useful|RTL.unuseful" href="#" role="button" aria-selected="false" aria-pressed="false"
+  페이지 표식 u_likeit_text _count"
+== 346_0000117364 → https://n.news.naver.com/mnews/article/346/0000117364 200
+  댓글 news 200 cb({"success":true,"code":"1000","message":"요청을 성공적으로 처리하였습니다.","lang":"ko","country":"KR","result":{"commentList":[{"ticket":"news","objectId":"news346,0000117364","categoryId":"*","templateId":"default_life","commentNo":"907662040682725382","parentCommentNo":"907662040682725382","replyLevel":1,"replyCount":7,"replyAllCount":7,"replyPreviewNo":null,"replyList":null,"imageCount":0,"imageList":null
+  댓글 entertain 200 cb({"success":false,"code":"4001","message":"Wrong ticket.","lang":null,"country":"KR","result":{},"date":"2026-10-15T06:31:43+0000","mode":0});
+  댓글 sports 200 cb({"success":false,"code":"4001","message":"Wrong ticket.","lang":null,"country":"KR","result":{},"date":"2026-10-15T06:31:43+0000","mode":0});
+  반응 200 {"contents":[{"serviceId":"NEWS","contentsId":"ne_346_0000117364","isDisplay":true,"categoryId":null,"countType":"DEFAULT","reactions":[{"reactionType":"useful","count":12,"isReacted":false,"periodUser":null,"reactionTypeCode":{"name":"useful","messageCode":"reaction.type.useful","description":"유익해요"}},{"reactionType":"recommend","count":10,"isReacted":false,"periodUser":null,"reactionTypeCode":{"name":"recommend","messageCode":"reaction.type.recommend","description":"추천해요"}},{"reactionType":"touched","count":26,"isReacted":false,"periodUser":null,"reactionTypeCode":{"name":"touched","messageCode":"reaction.type.touched","description":"감동받았어요"}},{"reactionType":"wow","count":3,"isReacted":false,"periodUser":null,"reactionTypeCode":{"name":"wow","messageCode":"reaction.type.wow","descriptio
+  페이지 표식 _reactionModule u_likeit nv_notrans" data-sid="NEWS" data-cid="ne_346_0000117364" data-like-nlog-prefix="content.reaction_top"
+  페이지 표식 _reactionModule u_likeit" data-sid="NEWS" data-cid="ne_346_0000117364" id="likeItCountViewDiv" data-like-nlog-prefix="content.reaction_bottom" style="visibility: visible;"
+  페이지 표식 cbox
+  페이지 표식 cbox/js/cbox.core.js
+  페이지 표식 cbox5
+  페이지 표식 cbox_guide_emphasis\
+  페이지 표식 cbox_module
+  페이지 표식 cbox_msg_point\
+  페이지 표식 cbox_wrapper
+  페이지 표식 ne_346_0000117364
+  페이지 표식 u_likeit nv_notrans" data-sid="NEWS" data-cid="ne_346_0000117364" data-like-nlog-prefix="content.reaction_top"
+  페이지 표식 u_likeit_button _face _LIKE_BUTTON" data-label="recommend" aria-haspopup="true" aria-pressed="false" data-clk="RTL.face"
+  페이지 표식 u_likeit_icon __reaction__zeroface"
+  페이지 표식 u_likeit_icons _icons"
+  페이지 표식 u_likeit_layer _faceLayer" role="menu"
+  페이지 표식 u_likeit_list useful" role="menuitem"
+  페이지 표식 u_likeit_list_button _button off" data-type="useful" data-log="RTL.useful|RTL.unuseful" href="#" role="button" aria-selected="false" aria-pressed="false"
+  페이지 표식 u_likeit_text _count"
