@@ -1,7 +1,7 @@
 {
  "date": "2026-10-15",
  "generatedAt": "2026-10-15T12:37:36+09:00",
- "note": "건강은 비만치료제 직구·부작용과 자궁경부암(HPV) 오해, 연예인은 이지혜 '성심당 싹쓸이' 논란이 4개 커뮤니티에 동시에 올라 가장 뜨겁습니다. 문화는 K팝 세대 논쟁과 일본 인플루언서 스타벅스 광고 철회, 이슈는 성추행 누명 초등학생과 화장품 대표 직원 폭행 글에 댓글이 몰렸습니다.",
+ "note": "건강은 비만치료제 직구·부작용과 자궁경부암(HPV) 오해, 연예인은 이지혜 '성심당 싹쓸이' 논란이 4개 커뮤니티에 동시에 올라 가장 뜨겁습니다. 문화는 K팝 세대 논쟁과 일본 인플루언서 스타벅스 광고 철회, 이슈는 성추행 누명 초등학생과 화장품 대표 직원 폭행 글에 댓글이 몰렸습니다. 낮 다시 조회로 이수만 걸그룹 데뷔 반응, 관세청의 마운자로 위조품 발표, 티켓 예매수수료 인상 같은 글이 더해졌습니다.",
  "items": [
   {
    "category": "건강",
@@ -426,6 +426,14 @@
     {
      "title": "와이고수: 이수만이 만든걸그룹",
      "url": "https://ygosu.com/board/real_article/yeobgi/2151588/?type=group0&list_context=real_article&page=1"
+    },
+    {
+     "title": "네이트판: 이수만 아이돌 'A2O LITE' 멤버 국적 상황",
+     "url": "https://pann.nate.com/talk/375669088"
+    },
+    {
+     "title": "MLB파크: 이수만 걸그룹 진짜 멜론 1위함 ㄷㄷㄷ...JPG",
+     "url": "https://mlbpark.donga.com/mp/b.php?b=bullpen&id=202610140119435529&m=view"
     }
    ],
    "date": "2026-10-14"
@@ -716,13 +724,12 @@
    "views": null,
    "likes": 1226,
    "comments": 1096,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "score": 4,
+   "angle": "마운자로 직구·짝퉁 논란 속 실제 사용자 커뮤니티 반응을 다루는 기사. '마운자로 직구 식약처 입장' 항목, 관세청 위조품 발표와 묶어 비만치료제 불법 유통 기획으로.",
+   "check": "사용자 불만의 원인(관세청 발표·직구 차단 등)을 확인하고, 투약 경험담은 의학적 근거로 인용하지 않기.",
    "covered": false,
    "press": [],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
    "category": "이슈",
@@ -732,13 +739,12 @@
    "views": null,
    "likes": 2222,
    "comments": 767,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "score": 2,
+   "angle": "성별 공용 소변기 설계를 둘러싼 논쟁. 공중화장실 성평등 설계 기준을 짚는 생활 기사 소재.",
+   "check": "해당 시설 위치와 설치 기관, 공중화장실 설치 기준 확인.",
    "covered": false,
    "press": [],
-   "date": "2026-10-14",
-   "auto": true
+   "date": "2026-10-14"
   },
   {
    "category": "이슈",
@@ -748,9 +754,9 @@
    "views": null,
    "likes": 1983,
    "comments": 756,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "score": 2,
+   "angle": "'황당한 오해로 사망자가 늘고 있다'는 글. 어떤 오해인지에 따라 건강 정보 팩트체크로 쓸 수 있음.",
+   "check": "원글이 근거로 든 통계 출처를 먼저 확인. 출처가 없으면 기사화하지 않기.",
    "covered": false,
    "press": [
     {
@@ -762,8 +768,7 @@
      "url": "https://www.dogdrip.net/dogdrip/729691283?sort_index=popular&page=1"
     }
    ],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
    "category": "이슈",
@@ -773,13 +778,12 @@
    "views": null,
    "likes": 2601,
    "comments": 553,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "score": 2,
+   "angle": "등록금이 없어 울던 서울대 합격생의 이후 이야기라는 글. 저소득층 대학생 장학 지원 제도와 연결 가능.",
+   "check": "예전 사연을 다시 퍼 나른 글일 가능성이 커서 원 출처와 시점 확인. 당사자 신상은 다루지 않기.",
    "covered": false,
    "press": [],
-   "date": "2026-10-14",
-   "auto": true
+   "date": "2026-10-14"
   },
   {
    "category": "건강",
@@ -790,8 +794,8 @@
    "likes": 1870,
    "comments": 478,
    "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "angle": "관세청이 해외 직구 마운자로 일부를 위조품으로 발표한 뒤 직구 사용자들이 동요하고 있다는 글. 가짜 비만치료제 적발 현황과 위험성을 다루는 안전 기사로 바로 쓸 수 있음.",
+   "check": "관세청 발표 원문(적발 규모·국가)과 식약처 위조 의약품 경고 확인.",
    "covered": false,
    "press": [
     {
@@ -799,8 +803,7 @@
      "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470439&list_num=100&_dcbest=1&page=1"
     }
    ],
-   "date": "2026-10-14",
-   "auto": true
+   "date": "2026-10-14"
   },
   {
    "category": "문화",
@@ -810,9 +813,9 @@
    "views": 28953,
    "likes": null,
    "comments": 530,
-   "score": 4,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "score": 3,
+   "angle": "신곡 제목 '체포하겠어'와 경찰 호루라기 효과음을 두고 음지 문화 차용 논란이 붙었다는 글. K팝 가사·콘셉트 논란 기사로.",
+   "check": "어떤 가수의 곡인지, 소속사 입장과 논란의 쟁점을 원문으로 확인.",
    "covered": false,
    "press": [
     {
@@ -820,8 +823,7 @@
      "url": "https://theqoo.net/hot/4376251491"
     }
    ],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
    "category": "연예인",
@@ -832,12 +834,11 @@
    "likes": null,
    "comments": 446,
    "score": 4,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "angle": "이수만의 신규 걸그룹 데뷔 후 보아 팬들이 반발한다는 글. '이수만이 만든 여자 아이돌' 항목과 묶어 데뷔 반응 기사로.",
+   "check": "팬들이 문제 삼는 지점을 원문으로 확인하고 소속사 입장 받기.",
    "covered": false,
    "press": [],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
    "category": "문화",
@@ -847,13 +848,12 @@
    "views": 19051,
    "likes": 55,
    "comments": 517,
-   "score": 4,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "score": 3,
+   "angle": "'존경남·안정형남' 다음 연애 트렌드로 '엉가남'이 거론된다는 글. 2030 연애 신조어 트렌드 기사 소재.",
+   "check": "신조어의 뜻과 실제 쓰임(SNS·커뮤니티 사용 빈도) 확인.",
    "covered": false,
    "press": [],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
    "category": "연예인",
@@ -863,9 +863,9 @@
    "views": 25605,
    "likes": null,
    "comments": 317,
-   "score": 4,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "score": 1,
+   "angle": "아이돌 팬덤이 '프로듀서의 작품'으로서 아이돌을 소비한다는 팬 글. K팝 팬덤 소비 방식 분석 기획의 참고 자료.",
+   "check": "특정 아이돌·프로듀서를 겨냥한 표현은 인용하지 않기.",
    "covered": false,
    "press": [
     {
@@ -873,11 +873,10 @@
      "url": "https://ygosu.com/board/real_article/yeobgi/2151587/?type=group0&list_context=real_article&page=1"
     }
    ],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
-   "category": "문화",
+   "category": "연예인",
    "title": "대구 임금체불 심하다 까던 여성 방송인 근황",
    "url": "https://bbs.ruliweb.com/best/board/300143/read/77029555?orderby=regdate&range=24h&view=list&m=humor&t=hit",
    "source": "루리웹",
@@ -885,15 +884,14 @@
    "likes": 260,
    "comments": 82,
    "score": 3,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "angle": "대구 임금체불 문제를 비판하던 여성 방송인의 근황이 화제라는 글. 지역 임금체불 실태와 함께 다룰 수 있음.",
+   "check": "누구인지, 발언 원문과 시점을 확인하고 본인 측 입장 받기.",
    "covered": false,
    "press": [],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
-   "category": "건강",
+   "category": "문화",
    "title": "[백갤] 백종원 신작 배고파 일본토레토레 요약",
    "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470359&list_num=100&_dcbest=1&page=1",
    "source": "디시인사이드",
@@ -901,28 +899,11 @@
    "likes": 208,
    "comments": 165,
    "score": 3,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "angle": "백종원의 새 예능 '배고파' 일본 편 요약 글에 반응이 몰림. 방송 신작 반응 기사로.",
+   "check": "방송 회차·채널과 시청 반응(시청률·조회수) 확인.",
    "covered": false,
    "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "이슈",
-   "title": "실시간 나락가고있는 국장..",
-   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10448023125",
-   "source": "FMKorea",
-   "views": null,
-   "likes": 515,
-   "comments": 930,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
    "category": "이슈",
@@ -932,9 +913,9 @@
    "views": 77290,
    "likes": null,
    "comments": 528,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "score": 3,
+   "angle": "여자친구에게 이별 통보를 받은 이유를 묻는 글에 댓글 500여 개가 붙음. 2030 연애관 차이를 보여주는 '사연+반응' 기사.",
+   "check": "본문 세부는 요약만 하고, 댓글 여론은 비율로 정리.",
    "covered": false,
    "press": [
     {
@@ -958,29 +939,7 @@
      "url": "https://www.inven.co.kr/board/webzine/2097/2740465"
     }
    ],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "이슈",
-   "title": "실시간 중국인들 발작중이라는 주제.jpg",
-   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10446289953",
-   "source": "FMKorea",
-   "views": null,
-   "likes": 1029,
-   "comments": 580,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [
-    {
-     "title": "개드립: 중국인들 발작버튼 눌린 주제",
-     "url": "https://www.dogdrip.net/dogdrip/729627733?sort_index=popular&page=1"
-    }
-   ],
-   "date": "2026-10-14",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
    "category": "이슈",
@@ -990,45 +949,15 @@
    "views": 67272,
    "likes": null,
    "comments": 345,
-   "score": 5,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "score": 3,
+   "angle": "'돈이 없어 알바하며 대학원 다닐 수 있냐'고 묻자 교수가 공부하지 말라고 했다는 경험담. 대학원생 생계·인건비 문제 기사로 확장 가능.",
+   "check": "대학원생 인건비·장학금 실태 조사 자료와 대학원생노조 의견 확보. 특정 교수·학교는 특정하지 않기.",
    "covered": false,
    "press": [],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
-   "category": "이슈",
-   "title": "한국이 세계에서 5위한 종목",
-   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10437851667",
-   "source": "FMKorea",
-   "views": null,
-   "likes": 777,
-   "comments": 549,
-   "score": 4,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [
-    {
-     "title": "뽐뿌: 한국 전세계 5위, 아시아유일",
-     "url": "https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&no=10152370"
-    },
-    {
-     "title": "보배드림: 한국 전세계 5위, 아시아유일",
-     "url": "https://www.bobaedream.co.kr/view?code=best&No=1039900&vdate=h"
-    },
-    {
-     "title": "와이고수: 한국 전세계 5위, 아시아유일",
-     "url": "https://ygosu.com/board/real_article/yeobgi/2151604/?type=group0&list_context=real_article&page=1"
-    }
-   ],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "이슈",
+   "category": "문화",
    "title": "NOL 놀 티켓 예매수수료 인상 공지",
    "url": "https://theqoo.net/hot/4376184759",
    "source": "더쿠",
@@ -1036,44 +965,11 @@
    "likes": null,
    "comments": 497,
    "score": 4,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "angle": "티켓 예매 플랫폼 NOL(놀) 예매수수료 인상 공지에 반발. 공연·스포츠 티켓 수수료 인상이 소비자 부담으로 이어진다는 소비자 기사.",
+   "check": "인상 폭·적용일과 경쟁 플랫폼 수수료를 공지 원문으로 비교.",
    "covered": false,
    "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "이슈",
-   "title": "[싱갤] 훌쩍훌쩍 징역42년받고 우는 멘헤라 17살 미국녀",
-   "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470375&list_num=100&_dcbest=1&page=1",
-   "source": "디시인사이드",
-   "views": 31558,
-   "likes": 219,
-   "comments": 387,
-   "score": 4,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "이슈",
-   "title": "삼전7만원 / 하닉 20만원 적정주가",
-   "url": "https://theqoo.net/hot/4376133365",
-   "source": "더쿠",
-   "views": 45430,
-   "likes": null,
-   "comments": 325,
-   "score": 4,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
    "category": "문화",
@@ -1083,29 +979,12 @@
    "views": 29244,
    "likes": 175,
    "comments": 45,
-   "score": 3,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "score": 2,
+   "angle": "소설가 김진명의 최근 근황이 화제. 신작·활동 소식이 있으면 문화 단신.",
+   "check": "근황의 원출처(인터뷰·방송) 확인.",
    "covered": false,
    "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "연예인",
-   "title": "어제자 윙 건담 근황에 팬덤 술렁술렁 ㄷㄷ",
-   "url": "https://bbs.ruliweb.com/best/board/300143/read/77029306?orderby=regdate&range=24h&view=list&m=humor&t=hit",
-   "source": "루리웹",
-   "views": 28498,
-   "likes": 141,
-   "comments": 53,
-   "score": 3,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-15"
   },
   {
    "category": "연예인",
@@ -1116,79 +995,14 @@
    "likes": 293,
    "comments": 62,
    "score": 3,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "angle": "배우 박해일의 선행·결정이 '대승적 행보'로 화제라는 글. 미담 기사 소재.",
+   "check": "어떤 행보인지 원 보도·소속사 확인.",
    "covered": false,
    "press": [],
-   "date": "2026-10-14",
-   "auto": true
-  },
-  {
-   "category": "연예인",
-   "title": "이수만 아이돌 'A2O LITE' 멤버 국적 상황",
-   "url": "https://pann.nate.com/talk/375669088",
-   "source": "네이트판",
-   "views": 22489,
-   "likes": 19,
-   "comments": 70,
-   "score": 3,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "연예인",
-   "title": "[싱갤] 싱글벙글 왓챠 영화 코멘트촌",
-   "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470399&list_num=100&_dcbest=1&page=1",
-   "source": "디시인사이드",
-   "views": 17163,
-   "likes": 89,
-   "comments": 75,
-   "score": 3,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-14"
   },
   {
    "category": "문화",
-   "title": "너무 잔인해서 전세계가 기겁한 음식",
-   "url": "https://www.ppomppu.co.kr/zboard/view.php?id=youtube_info&no=23316",
-   "source": "뽐뿌",
-   "views": 20203,
-   "likes": null,
-   "comments": 66,
-   "score": 3,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "문화",
-   "title": "동남아가 현시점 한국을 절대 못 넘는 이유",
-   "url": "https://www.dogdrip.net/dogdrip/729659694?sort_index=popular&page=1",
-   "source": "개드립",
-   "views": null,
-   "likes": 144,
-   "comments": 144,
-   "score": 2,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
-  },
-  {
-   "category": "연예인",
    "title": "영화 '호프' 가장 최악이였던 CG",
    "url": "https://www.etoland.co.kr/hit/etohumor07/view/영화-39호프39-가장-최악이였던-cg-9502037",
    "source": "이토랜드",
@@ -1196,81 +1010,11 @@
    "likes": 52,
    "comments": 94,
    "score": 2,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
+   "angle": "영화 '호프' CG 완성도를 두고 관객 혹평이 모인 글. 개봉작 관객 반응 기사 소재.",
+   "check": "개봉 정보와 관객 평점·관객 수 함께 확인.",
    "covered": false,
    "press": [],
-   "date": "2026-10-14",
-   "auto": true
-  },
-  {
-   "category": "문화",
-   "title": "큰 가슴의 시대는 끝났다... 작은 '발레리나 가슴' 유행",
-   "url": "https://www.etoland.co.kr/hit/etohumor07/view/큰-가슴의-시대는-끝났다-작은-39발레리나-가슴39-유행-9501773",
-   "source": "이토랜드",
-   "views": 13039,
-   "likes": 71,
-   "comments": 76,
-   "score": 2,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-14",
-   "auto": true
-  },
-  {
-   "category": "문화",
-   "title": "증권tv 방송사고급 발언 ㄷㄷ. mp4",
-   "url": "https://www.dogdrip.net/dogdrip/729588001?sort_index=popular&page=1",
-   "source": "개드립",
-   "views": null,
-   "likes": 125,
-   "comments": 121,
-   "score": 2,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-14",
-   "auto": true
-  },
-  {
-   "category": "연예인",
-   "title": "이수만 걸그룹 진짜 멜론 1위함 ㄷㄷㄷ...JPG",
-   "url": "https://mlbpark.donga.com/mp/b.php?b=bullpen&id=202610140119435529&m=view",
-   "source": "MLB파크",
-   "views": 10028,
-   "likes": 11,
-   "comments": 76,
-   "score": 2,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [
-    {
-     "title": "와이고수: 이수만 걸그룹 센터",
-     "url": "https://ygosu.com/board/real_article/yeobgi/2151590/?type=group0&list_context=real_article&page=1"
-    }
-   ],
-   "date": "2026-10-14",
-   "auto": true
-  },
-  {
-   "category": "문화",
-   "title": "[네이버] 네이버멤버십_ 오뚜기 피자, 매일유업 고단백 검은콩두유, 크리넥스 데코&소프트 와이드 화이트, 피지...",
-   "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=740275",
-   "source": "뽐뿌",
-   "views": 15850,
-   "likes": 46,
-   "comments": 31,
-   "score": 2,
-   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
-   "check": "",
-   "covered": false,
-   "press": [],
-   "date": "2026-10-15",
-   "auto": true
+   "date": "2026-10-14"
   }
  ],
  "press": {
