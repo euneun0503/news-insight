@@ -1,10 +1,12 @@
 name: 이슈데스크 다시 조회
 
-# 사이트의 이슈데스크 '지금 다시 조회' 버튼으로 실행됩니다.
+# 매일 06:40(한국시간) 기본 수집 + 사이트의 이슈데스크 '지금 다시 조회' 버튼으로 실행됩니다.
 # 커뮤니티 인기글을 다시 모아 오늘 보고서(data/issuedesk/오늘.json)에 더하고 사이트를 다시 배포합니다.
 # 저장소 Secrets에 ANTHROPIC_API_KEY 가 있으면 새 항목의 기사 앵글을 Claude가 작성합니다(없으면 수치만).
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "40 21 * * *"   # 매일 06:40 KST 기본 수집 (이어서 06:53에 Claude가 앵글·보도자료 정리)
 
 permissions:
   contents: write
