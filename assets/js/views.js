@@ -669,7 +669,7 @@ export async function articles(el, R, ctx) {
 
   const SORTS = {
     rank: [["views", "조회수 높은 순 (전체 순위)"], ["cm", "댓글 많은 순"], ["re", "반응 많은 순"], ["rc", "추천 많은 순"]],
-    pub: [["date", "최신 발행 순"], ["old", "오래된 순"], ["title", "제목 가나다"]],
+    pub: [["date", "최신 발행 순"], ["old", "오래된 순"], ["cm", "댓글 많은 순"], ["re", "반응 많은 순"], ["rc", "추천 많은 순"], ["title", "제목 가나다"]],
   };
   let data = [];
   let filtered = [];
@@ -705,6 +705,8 @@ export async function articles(el, R, ctx) {
       const M = meta();
       const two = new Set([M.our_media, M.compare_media || "296"]);
       data = data.filter((a) => two.has(a.oid));
+      const eg = await loadEngage(R.days);
+      data = data.map((a) => ({ ...a, engage: splitEngage(eg[`${a.oid}_${a.aid}`]) || null }));
     }
     const medias = [...new Set(data.map((a) => a.oid))];
     const mSel = $("#mSel", card);
@@ -737,7 +739,7 @@ export async function articles(el, R, ctx) {
     const listOnly = state.src === "pub" && filtered.some((a) => a.listOnly) ? " · 발행 시각·기자명은 상세 수집 매체(헬스조선·코메디닷컴 등)만 표시, 나머지는 네이버 목록 기준" : "";
     $("#count", card).textContent = `${fmt(filtered.length)}건${rankNote}${nvNote}${listOnly}`;
     const box = $("#list", card);
-    articleTable(box, items, { showDay: true, showRank: state.src === "rank", showViews: state.src === "rank", showTime: true, overall: state.src === "rank" ? (state.page - 1) * PAGE : null, showEngage: state.src === "rank" });
+    articleTable(box, items, { showDay: true, showRank: state.src === "rank", showViews: state.src === "rank", showTime: true, overall: state.src === "rank" ? (state.page - 1) * PAGE : null, showEngage: true });
     if (pages > 1) {
       box.append(h(`<div class="pager"><button class="btn sm" data-p="-1" ${state.page === 1 ? "disabled" : ""}>이전</button><span>${state.page} / ${pages}</span><button class="btn sm" data-p="1" ${state.page === pages ? "disabled" : ""}>다음</button></div>`));
       $$(".pager button", box).forEach((b) => b.addEventListener("click", () => { state.page += Number(b.dataset.p); draw(); card.scrollIntoView({ block: "start" }); }));
@@ -753,11 +755,11 @@ export async function articles(el, R, ctx) {
       rows: filtered.map((a) => ({
         날짜: a.day, 매체: mediaName(a.oid), ...(state.src === "rank" ? { 순위: a.rank, 조회수: a.views } : {}),
         제목: a.title, 기자: a.reporter || "", 발행시각: a.time || (a.pub || "").slice(11, 16),
-        ...(state.src === "rank" ? {
+        ...({
           댓글: a.engage?.cm ?? "", 반응합계: sumOf(a.engage?.re) ?? "", ...Object.fromEntries(Object.entries(RE_LABEL).map(([k, l]) => [l, a.engage?.re?.[k] ?? ""])),
           추천합계: sumOf(a.engage?.rc) ?? "", ...Object.fromEntries(Object.entries(RC_LABEL).map(([k, l]) => [l, a.engage?.rc?.[k] ?? ""])),
           반응수집시각: a.engage?.at ? a.engage.at.slice(0, 16).replace("T", " ") : "",
-        } : {}),
+        }),
         링크: articleUrl(a.oid, a.aid),
       })),
     }])
