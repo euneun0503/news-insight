@@ -1,6 +1,6 @@
 {
  "date": "2026-10-15",
- "generatedAt": "2026-10-15T12:27:13+09:00",
+ "generatedAt": "2026-10-15T12:37:36+09:00",
  "note": "건강은 비만치료제 직구·부작용과 자궁경부암(HPV) 오해, 연예인은 이지혜 '성심당 싹쓸이' 논란이 4개 커뮤니티에 동시에 올라 가장 뜨겁습니다. 문화는 K팝 세대 논쟁과 일본 인플루언서 스타벅스 광고 철회, 이슈는 성추행 누명 초등학생과 화장품 대표 직원 폭행 글에 댓글이 몰렸습니다.",
  "items": [
   {
@@ -190,7 +190,12 @@
    "angle": "식당 정수기 위생 관리 실태와 필터 교체 의무 규정을 다루는 생활 위생 기사.",
    "check": "가게 특정 금지. 식품위생법상 정수기 관리 기준과 지자체 점검 현황 확인.",
    "covered": false,
-   "press": [],
+   "press": [
+    {
+     "title": "개드립: 젓가락 내려놓게 만든 텐동집 정수기 상태",
+     "url": "https://www.dogdrip.net/dogdrip/729622105?sort_index=popular&page=1"
+    }
+   ],
    "date": "2026-10-15"
   },
   {
@@ -205,7 +210,12 @@
    "angle": "일본 덮밥 체인의 한국 시장 부진 이유를 외식 트렌드·가격 구조로 분석하는 기사.",
    "check": "요시노야·스키야 등 국내 매장 수 변화와 외식업 통계 확인.",
    "covered": false,
-   "press": [],
+   "press": [
+    {
+     "title": "보배드림: 한국 놀러온 일본 bts팬",
+     "url": "https://www.bobaedream.co.kr/view?code=best&No=1039981&vdate=h"
+    }
+   ],
    "date": "2026-10-15"
   },
   {
@@ -289,6 +299,14 @@
     {
      "title": "뽐뿌: 성심당서 싹쓸이 했다고 욕 먹는 여자연예인",
      "url": "https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&no=10152213"
+    },
+    {
+     "title": "개드립: 성심당 싹쓸이 논란 해명글 올린 이지혜 인스타.jpg",
+     "url": "https://www.dogdrip.net/dogdrip/729617668?sort_index=popular&page=1"
+    },
+    {
+     "title": "개드립: 성심당 빵 싹쓸이했다는 렉카채널에 어이없어한 이지혜.JPG",
+     "url": "https://www.dogdrip.net/dogdrip/729668141?sort_index=popular&page=1"
     }
    ],
    "date": "2026-10-14"
@@ -305,7 +323,16 @@
    "angle": "단독 보도 이후 반응 정리와 양측 소속사 입장 후속.",
    "check": "원 단독 보도 매체와 소속사 공식 입장 확인.",
    "covered": true,
-   "press": [],
+   "press": [
+    {
+     "title": "MLB파크: 이규한 솔비 내년 결혼.jpg",
+     "url": "https://mlbpark.donga.com/mp/b.php?b=bullpen&id=202610150119438688&m=view"
+    },
+    {
+     "title": "MLB파크: 이규한이 솔비랑 결혼하는 이유",
+     "url": "https://mlbpark.donga.com/mp/b.php?b=bullpen&id=202610150119441961&m=view"
+    }
+   ],
    "date": "2026-10-15"
   },
   {
@@ -395,6 +422,10 @@
     {
      "title": "와이고수: 이수만 걸그룹 센터",
      "url": "https://ygosu.com/board/real_article/yeobgi/2151590/?type=group0&list_context=real_article&page=1"
+    },
+    {
+     "title": "와이고수: 이수만이 만든걸그룹",
+     "url": "https://ygosu.com/board/real_article/yeobgi/2151588/?type=group0&list_context=real_article&page=1"
     }
    ],
    "date": "2026-10-14"
@@ -415,6 +446,10 @@
     {
      "title": "웃긴대학: 하정우·카더가든 12월13일 결혼",
      "url": "https://web.humoruniv.com/board/humor/read.html?table=pds&number=1428805"
+    },
+    {
+     "title": "82쿡: 김용건, 하정우 결혼 날짜도 몰랐다",
+     "url": "https://www.82cook.com/entiz/read.php?num=4249250"
     }
    ],
    "date": "2026-10-14"
@@ -511,7 +546,12 @@
    "angle": "한국산 수출 굴 폐기 사유(노로바이러스 등)와 수산물 위생 관리, 어민 피해를 짚는 경제·식품안전 기사.",
    "check": "FDA 리콜 공지와 해양수산부·식약처 입장 확인.",
    "covered": false,
-   "press": [],
+   "press": [
+    {
+     "title": "개드립: 미국 수출 굴 전량 폐기",
+     "url": "https://www.dogdrip.net/dogdrip/729590473?sort_index=popular&page=1"
+    }
+   ],
    "date": "2026-10-15"
   },
   {
@@ -712,7 +752,16 @@
    "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
    "check": "",
    "covered": false,
-   "press": [],
+   "press": [
+    {
+     "title": "디시인사이드: [이갤] 요즘 황당한 오해로 사망자가 급증하고 있는 이유",
+     "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470377&list_num=100&_dcbest=1&page=1"
+    },
+    {
+     "title": "개드립: 요즘 황당한 오해로 사망자가 급증하고 있는 이유.jpg",
+     "url": "https://www.dogdrip.net/dogdrip/729691283?sort_index=popular&page=1"
+    }
+   ],
    "date": "2026-10-15",
    "auto": true
   },
@@ -765,7 +814,12 @@
    "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
    "check": "",
    "covered": false,
-   "press": [],
+   "press": [
+    {
+     "title": "더쿠: 한국 경찰이 호루라기를 불어?",
+     "url": "https://theqoo.net/hot/4376251491"
+    }
+   ],
    "date": "2026-10-15",
    "auto": true
   },
@@ -813,7 +867,12 @@
    "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
    "check": "",
    "covered": false,
-   "press": [],
+   "press": [
+    {
+     "title": "와이고수: 아이브 리즈",
+     "url": "https://ygosu.com/board/real_article/yeobgi/2151587/?type=group0&list_context=real_article&page=1"
+    }
+   ],
    "date": "2026-10-15",
    "auto": true
   },
@@ -842,6 +901,370 @@
    "likes": 208,
    "comments": 165,
    "score": 3,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "이슈",
+   "title": "실시간 나락가고있는 국장..",
+   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10448023125",
+   "source": "FMKorea",
+   "views": null,
+   "likes": 515,
+   "comments": 930,
+   "score": 5,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "이슈",
+   "title": "여자친구한테 차였는데 여자들이 생각했을 때 이게 이별사유가 돼?",
+   "url": "https://theqoo.net/hot/4376063996",
+   "source": "더쿠",
+   "views": 77290,
+   "likes": null,
+   "comments": 528,
+   "score": 5,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [
+    {
+     "title": "디시인사이드: [싱갤] 싱글벙글 념글 보적보대응 여자코스어",
+     "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470403&list_num=100&_dcbest=1&page=1"
+    },
+    {
+     "title": "이토랜드: 요즈음 여자들이 원하는 남성상",
+     "url": "https://www.etoland.co.kr/hit/etohumor07/view/요즈음-여자들이-원하는-남성상-9500872"
+    },
+    {
+     "title": "보배드림: 남자친구한테 열등감 느끼는 여자",
+     "url": "https://www.bobaedream.co.kr/view?code=best&No=1039969&vdate=h"
+    },
+    {
+     "title": "MLB파크: 나는 여자과외선생님 싫었음...",
+     "url": "https://mlbpark.donga.com/mp/b.php?b=bullpen&id=202610150119438193&m=view"
+    },
+    {
+     "title": "인벤: 몸매좋은 여자랑 사귀기 VS",
+     "url": "https://www.inven.co.kr/board/webzine/2097/2740465"
+    }
+   ],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "이슈",
+   "title": "실시간 중국인들 발작중이라는 주제.jpg",
+   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10446289953",
+   "source": "FMKorea",
+   "views": null,
+   "likes": 1029,
+   "comments": 580,
+   "score": 5,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [
+    {
+     "title": "개드립: 중국인들 발작버튼 눌린 주제",
+     "url": "https://www.dogdrip.net/dogdrip/729627733?sort_index=popular&page=1"
+    }
+   ],
+   "date": "2026-10-14",
+   "auto": true
+  },
+  {
+   "category": "이슈",
+   "title": "ㄹㅇ 나 학부생때 교수랑 진로 상담하면서 내가 돈이 없어서 알바하면서 대학원다닐수있냐니까 그따위마인드로 공부하지말랬음.",
+   "url": "https://theqoo.net/hot/4376074027",
+   "source": "더쿠",
+   "views": 67272,
+   "likes": null,
+   "comments": 345,
+   "score": 5,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "이슈",
+   "title": "한국이 세계에서 5위한 종목",
+   "url": "https://www.fmkorea.com/index.php?mid=best2&listStyle=list&document_srl=10437851667",
+   "source": "FMKorea",
+   "views": null,
+   "likes": 777,
+   "comments": 549,
+   "score": 4,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [
+    {
+     "title": "뽐뿌: 한국 전세계 5위, 아시아유일",
+     "url": "https://www.ppomppu.co.kr/zboard/zboard.php?id=freeboard&no=10152370"
+    },
+    {
+     "title": "보배드림: 한국 전세계 5위, 아시아유일",
+     "url": "https://www.bobaedream.co.kr/view?code=best&No=1039900&vdate=h"
+    },
+    {
+     "title": "와이고수: 한국 전세계 5위, 아시아유일",
+     "url": "https://ygosu.com/board/real_article/yeobgi/2151604/?type=group0&list_context=real_article&page=1"
+    }
+   ],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "이슈",
+   "title": "NOL 놀 티켓 예매수수료 인상 공지",
+   "url": "https://theqoo.net/hot/4376184759",
+   "source": "더쿠",
+   "views": 31882,
+   "likes": null,
+   "comments": 497,
+   "score": 4,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "이슈",
+   "title": "[싱갤] 훌쩍훌쩍 징역42년받고 우는 멘헤라 17살 미국녀",
+   "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470375&list_num=100&_dcbest=1&page=1",
+   "source": "디시인사이드",
+   "views": 31558,
+   "likes": 219,
+   "comments": 387,
+   "score": 4,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "이슈",
+   "title": "삼전7만원 / 하닉 20만원 적정주가",
+   "url": "https://theqoo.net/hot/4376133365",
+   "source": "더쿠",
+   "views": 45430,
+   "likes": null,
+   "comments": 325,
+   "score": 4,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "문화",
+   "title": "인기 소설가 김진명 근황",
+   "url": "https://bbs.ruliweb.com/best/board/300143/read/77029322?orderby=regdate&range=24h&view=list&m=humor&t=hit",
+   "source": "루리웹",
+   "views": 29244,
+   "likes": 175,
+   "comments": 45,
+   "score": 3,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "연예인",
+   "title": "어제자 윙 건담 근황에 팬덤 술렁술렁 ㄷㄷ",
+   "url": "https://bbs.ruliweb.com/best/board/300143/read/77029306?orderby=regdate&range=24h&view=list&m=humor&t=hit",
+   "source": "루리웹",
+   "views": 28498,
+   "likes": 141,
+   "comments": 53,
+   "score": 3,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "연예인",
+   "title": "배우 박해일 대승적 행보.jpg",
+   "url": "https://www.etoland.co.kr/hit/etohumor07/view/배우-박해일-대승적-행보-jpg-9501056",
+   "source": "이토랜드",
+   "views": 16930,
+   "likes": 293,
+   "comments": 62,
+   "score": 3,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-14",
+   "auto": true
+  },
+  {
+   "category": "연예인",
+   "title": "이수만 아이돌 'A2O LITE' 멤버 국적 상황",
+   "url": "https://pann.nate.com/talk/375669088",
+   "source": "네이트판",
+   "views": 22489,
+   "likes": 19,
+   "comments": 70,
+   "score": 3,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "연예인",
+   "title": "[싱갤] 싱글벙글 왓챠 영화 코멘트촌",
+   "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=470399&list_num=100&_dcbest=1&page=1",
+   "source": "디시인사이드",
+   "views": 17163,
+   "likes": 89,
+   "comments": 75,
+   "score": 3,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "문화",
+   "title": "너무 잔인해서 전세계가 기겁한 음식",
+   "url": "https://www.ppomppu.co.kr/zboard/view.php?id=youtube_info&no=23316",
+   "source": "뽐뿌",
+   "views": 20203,
+   "likes": null,
+   "comments": 66,
+   "score": 3,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "문화",
+   "title": "동남아가 현시점 한국을 절대 못 넘는 이유",
+   "url": "https://www.dogdrip.net/dogdrip/729659694?sort_index=popular&page=1",
+   "source": "개드립",
+   "views": null,
+   "likes": 144,
+   "comments": 144,
+   "score": 2,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-15",
+   "auto": true
+  },
+  {
+   "category": "연예인",
+   "title": "영화 '호프' 가장 최악이였던 CG",
+   "url": "https://www.etoland.co.kr/hit/etohumor07/view/영화-39호프39-가장-최악이였던-cg-9502037",
+   "source": "이토랜드",
+   "views": 10815,
+   "likes": 52,
+   "comments": 94,
+   "score": 2,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-14",
+   "auto": true
+  },
+  {
+   "category": "문화",
+   "title": "큰 가슴의 시대는 끝났다... 작은 '발레리나 가슴' 유행",
+   "url": "https://www.etoland.co.kr/hit/etohumor07/view/큰-가슴의-시대는-끝났다-작은-39발레리나-가슴39-유행-9501773",
+   "source": "이토랜드",
+   "views": 13039,
+   "likes": 71,
+   "comments": 76,
+   "score": 2,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-14",
+   "auto": true
+  },
+  {
+   "category": "문화",
+   "title": "증권tv 방송사고급 발언 ㄷㄷ. mp4",
+   "url": "https://www.dogdrip.net/dogdrip/729588001?sort_index=popular&page=1",
+   "source": "개드립",
+   "views": null,
+   "likes": 125,
+   "comments": 121,
+   "score": 2,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [],
+   "date": "2026-10-14",
+   "auto": true
+  },
+  {
+   "category": "연예인",
+   "title": "이수만 걸그룹 진짜 멜론 1위함 ㄷㄷㄷ...JPG",
+   "url": "https://mlbpark.donga.com/mp/b.php?b=bullpen&id=202610140119435529&m=view",
+   "source": "MLB파크",
+   "views": 10028,
+   "likes": 11,
+   "comments": 76,
+   "score": 2,
+   "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
+   "check": "",
+   "covered": false,
+   "press": [
+    {
+     "title": "와이고수: 이수만 걸그룹 센터",
+     "url": "https://ygosu.com/board/real_article/yeobgi/2151590/?type=group0&list_context=real_article&page=1"
+    }
+   ],
+   "date": "2026-10-14",
+   "auto": true
+  },
+  {
+   "category": "문화",
+   "title": "[네이버] 네이버멤버십_ 오뚜기 피자, 매일유업 고단백 검은콩두유, 크리넥스 데코&소프트 와이드 화이트, 피지...",
+   "url": "https://www.ppomppu.co.kr/zboard/view.php?id=ppomppu&no=740275",
+   "source": "뽐뿌",
+   "views": 15850,
+   "likes": 46,
+   "comments": 31,
+   "score": 2,
    "angle": "자동 수집 항목입니다. 기사 앵글은 아직 작성되지 않았습니다.",
    "check": "",
    "covered": false,
@@ -1108,5 +1531,5 @@
    }
   ]
  },
- "refreshedAt": "2026-10-15T12:27:13+09:00"
+ "refreshedAt": "2026-10-15T12:37:36+09:00"
 }
