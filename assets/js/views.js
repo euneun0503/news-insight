@@ -358,7 +358,7 @@ function engageCells(a) {
   const re = sumOf(e.re), rc = sumOf(e.rc);
   const at = e.at ? `${e.at.slice(5, 10).replace("-", ".")} ${e.at.slice(11, 16)} 수집` : "";
   return `<td class="r num" title="${esc(at)}">${e.cm == null ? '<span class="form-hint">미수집</span>' : fmt(e.cm)}</td>
-    <td class="r num" title="${esc(breakdown(e.re, RE_LABEL) || at)}">${re == null ? (e._any ? "0" : '<span class="form-hint">미수집</span>') : fmt(re)}</td>
+    <td class="r num" title="${esc(breakdown(e.re, RE_LABEL) || at)}">${re == null ? (e._any ? '<span class="form-hint" title="네이버가 이 기사에 감정 반응(좋아요 등)을 표시하지 않습니다">-</span>' : '<span class="form-hint">미수집</span>') : fmt(re)}</td>
     <td class="r num" title="${esc(breakdown(e.rc, RC_LABEL) || at)}">${rc == null ? '<span class="form-hint">미수집</span>' : fmt(rc)}</td>`;
 }
 
