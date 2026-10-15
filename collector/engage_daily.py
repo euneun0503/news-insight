@@ -5,6 +5,7 @@
 - 그날 이후에 늘어나는 댓글·반응은 다시 수집하지 않습니다 (하루 1회, 전날 기준).
 - 사용: python collector/engage_daily.py [YYYY-MM-DD]  (날짜를 비우면 어제)
 """
+import re
 import sys
 import datetime as dt
 from pathlib import Path
@@ -16,7 +17,26 @@ from collect import make_session  # noqa: E402
 from store import CONFIG, DATA, now_kst, today_kst  # noqa: E402
 
 
+def debug(keys):
+    """문제 기사 확인용: 기사 주소 이동 결과와 댓글·반응 응답 원문 일부를 출력"""
+    session = make_session(2)
+    for k in keys:
+        oid, aid = k.split("_")
+        r = session.get(engage._article_url(oid, aid), timeout=12)
+        print("==", k, "→", r.url, r.status_code)
+        for t in engage.COMMENT_TICKETS:
+            c = session.get(engage.COMMENT_API, timeout=10, headers={"Referer": r.url}, params={**t, "lang": "ko", "country": "KR", "objectId": f"news{oid},{aid}", "pageSize": 1, "indexSize": 1, "page": 1, "sort": "FAVORITE", "initialize": "true", "_callback": "cb"})
+            print("  댓글", t["ticket"], c.status_code, c.text[:300].replace("\n", " "))
+        q = "|".join(f"{s}[ne_{oid}_{aid}]" for s in ["NEWS", "NEWS_MAIN", "ENTERTAIN", "ENTERTAIN_MAIN", "SPORTS", "SPORTS_MAIN"])
+        l = session.get(engage.LIKE_API, timeout=10, headers={"Referer": r.url}, params={"suppress_response_codes": "true", "q": q})
+        print("  반응", l.status_code, l.text[:600])
+        for m in sorted(set(re.findall(r'data-cid="([^"]+)"|"objectId"\s*:\s*"([^"]+)"|(ENTERTAIN\[[^\]]+\]|NEWS\[[^\]]+\]|SPORTS\[[^\]]+\])', r.text))):
+            print("  페이지 표식", m)
+
+
 def main():
+    if len(sys.argv) > 2 and sys.argv[1] == "--debug":
+        return debug(sys.argv[2].split(","))
     day = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else (today_kst() - dt.timedelta(days=1)).isoformat()
     doc = store.read_json(store.ranking_path(day), None) or {}
     em = CONFIG.get("engage_media")
