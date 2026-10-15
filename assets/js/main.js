@@ -11,7 +11,7 @@ import { issuedesk } from "./issuedesk.js";
 
 const CFG = window.SITE_CONFIG || {};
 const DATA_PAGES = { dashboard: V.dashboard, keywords: V.keywords, media: V.media, articles: V.articles, insights: V.insights, reporters: V.reporters };
-const TITLES = { dashboard: "뉴스통계 (N)", keywords: "키워드 랭킹", issuedesk: "이슈데스크", media: "매체 비교", articles: "기사 목록", insights: "작성 인사이트", reporters: "기자 통계", board: "공지·게시판", admin: "관리자" };
+const TITLES = { dashboard: "뉴스통계 (N)", keywords: "키워드 랭킹", issuedesk: "이슈 데스크", media: "매체 비교", articles: "기사 목록", insights: "작성 인사이트", reporters: "기자 통계", board: "공지·게시판", admin: "관리자" };
 
 let BOARD = { posts: [] };
 let lastFinal = kstToday();
@@ -138,8 +138,8 @@ async function render() {
     } else if (page === "issuedesk") {
       const r = currentRange(q);
       syncFilter(r);
-      $("#rangeNote").innerHTML = `조회 기간: <b>${r.s.replace(/-/g, ".")} ~ ${r.e.replace(/-/g, ".")}</b> · 이슈데스크 보고서는 매일 아침 쌓입니다`;
-      view.innerHTML = '<div class="loading">이슈데스크 불러오는 중…</div>';
+      $("#rangeNote").innerHTML = `조회 기간: <b>${r.s.replace(/-/g, ".")} ~ ${r.e.replace(/-/g, ".")}</b> · 이슈 데스크 보고서는 매일 아침 쌓입니다`;
+      view.innerHTML = '<div class="loading">이슈 데스크 불러오는 중…</div>';
       const box = document.createElement("div");
       await issuedesk(box, r, ctx);
       if (seq !== renderSeq) return;

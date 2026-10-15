@@ -46,7 +46,7 @@ export async function issuedesk(el, r, ctx) {
   const idx = await getJSON("data/issuedesk/index.json");
   const all = (idx?.days || []).slice().sort();
   if (!all.length) {
-    el.append(h(`<div class="card"><div class="empty">아직 올라온 이슈데스크 보고서가 없습니다.</div></div>`));
+    el.append(h(`<div class="card"><div class="empty">아직 올라온 이슈 데스크 보고서가 없습니다.</div></div>`));
     return;
   }
   let days = all.filter((d) => d >= r.s && d <= r.e);
@@ -61,9 +61,9 @@ export async function issuedesk(el, r, ctx) {
   const updated = idx.updatedAt ? kstDateTime(idx.updatedAt) : "";
 
   const wrap = h(`<div class="idk">
-    ${fallback ? `<div class="ok-box">선택한 기간에는 이슈데스크 보고서가 없어 <b>가장 최근 보고서(${dotDate(days[0])})</b>를 보여줍니다.</div>` : ""}
+    ${fallback ? `<div class="ok-box">선택한 기간에는 이슈 데스크 보고서가 없어 <b>가장 최근 보고서(${dotDate(days[0])})</b>를 보여줍니다.</div>` : ""}
     <div class="card">
-      <div class="card-head"><div><h3>이슈데스크</h3><div class="sub">커뮤니티·SNS에서 반응이 큰 글과 기관 보도자료 중 기사로 쓸 만한 것 · 매일 오전 7시 수집${updated ? ` · 마지막 갱신 ${esc(updated)}` : ""}</div></div>
+      <div class="card-head"><div><h3>이슈 데스크</h3><div class="sub">커뮤니티·SNS에서 반응이 큰 글과 기관 보도자료 중 기사로 쓸 만한 것 · 매일 오전 7시 수집${updated ? ` · 마지막 갱신 ${esc(updated)}` : ""}</div></div>
         <div class="tools"><div class="seg" id="idkTab"><button data-t="issue">커뮤니티 이슈</button><button data-t="press">보도자료</button></div><button class="btn sm primary" id="idkRun">지금 다시 조회</button></div></div>
       <div class="idk-run" id="idkRunMsg" hidden></div>
       ${latest?.note ? `<div class="idk-note">${esc(latest.note)}</div>` : ""}
@@ -141,7 +141,7 @@ export async function issuedesk(el, r, ctx) {
       { name: "보도자료", rows: f.press.map((i) => ({ 보고서날짜: i.day, 자료일자: i.date || "", 신규: i._new ? "신규" : "", 기관: i.agency, 추천도: i.score, 제목: i.title, 출처: i.source || "", 기사앵글: i.angle || "", 링크: i.url, 기관게시판: i.home || "" })) },
     ];
     // 지금 보고 있는 탭의 시트만 내려받기
-    ctx.exportSheets(`이슈데스크_${tab === "press" ? "보도자료" : "커뮤니티이슈"}_${span}`, [tab === "press" ? sheets[1] : sheets[0]]);
+    ctx.exportSheets(`이슈_데스크_${tab === "press" ? "보도자료" : "커뮤니티이슈"}_${span}`, [tab === "press" ? sheets[1] : sheets[0]]);
   }
   $w("#idkDlRange").addEventListener("click", () => {
     let a = $w("#idkFrom").value, b = $w("#idkTo").value;
@@ -172,7 +172,7 @@ export async function issuedesk(el, r, ctx) {
       const now = await getJSON("data/issuedesk/index.json");
       if (now?.updatedAt && now.updatedAt !== before) {
         clearInterval(polling);
-        toast("이슈데스크를 새로 고쳤습니다");
+        toast("이슈 데스크를 새로 고쳤습니다");
         if (location.hash.startsWith("#/issuedesk")) window.dispatchEvent(new HashChangeEvent("hashchange"));
         return;
       }
