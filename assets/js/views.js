@@ -354,13 +354,14 @@ function splitEngage(e) {
   const got = "re" in e || "rc" in e || e.cm != null;
   return { ...e, re: Object.keys(re).length ? re : null, rc: Object.keys(rc).length ? rc : got ? {} : null, _split: true, _any: got };
 }
+const allRe = (a) => (a.engage?._any ? sumOf({ ...(a.engage.re || {}), ...(a.engage.rc || {}) }) || 0 : null);
 function engageCells(a) {
   const e = a.engage;
   if (!e) return '<td class="r num"><span class="form-hint">-</span></td><td class="r num"><span class="form-hint">-</span></td><td class="r num"><span class="form-hint">-</span></td>';
-  const re = sumOf(e.re), rc = sumOf(e.rc);
+  const re = sumOf({ ...(e.re || {}), ...(e.rc || {}) }), rc = sumOf(e.rc); // 반응 = 모든 반응 합(감정 반응 + 추천 5종)
   const at = e.at ? `${e.at.slice(5, 10).replace("-", ".")} ${e.at.slice(11, 16)} 수집` : "";
   return `<td class="r num" title="${esc(at)}">${e.cm == null ? '<span class="form-hint">미수집</span>' : fmt(e.cm)}</td>
-    <td class="r num" title="${esc(breakdown(e.re, RE_LABEL) || at)}">${re == null ? (e._any ? '<span class="form-hint" title="네이버가 이 기사에 감정 반응(좋아요 등)을 표시하지 않습니다">-</span>' : '<span class="form-hint">미수집</span>') : fmt(re)}</td>
+    <td class="r num" title="${esc(breakdown({ ...(e.re || {}), ...(e.rc || {}) }, { ...RE_LABEL, ...RC_LABEL }) || at)}">${e._any ? fmt(re || 0) : '<span class="form-hint">미수집</span>'}</td>
     <td class="r num" title="${esc(breakdown(e.rc, RC_LABEL) || at)}">${rc == null ? '<span class="form-hint">미수집</span>' : fmt(rc)}</td>`;
 }
 
@@ -721,7 +722,7 @@ export async function articles(el, R, ctx) {
     filtered.sort((a, b) =>
       s === "views" ? (b.views ?? -1) - (a.views ?? -1)
         : s === "cm" ? (b.engage?.cm ?? -1) - (a.engage?.cm ?? -1) || (b.views ?? -1) - (a.views ?? -1)
-        : s === "re" ? (sumOf(b.engage?.re) ?? -1) - (sumOf(a.engage?.re) ?? -1) || (b.views ?? -1) - (a.views ?? -1)
+        : s === "re" ? (allRe(b) ?? -1) - (allRe(a) ?? -1) || (b.views ?? -1) - (a.views ?? -1)
         : s === "rc" ? (sumOf(b.engage?.rc) ?? -1) - (sumOf(a.engage?.rc) ?? -1) || (b.views ?? -1) - (a.views ?? -1)
         : s === "title" ? a.title.localeCompare(b.title, "ko")
         : s === "old" ? (a.day + (a.time || "")).localeCompare(b.day + (b.time || ""))
@@ -756,7 +757,7 @@ export async function articles(el, R, ctx) {
         날짜: a.day, 매체: mediaName(a.oid), ...(state.src === "rank" ? { 순위: a.rank, 조회수: a.views } : {}),
         제목: a.title, 기자: a.reporter || "", 발행시각: a.time || (a.pub || "").slice(11, 16),
         ...({
-          댓글: a.engage?.cm ?? "", 반응합계: sumOf(a.engage?.re) ?? "", ...Object.fromEntries(Object.entries(RE_LABEL).map(([k, l]) => [l, a.engage?.re?.[k] ?? ""])),
+          댓글: a.engage?.cm ?? "", 반응합계: allRe(a) ?? "", ...Object.fromEntries(Object.entries(RE_LABEL).map(([k, l]) => [l, a.engage?.re?.[k] ?? ""])),
           추천합계: sumOf(a.engage?.rc) ?? "", ...Object.fromEntries(Object.entries(RC_LABEL).map(([k, l]) => [l, a.engage?.rc?.[k] ?? ""])),
           반응수집시각: a.engage?.at ? a.engage.at.slice(0, 16).replace("T", " ") : "",
         }),
