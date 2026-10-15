@@ -972,12 +972,35 @@ export async function insights(el, R, ctx) {
 // 6. 기자 통계 — 기사 원본(랭킹·발행)에서 직접 계산
 // ═══════════════════════════════════════════════════════
 // 마스터 전용: 기자 이메일(암호화 저장) 설정·과거 채우기·엑셀 받기
+// 기자 데이터 받기 결과 팝업
+function contactsDone(list, fname, errMsg) {
+  const byMedia = {};
+  (list || []).forEach((c) => (byMedia[c.oid] = (byMedia[c.oid] || 0) + 1));
+  const top = Object.entries(byMedia).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const people = new Set((list || []).map((c) => c.oid + "|" + c.name)).size;
+  const ov = h(`<div class="rp-ov ct-ov"><div class="rp-dlg ct-dlg" role="dialog" aria-modal="true" aria-labelledby="ctTitle">
+    <div class="rp-dh"><div><h3 id="ctTitle">${errMsg ? "기자 데이터를 받지 못했습니다" : list.length ? "기자 데이터를 받았습니다" : "아직 모인 기자 메일이 없습니다"}</h3></div><button class="btn sm" data-x>닫기</button></div>
+    ${errMsg ? `<p class="ct-msg err">${esc(errMsg)}</p>`
+      : list.length ? `<p class="ct-msg"><b>${esc(fname)}.xlsx</b> 파일로 저장했습니다. 브라우저의 다운로드 폴더를 확인해 주세요.</p>
+        <div class="ct-stats"><div><span>기자</span><b class="num">${fmt(people)}명</b></div><div><span>이메일</span><b class="num">${fmt(list.length)}건</b></div><div><span>매체</span><b class="num">${fmt(Object.keys(byMedia).length)}곳</b></div></div>
+        <div class="ct-top">${top.map(([o, n]) => `<span class="rep-chip">${esc(mediaName(o))} <b>${fmt(n)}</b></span>`).join("")}</div>
+        <p class="form-hint">취재·업무 연락 용도로만 쓰고 외부에 공유하지 마세요.</p>`
+      : `<p class="ct-msg">메일 과거 채우기가 아직 진행 중이거나 시작 전입니다. 30분~1시간 뒤 다시 받아 주세요. 새로 수집되는 기사에서도 30분마다 계속 쌓입니다.</p>`}
+  </div></div>`);
+  document.body.append(ov);
+  const close = () => ov.remove();
+  $("[data-x]", ov).addEventListener("click", close);
+  ov.addEventListener("click", (e) => e.target === ov && close());
+  document.addEventListener("keydown", function esc_(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc_); } });
+  $("[data-x]", ov).focus();
+}
+
 async function contactsTools(box, ctx) {
   const ok = await contactsKeyState().catch(() => null);
   const draw = (has) => {
     box.innerHTML = has
-      ? `<button class="btn primary" id="ctDl" title="마스터 전용 · 바이라인에서 확인된 기자의 소속·이름·이메일">⬇ 확인된 기자 데이터 받기</button><button class="btn sm" id="ctFill" title="이미 수집한 기사를 다시 열어 이메일을 채웁니다">메일 과거 채우기</button> ${info("contacts")}`
-      : `<button class="btn primary" id="ctSet" title="마스터 전용 · 한 번만 설정">🔒 기자 메일 수집 시작(암호화 설정)</button> ${info("contacts")}`;
+      ? `<button class="btn primary" id="ctDl" title="마스터 전용 · 바이라인에서 확인된 기자의 소속·이름·이메일">⬇ 확인된 기자 데이터 받기</button><button class="btn" id="ctFill" title="이미 수집한 기사를 다시 열어 이메일을 채웁니다">메일 과거 채우기</button>${info("contacts")}`
+      : `<button class="btn primary" id="ctSet" title="마스터 전용 · 한 번만 설정">🔒 기자 메일 수집 시작(암호화 설정)</button>${info("contacts")}`;
     $("#ctSet", box)?.addEventListener("click", async (e) => {
       e.target.disabled = true;
       try {
@@ -998,9 +1021,10 @@ async function contactsTools(box, ctx) {
       toast("기자 데이터를 푸는 중…");
       try {
         const list = (await loadContacts()).sort((a, b) => mediaName(a.oid).localeCompare(mediaName(b.oid), "ko") || a.name.localeCompare(b.name, "ko"));
-        if (!list.length) toast("아직 모인 기자 메일이 없습니다. 과거 채우기가 끝난 뒤 다시 받아 주세요.", 5000);
-        else await ctx.exportSheets(`확인된기자_${new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10)}`, [{ name: "기자", rows: list.map((c) => ({ 소속: mediaName(c.oid), 이름: c.name, 이메일: c.email, "처음 확인": c.first || "", "마지막 확인": c.last || "", "확인 횟수": c.count, "확인 기사": articleUrl(c.oid, c.aid) })) }]);
-      } catch (err) { toast(err.message, 5000); }
+        const fname = `확인된기자_${new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10)}`;
+        if (list.length) await ctx.exportSheets(fname, [{ name: "기자", rows: list.map((c) => ({ 소속: mediaName(c.oid), 이름: c.name, 이메일: c.email, "처음 확인": c.first || "", "마지막 확인": c.last || "", "확인 횟수": c.count, "확인 기사": articleUrl(c.oid, c.aid) })) }]);
+        contactsDone(list, fname);
+      } catch (err) { contactsDone(null, "", err.message); }
       e.target.disabled = false;
     });
   };
@@ -1013,7 +1037,7 @@ export async function reporters(el, R, ctx) {
   const SEL = mediaSel();
   const head = h(`<div class="page-head"><div><h1>기자 통계 ${info("reporters")}</h1><p>네이버 기사 페이지의 바이라인에서 확인한 기자별 발행량과 랭킹 성과입니다. 기자를 누르면 기사 목록이 열립니다.</p>
     <div class="rep-media" id="repMedia"><span class="form-hint">적용 매체 확인 중…</span></div></div>
-    <div class="tools" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span id="repContacts"></span><button class="btn" id="msBtn">⚙ 매체 추가·삭제</button></div></div>`);
+    <div class="rep-head-tools"><div id="repContacts" class="rep-head-tools"></div><button class="btn" id="msBtn">⚙ 매체 추가·삭제</button></div></div>`);
   const msSlot = h(`<div></div>`);
   el.append(head, msSlot);
   if (isMaster()) contactsTools($("#repContacts", head), ctx);

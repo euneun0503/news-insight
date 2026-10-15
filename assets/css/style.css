@@ -634,3 +634,18 @@ body.gated .topbar, body.gated .layout { display: none; }
 .idk-pill.top { background: #eceff3; color: var(--text-2); }
 .idk-sw { display: inline-block; width: 14px; height: 10px; border-radius: 3px; background: #f1f3f6; border: 1px solid #dfe3e9; margin-right: 6px; vertical-align: -1px; }
 .eg-t { color: var(--text-2); font-size: 12.5px; }
+/* 기자 통계 상단 버튼: 같은 크기·같은 간격 */
+.rep-head-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rep-head-tools:empty { display: none; }
+.rep-head-tools .btn { height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 13px; }
+.rep-head-tools .info-btn { margin-left: -2px; }
+/* 기자 데이터 받기 결과 팝업 */
+.ct-ov { align-items: center; }
+.ct-dlg { width: min(480px, 100%); }
+.ct-msg { margin: 6px 0 14px; font-size: 14px; line-height: 1.6; }
+.ct-msg.err { color: var(--red); }
+.ct-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.ct-stats div { background: var(--line-2); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.ct-stats span { font-size: 12px; color: var(--muted); }
+.ct-stats b { font-size: 20px; }
+.ct-top { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
