@@ -1,6 +1,6 @@
 // 분석 화면들
 import { esc, fmt, fmt1, pct, short, h, $, $$, mmdd, weekday, weekdayIdx, dayKind, DAY_COLOR, holiday, articleUrl, mediaColor, sparkline, debounce, dotDate, kstDateTime, relTime, OUR_COLOR } from "./util.js";
-import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel, Range, loadRankingDays, loadTitles } from "./data.js";
+import { meta, mediaName, keywordTable, kwScore, LIMITS, naverCoverage, mediaSel, Range, loadRankingDays, loadTitles, loadEngage } from "./data.js";
 import { openMediaSettings } from "./mediasel.js";
 import { adminForSettings, saveSeedGroups } from "./admin.js";
 import { lineChart, barChart, comboChart, multiCombo, dayLabels } from "./charts.js";
@@ -340,17 +340,31 @@ function statusCard() {
 }
 
 // overall: 숫자를 주면 '순위' = 전체 조회수 순위(시작 번호), 매체 안 순위는 매체 옆에 작게 표시
-function articleTable(el, items, { showDay = true, showRank = true, showViews = true, showTime = false, overall = null } = {}) {
+const RE_LABEL = { like: "좋아요", warm: "훈훈해요", sad: "슬퍼요", angry: "화나요", want: "후속기사 원해요" };
+const RC_LABEL = { useful: "쏠쏠정보", wow: "흥미진진", touched: "공감백배", analytical: "분석탁월", recommend: "후속강추" };
+const sumOf = (o) => (o ? Object.values(o).reduce((a, b) => a + b, 0) : null);
+const breakdown = (o, L) => (o ? Object.entries(o).filter(([, n]) => n).map(([k, n]) => `${L[k] || k} ${n.toLocaleString("ko-KR")}`).join(" · ") : "");
+function engageCells(a) {
+  const e = a.engage;
+  if (!e) return '<td class="r num"><span class="form-hint">-</span></td><td class="r num"><span class="form-hint">-</span></td><td class="r num"><span class="form-hint">-</span></td>';
+  const re = sumOf(e.re), rc = sumOf(e.rc);
+  const at = e.at ? `${e.at.slice(5, 10).replace("-", ".")} ${e.at.slice(11, 16)} 수집` : "";
+  return `<td class="r num" title="${esc(at)}">${e.cm == null ? '<span class="form-hint">미수집</span>' : fmt(e.cm)}</td>
+    <td class="r num" title="${esc(breakdown(e.re, RE_LABEL) || at)}">${re == null ? '<span class="form-hint">미수집</span>' : fmt(re)}</td>
+    <td class="r num" title="${esc(breakdown(e.rc, RC_LABEL) || at)}">${rc == null ? '<span class="form-hint">미수집</span>' : fmt(rc)}</td>`;
+}
+
+function articleTable(el, items, { showDay = true, showRank = true, showViews = true, showTime = false, overall = null, showEngage = false } = {}) {
   if (!items.length) {
     el.innerHTML = emptyBox("기사가 없습니다.");
     return;
   }
   el.innerHTML = `<div class="table-wrap"><table class="t"><thead><tr>
-    ${overall != null ? '<th class="c">순위</th>' : ""}${showDay ? "<th>날짜</th>" : ""}${showRank && overall == null ? '<th class="c">순위</th>' : ""}<th>매체${overall != null && showRank ? ' <span class="form-hint">(매체 랭킹)</span>' : ""}</th><th>제목</th><th>기자</th>${showTime ? "<th>발행</th>" : ""}${showViews ? '<th class="r">조회수</th>' : ""}
+    ${overall != null ? '<th class="c">순위</th>' : ""}${showDay ? "<th>날짜</th>" : ""}${showRank && overall == null ? '<th class="c">순위</th>' : ""}<th>매체${overall != null && showRank ? ' <span class="form-hint">(매체 랭킹)</span>' : ""}</th><th>제목</th><th>기자</th>${showTime ? "<th>발행</th>" : ""}${showViews ? '<th class="r">조회수</th>' : ""}${showEngage ? `<th class="r">댓글</th><th class="r">반응 ${info("engage")}</th><th class="r">추천</th>` : ""}
   </tr></thead><tbody>${items
     .map(
       (a, i) => `<tr class="${isOur(a.oid) ? "ours" : ""}">
-      ${overall != null ? `<td class="c"><span class="rank-badge ${overall + i < 3 ? "top" : ""}">${overall + i + 1}</span></td>` : ""}
+      ${overall != null ? `<td class="c"><span class="rank-badge ${(a.overall ?? overall + i + 1) <= 3 ? "top" : ""}">${a.overall ?? overall + i + 1}</span></td>` : ""}
       ${showDay ? `<td class="num" style="white-space:nowrap">${mmdd(a.day)}(${weekday(a.day)})</td>` : ""}
       ${showRank && overall == null ? `<td class="c"><span class="rank-badge ${a.rank <= 3 ? "top" : ""}">${a.rank ?? "-"}</span></td>` : ""}
       <td style="white-space:nowrap">${chip(a.oid)}${overall != null && showRank && a.rank ? ` <span class="form-hint">${a.rank}위</span>` : ""}</td>
@@ -358,6 +372,7 @@ function articleTable(el, items, { showDay = true, showRank = true, showViews = 
       <td style="white-space:nowrap">${esc(a.reporter || "")}</td>
       ${showTime ? `<td class="num" style="white-space:nowrap">${esc(a.time || (a.pub || "").slice(11, 16))}</td>` : ""}
       ${showViews ? `<td class="r num">${a.views == null ? '<span class="form-hint" title="네이버가 이 매체의 조회수를 공개하지 않습니다">미공개</span>' : fmt(a.views)}</td>` : ""}
+      ${showEngage ? engageCells(a) : ""}
     </tr>`
     )
     .join("")}</tbody></table></div>`;
@@ -643,7 +658,7 @@ export async function articles(el, R, ctx) {
   el.append(card);
 
   const SORTS = {
-    rank: [["views", "조회수 높은 순 (전체 순위)"]],
+    rank: [["views", "조회수 높은 순 (전체 순위)"], ["cm", "댓글 많은 순"], ["re", "반응 많은 순"], ["rc", "추천 많은 순"]],
     pub: [["date", "최신 발행 순"], ["old", "오래된 순"], ["title", "제목 가나다"]],
   };
   let data = [];
@@ -664,6 +679,11 @@ export async function articles(el, R, ctx) {
         $("#count", card).textContent = "";
       }
       data = data.filter((a) => a.views != null); // 조회수를 공개하지 않는 매체(조선일보 등)는 순위를 매길 수 없어 제외
+      // 헬스조선·코메디닷컴 랭킹 기사: 댓글·공감 반응·추천 (수집 시점 값)
+      const eg = await loadEngage(R.days);
+      data = data.map((a) => ({ ...a, engage: eg[`${a.oid}_${a.aid}`] || null }));
+      // 조회수 순위는 정렬이 바뀌어도 유지
+      data.slice().sort((x, y) => (y.views ?? -1) - (x.views ?? -1)).forEach((a, i) => (a.overall = i + 1));
     } else {
       data = await R.articles();
       if (!data) {
@@ -688,6 +708,9 @@ export async function articles(el, R, ctx) {
     const s = state.sort;
     filtered.sort((a, b) =>
       s === "views" ? (b.views ?? -1) - (a.views ?? -1)
+        : s === "cm" ? (b.engage?.cm ?? -1) - (a.engage?.cm ?? -1) || (b.views ?? -1) - (a.views ?? -1)
+        : s === "re" ? (sumOf(b.engage?.re) ?? -1) - (sumOf(a.engage?.re) ?? -1) || (b.views ?? -1) - (a.views ?? -1)
+        : s === "rc" ? (sumOf(b.engage?.rc) ?? -1) - (sumOf(a.engage?.rc) ?? -1) || (b.views ?? -1) - (a.views ?? -1)
         : s === "title" ? a.title.localeCompare(b.title, "ko")
         : s === "old" ? (a.day + (a.time || "")).localeCompare(b.day + (b.time || ""))
         : state.src === "rank" ? b.day.localeCompare(a.day) || a.oid.localeCompare(b.oid) || a.rank - b.rank
@@ -704,7 +727,7 @@ export async function articles(el, R, ctx) {
     const listOnly = state.src === "pub" && filtered.some((a) => a.listOnly) ? " · 발행 시각·기자명은 상세 수집 매체(헬스조선·코메디닷컴 등)만 표시, 나머지는 네이버 목록 기준" : "";
     $("#count", card).textContent = `${fmt(filtered.length)}건${rankNote}${nvNote}${listOnly}`;
     const box = $("#list", card);
-    articleTable(box, items, { showDay: true, showRank: state.src === "rank", showViews: state.src === "rank", showTime: true, overall: state.src === "rank" ? (state.page - 1) * PAGE : null });
+    articleTable(box, items, { showDay: true, showRank: state.src === "rank", showViews: state.src === "rank", showTime: true, overall: state.src === "rank" ? (state.page - 1) * PAGE : null, showEngage: state.src === "rank" });
     if (pages > 1) {
       box.append(h(`<div class="pager"><button class="btn sm" data-p="-1" ${state.page === 1 ? "disabled" : ""}>이전</button><span>${state.page} / ${pages}</span><button class="btn sm" data-p="1" ${state.page === pages ? "disabled" : ""}>다음</button></div>`));
       $$(".pager button", box).forEach((b) => b.addEventListener("click", () => { state.page += Number(b.dataset.p); draw(); card.scrollIntoView({ block: "start" }); }));
@@ -719,7 +742,13 @@ export async function articles(el, R, ctx) {
       name: state.src === "rank" ? "랭킹기사" : "발행기사",
       rows: filtered.map((a) => ({
         날짜: a.day, 매체: mediaName(a.oid), ...(state.src === "rank" ? { 순위: a.rank, 조회수: a.views } : {}),
-        제목: a.title, 기자: a.reporter || "", 발행시각: a.time || (a.pub || "").slice(11, 16), 링크: articleUrl(a.oid, a.aid),
+        제목: a.title, 기자: a.reporter || "", 발행시각: a.time || (a.pub || "").slice(11, 16),
+        ...(state.src === "rank" ? {
+          댓글: a.engage?.cm ?? "", 반응합계: sumOf(a.engage?.re) ?? "", ...Object.fromEntries(Object.entries(RE_LABEL).map(([k, l]) => [l, a.engage?.re?.[k] ?? ""])),
+          추천합계: sumOf(a.engage?.rc) ?? "", ...Object.fromEntries(Object.entries(RC_LABEL).map(([k, l]) => [l, a.engage?.rc?.[k] ?? ""])),
+          반응수집시각: a.engage?.at ? a.engage.at.slice(0, 16).replace("T", " ") : "",
+        } : {}),
+        링크: articleUrl(a.oid, a.aid),
       })),
     }])
   );

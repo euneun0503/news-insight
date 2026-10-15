@@ -127,6 +127,14 @@ export async function loadTitles(days, oids) {
 }
 
 // 검색 키워드: 구글 급상승(기간 내 누적) + 네이버 검색량(기간 내 가장 최근 조회분)
+// 우리 매체 랭킹 기사의 댓글·공감 반응·추천 (data/engage/날짜.json) → { "oid_aid": {cm, re, rc, at} }
+export async function loadEngage(days) {
+  const docs = await Promise.all(days.map((d) => getJSON(`data/engage/${d}.json`)));
+  const out = {};
+  docs.forEach((doc) => doc?.items && Object.assign(out, doc.items));
+  return out;
+}
+
 export async function loadSearch(days) {
   // 검색 키워드는 '지금' 지표라, 어제·오늘을 보고 있으면 오늘 수집분까지 포함 (메타에 아직 없어도 파일을 직접 확인)
   const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
