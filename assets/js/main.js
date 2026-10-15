@@ -103,6 +103,7 @@ async function render() {
   }
   const isData = !!DATA_PAGES[page];
   $("#filterbar").hidden = !(isData || page === "issuedesk");
+  $("#btnReport").hidden = page !== "dashboard"; // 보고서 버튼은 뉴스통계 화면에서만
   renderBanners($("#bannerSlot"), BOARD, page === "dashboard" || (page === "board" && !param));
 
   const ctx = {
