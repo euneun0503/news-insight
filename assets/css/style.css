@@ -630,3 +630,6 @@ body.gated .topbar, body.gated .layout { display: none; }
 .idk-dl .input { padding: 4px 8px; font-size: 12.5px; }
 .idk-pill.auto { background: var(--line-2); color: var(--text-2); }
 .btn[hidden] { display: none; }
+.idk-item.top { background: #f6f7f9; border-color: #e6e9ee; }
+.idk-pill.top { background: #eceff3; color: var(--text-2); }
+.idk-sw { display: inline-block; width: 14px; height: 10px; border-radius: 3px; background: #f1f3f6; border: 1px solid #dfe3e9; margin-right: 6px; vertical-align: -1px; }

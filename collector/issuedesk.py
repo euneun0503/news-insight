@@ -1,7 +1,8 @@
 """이슈데스크 수집기 (GitHub Actions에서 실행)
 
 - 커뮤니티 인기글(실시간 커뮤니티 인기글 모음 trends.json)에서 최근 36시간 글을 모아
-  건강·문화·연예인·이슈로 나누고 반응(조회·추천·댓글) 순으로 골라 오늘 보고서에 더합니다.
+  건강·문화·연예인·이슈·스포츠·제약·바이오로 나누고 반응(조회·추천·댓글) 순으로 골라 오늘 보고서에 더합니다
+  (하루 200건 목표, 이미 채웠으면 새 글 30건까지).
 - 이미 있는 항목(같은 URL)은 반응 수치만 갱신하고, 사람이 쓴 기사 앵글은 그대로 둡니다.
 - ANTHROPIC_API_KEY 가 있으면 새 항목의 기사 앵글·확인할 것·추천도를 Claude가 작성합니다.
   없으면 반응 수치로 추천도를 매기고 앵글 칸은 '자동 수집'으로 둡니다.
@@ -19,12 +20,15 @@ KST = timezone(timedelta(hours=9))
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "issuedesk"
 TRENDS = "https://gumoyaz.github.io/korean-community-crawler/data/trends.json"
-MAX_NEW = int(os.environ.get("ISSUEDESK_MAX_NEW", "20"))
-MAX_PER_CAT = 8
+TARGET = int(os.environ.get("ISSUEDESK_TARGET", "200"))  # 하루 보고서 목표 건수
+MIN_NEW = 30  # 이미 목표를 채웠어도 다시 조회 때 새 글은 이만큼까지 더함
+MAX_PER_CAT = 45
 
+SPORTS = re.compile(r"축구|야구|농구|배구|골프|테니스|올림픽|월드컵|아시안게임|KBO|K리그|EPL|MLB|NBA|LPGA|PGA|UFC|프리미어리그|챔피언스리그|국가대표|대표팀|국대|감독|선수|구단|홈런|골\b|득점|우승|손흥민|이강인|김민재|오타니|김하성|이정후|홍명보|류현진|김연경|마라톤", re.I)
+PHARMA = re.compile(r"제약|바이오|신약|임상|FDA|허가|셀트리온|삼성바이오|한미약품|유한양행|녹십자|대웅|종근당|SK바이오|알테오젠|에이비엘|휴젤|헬스케어|의료기기|디지털헬스|원격의료|비대면진료|치료제|백신\s?개발|약가|복제약|바이오시밀러", re.I)
 HEALTH = re.compile(r"건강|다이어트|살\s?빼|체중|비만|마운자로|위고비|병원|의사|간호|약국|약\b|처방|암\b|질환|증상|식단|영양|백신|독감|코로나|감기|수술|성형|운동|헬스|수면|커피|혈압|당뇨|치매|우울|정신과|탈모|임신|출산|생리|피부과|식약처|건보")
 CULTURE = re.compile(r"드라마|영화|예능|방송|시청률|넷플릭스|공연|전시|뮤지컬|책\b|소설|웹툰|여행|맛집|음식|식당|카페|메뉴|케이팝|K-?팝|노래|음원|앨범|패션|트렌드|광고|유행")
-EXCLUDE = re.compile(r"\.gif|\.mp4|ㅋㅋㅋ|짤|레전드\s*$|후방|ㄷㄷㄷㄷ|언더붑|노출|ㅗ|새끼|씨발|시발|ㅅㅂ|병신|존나|ㅈㄴ|성욕|야동|섹스|19금|\bav\b|av배우|코스피|국장|삼전|하닉|주가|증권|주식|코인|비트코인|홍명보|국대|축구|야구|가슴|멤버십|쿠폰|특가|핫딜|건담|중국인|동남아|멘헤라|발작", re.I)
+EXCLUDE = re.compile(r"\.gif|\.mp4|ㅋㅋㅋ|짤|레전드\s*$|후방|ㄷㄷㄷㄷ|언더붑|노출|ㅗ|새끼|씨발|시발|ㅅㅂ|병신|존나|ㅈㄴ|성욕|야동|섹스|19금|\bav\b|av배우|코스피|국장|삼전|하닉|주가|증권|주식|코인|비트코인|토토|배팅|베팅|가슴|멤버십|쿠폰|특가|핫딜|건담|중국인|동남아|멘헤라|발작", re.I)
 STOP = {"근황","이유","논란","해명글","올린","jpg","jpeg","png","mp4","gif","진짜","요즘","오늘","최근","ㄷㄷ","관련","이후","뒤","벌어진","일"}
 
 
@@ -71,6 +75,10 @@ def parse_date(s):
 
 def classify(p):
     t = p.get("title", "")
+    if PHARMA.search(t):
+        return "제약·바이오"
+    if SPORTS.search(t):
+        return "스포츠"
     if p.get("is_celeb"):
         return "연예인"
     if HEALTH.search(t) or p.get("is_beauty"):
@@ -93,6 +101,7 @@ def claude_angles(items):
     key = os.environ.get("ANTHROPIC_API_KEY")
     if not key or not items:
         return False
+    items = items[:120]  # 한 번에 너무 길어지지 않게
     lines = [f'{i}. [{x["category"]}] {x["title"]} ({x["source"]}, 조회 {x.get("views")}, 추천 {x.get("likes")}, 댓글 {x.get("comments")})' for i, x in enumerate(items)]
     prompt = (
         "한국 언론사 온라인 이슈팀 데스크입니다. 아래 커뮤니티 인기글 각각에 대해 기사화 관점을 정리해 주세요.\n"
@@ -102,7 +111,7 @@ def claude_angles(items):
     )
     body = json.dumps({
         "model": os.environ.get("ISSUEDESK_MODEL", "claude-sonnet-5-5"),
-        "max_tokens": 6000,
+        "max_tokens": 16000,
         "messages": [{"role": "user", "content": prompt}],
     }).encode("utf-8")
     req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body, headers={
@@ -173,6 +182,7 @@ def main():
 
     cands.sort(key=lambda c: -c[0])
     per_cat, new = {}, []
+    max_new = max(MIN_NEW, TARGET - len(doc["items"]))
     def attach(p):  # 이미 있는 이슈와 같은 글이면 그 항목의 관련 글로 붙임
         for it in doc["items"] + new:
             if same_issue(it["title"], p["title"]):
@@ -188,7 +198,7 @@ def main():
             merged += 1
             continue
         cat = classify(p)
-        if per_cat.get(cat, 0) >= MAX_PER_CAT or len(new) >= MAX_NEW or hval < 1:
+        if per_cat.get(cat, 0) >= MAX_PER_CAT or len(new) >= max_new or hval < 0.6:
             continue
         per_cat[cat] = per_cat.get(cat, 0) + 1
         new.append({

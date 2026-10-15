@@ -4,7 +4,9 @@
 import { esc, h, dotDate, toast, kstDateTime } from "./util.js";
 import { canRunIssuedesk, runIssuedesk, issuedeskLastRun } from "./admin.js";
 
-const CAT_COLOR = { 건강: "#0f9d74", 문화: "#b7791f", 연예인: "#c2417f", 이슈: "#2563eb" };
+const CAT_COLOR = { 건강: "#0f9d74", "제약·바이오": "#0e7490", 문화: "#b7791f", 연예인: "#c2417f", 스포츠: "#ea580c", 이슈: "#2563eb" };
+const TOP_N = 20; // 분야별 추천 상위 N건은 연한 회색 배경
+const heat = (i) => (i.views || 0) / 10000 + (i.likes || 0) / 300 + (i.comments || 0) / 60;
 const stars = (n) => "★".repeat(Math.max(0, Math.min(5, n || 0)));
 const num = (n) => (n == null || n === "" ? "" : Number(n).toLocaleString("ko-KR"));
 const kstISO = (off = 0) => new Date(Date.now() + 9 * 3600e3 + off * 864e5).toISOString().slice(0, 10);
@@ -23,7 +25,12 @@ const loadDocs = async (days) => (await Promise.all(days.map((d) => getJSON(`dat
 function flatten(docs) {
   const issues = [], press = [], homes = {};
   for (const d of docs) {
-    (d.items || []).forEach((i) => issues.push({ ...i, day: d.day, _new: isNew(i.date || d.day) }));
+    const mine = (d.items || []).map((i) => ({ ...i, day: d.day, _new: isNew(i.date || d.day) }));
+    // 보고서(날짜)·분야별로 추천도 → 반응 순 상위 TOP_N 표시
+    const byCat = {};
+    mine.forEach((i) => (byCat[i.category] ||= []).push(i));
+    Object.values(byCat).forEach((arr) => arr.slice().sort((a, b) => (b.score || 0) - (a.score || 0) || heat(b) - heat(a)).slice(0, TOP_N).forEach((i) => (i._top = true)));
+    issues.push(...mine);
     (d.press?.agencies || []).forEach((a) => {
       if (!homes[a.name]) homes[a.name] = a.home;
       (a.items || []).forEach((i) => press.push({ ...i, agency: a.name, home: a.home, day: d.day, _new: isNew(i.date) }));
@@ -84,14 +91,14 @@ export async function issuedesk(el, r, ctx) {
     const counts = {}, nc = {};
     issues.forEach((i) => { counts[i.category] = (counts[i.category] || 0) + 1; if (i._new) nc[i.category] = (nc[i.category] || 0) + 1; });
     chips(groups, counts, nc);
-    $w("#idkLegendExtra").textContent = "";
-    const list = issues.filter((i) => filter === "전체" || i.category === filter).sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : (b.score || 0) - (a.score || 0)));
+    $w("#idkLegendExtra").innerHTML = `<i class="idk-sw"></i>연한 회색 배경 = 분야별 추천 상위 ${TOP_N}건`;
+    const list = issues.filter((i) => filter === "전체" || i.category === filter).sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : (b._top ? 1 : 0) - (a._top ? 1 : 0) || (b.score || 0) - (a.score || 0) || heat(b) - heat(a)));
     if (!list.length) return ($w("#idkBody").innerHTML = `<div class="empty">해당 분야 항목이 없습니다.</div>`);
     $w("#idkBody").innerHTML = `<div class="idk-list">${list.map((i) => {
       const nums = [["조회", num(i.views)], ["추천", num(i.likes)], ["댓글", num(i.comments)]].filter((x) => x[1]).map((x) => `${x[0]} ${x[1]}`).join(" · ");
       const prs = (i.press || []).map((p) => `<a href="${esc(safe(p.url))}" target="_blank" rel="noopener">${esc(p.title)}</a>`).join("");
-      return `<article class="idk-item ${i._new ? "" : "old"}">
-        <div class="idk-top"><span class="idk-cat" style="color:${CAT_COLOR[i.category] || "var(--muted)"}">${esc(i.category)}</span><span class="idk-src">${esc(i.source || "")}</span><span class="idk-src">${dotDate(i.date || i.day)}${i.date_note ? " (게시일 미확인)" : ""}</span>${i.auto ? '<span class="idk-pill auto">자동 수집</span>' : i.covered ? '<span class="idk-pill cov">기보도·후속</span>' : '<span class="idk-pill">미보도 추정</span>'}<span class="idk-score">${stars(i.score)}</span></div>
+      return `<article class="idk-item ${i._new ? "" : "old"} ${i._top ? "top" : ""}">
+        <div class="idk-top"><span class="idk-cat" style="color:${CAT_COLOR[i.category] || "var(--muted)"}">${esc(i.category)}</span><span class="idk-src">${esc(i.source || "")}</span><span class="idk-src">${dotDate(i.date || i.day)}${i.date_note ? " (게시일 미확인)" : ""}</span>${i.auto ? '<span class="idk-pill auto">자동 수집</span>' : i.covered ? '<span class="idk-pill cov">기보도·후속</span>' : '<span class="idk-pill">미보도 추정</span>'}${i._top ? '<span class="idk-pill top">분야 추천 상위</span>' : ""}<span class="idk-score">${stars(i.score)}</span></div>
         <h4><i class="idk-dot ${i._new ? "new" : ""}"></i><a href="${esc(safe(i.url))}" target="_blank" rel="noopener">${esc(i.title)}</a></h4>
         ${nums ? `<div class="idk-nums num">${nums}</div>` : ""}
         ${i.auto ? "" : `<dl><dt>기사 앵글</dt><dd>${esc(i.angle || "")}</dd>${i.check ? `<dt>확인할 것</dt><dd>${esc(i.check)}</dd>` : ""}${prs ? `<dt>관련 보도</dt><dd class="idk-press">${prs}</dd>` : ""}</dl>`}
@@ -129,7 +136,7 @@ export async function issuedesk(el, r, ctx) {
     const f = flatten(docs);
     const span = list.length > 1 ? `${list[0]}~${list[list.length - 1]}` : list[0];
     const sheets = [
-      { name: "커뮤니티 이슈", rows: f.issues.map((i) => ({ 보고서날짜: i.day, 게시일: i.date || "", 신규: i._new ? "신규" : "", 분야: i.category, 추천도: i.score, 제목: i.title, 출처: i.source, 조회: i.views ?? "", 추천: i.likes ?? "", 댓글: i.comments ?? "", 구분: i.auto ? "자동 수집" : i.covered ? "기보도" : "미보도 추정", 기사앵글: i.auto ? "" : i.angle, 확인할것: i.check || "", 링크: i.url, 관련보도: (i.press || []).map((p) => `${p.title} ${p.url}`).join(" | ") })) },
+      { name: "커뮤니티 이슈", rows: f.issues.map((i) => ({ 보고서날짜: i.day, 게시일: i.date || "", 신규: i._new ? "신규" : "", 추천상위: i._top ? "상위" : "", 분야: i.category, 추천도: i.score, 제목: i.title, 출처: i.source, 조회: i.views ?? "", 추천: i.likes ?? "", 댓글: i.comments ?? "", 구분: i.auto ? "자동 수집" : i.covered ? "기보도" : "미보도 추정", 기사앵글: i.auto ? "" : i.angle, 확인할것: i.check || "", 링크: i.url, 관련보도: (i.press || []).map((p) => `${p.title} ${p.url}`).join(" | ") })) },
       { name: "보도자료", rows: f.press.map((i) => ({ 보고서날짜: i.day, 자료일자: i.date || "", 신규: i._new ? "신규" : "", 기관: i.agency, 추천도: i.score, 제목: i.title, 출처: i.source || "", 기사앵글: i.angle || "", 링크: i.url, 기관게시판: i.home || "" })) },
     ];
     // 지금 보고 있는 탭의 시트만 내려받기
