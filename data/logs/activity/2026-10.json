@@ -134,7 +134,16 @@
    "ev": "이슈데스크 다시 조회",
    "detail": "",
    "ua": "Chrome · Windows"
+  },
+  {
+   "t": "2026-10-15T04:28:58.417Z",
+   "id": "health",
+   "name": "마스터",
+   "role": "master",
+   "ev": "이슈데스크 다시 조회",
+   "detail": "",
+   "ua": "Chrome · Windows"
   }
  ],
- "updated_at": "2026-10-15T04:06:26.463Z"
+ "updated_at": "2026-10-15T04:28:58.867Z"
 }
