@@ -23,11 +23,14 @@ from store import DATA, now_kst
 DIR = DATA / "contacts"
 _lock = threading.Lock()
 _pending = {}  # (oid, name, email) -> {"d": 처음 본 날짜, "a": aid, "n": 횟수}
+# 30분 수집과 과거 채우기가 동시에 돌아도 서로의 파일을 덮지 않도록 파일을 나눔 (과거 채우기: "bf-")
+PREFIX = ""
 
 NAME = r"[가-힣]{2,4}"
 ROLE = r"(?:기자|특파원|객원기자|선임기자|전문기자|수습기자|기상캐스터|인턴기자)"
 EMAIL = r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
 BAD = {"press", "webmaster", "help", "news", "jebo", "master", "admin", "info", "contact", "privacy", "report"}
+TITLE = set("선임 전문 객원 수석 수습 인턴 의학전문 전문의 기상 대기자 편집 사진 영상 디지털".split())
 UI = set("닫기 열기 확인 취소 수정 입력 공유 저장 삭제 이전 다음 전체 댓글 구독 로그인 메뉴 검색 알림 본문 기사 이메일 제보".split())
 
 
@@ -43,14 +46,17 @@ def extract(soup, html=""):
     body = soup.select_one("#dic_area, #newsct_article, #articeBody, #articleBody, article")
     if body:
         texts.append(body.get_text(" ", strip=True))
-    pat1 = re.compile(r"(" + NAME + r")\s?(?:[가-힣]{2,6}\s)?" + ROLE + r"\s*[\(\[<]?\s*(" + EMAIL + r")")
+    # '홍길동 기자 x@y' / '홍길동 의학전문 기자 x@y' / 앞 낱말이 붙은 '서울 홍길동 기자 x@y' 모두 이름을 바르게 잡도록 앞뒤 두 낱말을 받아 고름
+    pat1 = re.compile(r"(?<![가-힣])(" + NAME + r")\s?(?:([가-힣]{2,6})\s)?" + ROLE + r"\s*[\(\[<]?\s*(" + EMAIL + r")")
     pat2 = re.compile(r"(" + EMAIL + r")\s*[\)\]>]?\s*(" + NAME + r")\s?" + ROLE)
     nb = len(texts) - (1 if body else 0)  # 앞쪽은 바이라인 태그, 마지막은 본문
     for i, t in enumerate(texts):
         t = re.sub(r"\s+", " ", t)
         hit = False
         for m in pat1.finditer(t):
-            add(m.group(1), m.group(2)); hit = True
+            first, mid, mail = m.group(1), m.group(2), m.group(3)
+            name = first if not mid or mid in TITLE or len(mid) > 4 else mid
+            add(name, mail); hit = True
         if not hit and i < nb:  # '이메일 홍길동 기자' 순서는 짧은 바이라인 태그 안에서만 (본문에서는 앞 기자 메일과 섞임)
             for m in pat2.finditer(t):
                 add(m.group(2), m.group(1))
@@ -97,7 +103,7 @@ def flush(log=print):
             log(f"   ✉️ 기자 이메일 {len(pend)}건 확인 — 암호화 열쇠가 아직 없어 저장하지 않음 (관리자 화면에서 마스터가 설정)")
         return None
     pub_pem = json.loads(keyf.read_text("utf-8"))["pem"]
-    seenf = DIR / "seen.json"
+    seenf = DIR / f"{PREFIX}seen.json"
     seen = json.loads(seenf.read_text("utf-8")) if seenf.exists() else {}
     new = []
     for (oid, n, e), x in pend.items():
@@ -110,11 +116,11 @@ def flush(log=print):
             new.append({"o": oid, "n": n, "e": e, "d": x["d"], "a": x["a"]})
     if new:
         now = now_kst()
-        f = DIR / f"{now:%Y-%m}.jsonl"
+        f = DIR / f"{PREFIX}{now:%Y-%m}.jsonl"
         DIR.mkdir(parents=True, exist_ok=True)
         with open(f, "a", encoding="utf-8") as fp:
             fp.write(json.dumps({"at": now.isoformat(timespec="seconds"), **_encrypt(pub_pem, new)}) + "\n")
-        idxf = DIR / "index.json"
+        idxf = DIR / f"{PREFIX}index.json"
         idx = json.loads(idxf.read_text("utf-8")) if idxf.exists() else {"files": []}
         if f.name not in idx["files"]:
             idx["files"].append(f.name)

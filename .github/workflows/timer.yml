@@ -26,13 +26,22 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           end=$(( $(date +%s) + 340*60 ))
-          last=""
+          last=""; last2=""
           while [ $(date +%s) -lt $end ]; do
             H=$(TZ=Asia/Seoul date +%-H); M=$(TZ=Asia/Seoul date +%-M); key="$H:$M"
             mode=""
             if [[ $H -eq 7 && $M -eq 30 ]]; then mode=full
             elif [[ $M -eq 10 && ( $((H % 3)) -eq 0 || $H -lt 3 ) ]]; then mode=full
             elif [[ $M -eq 10 || $M -eq 40 ]]; then mode=light
+            fi
+            # GitHub 예약 실행은 1~2시간 늦는 일이 잦아서, 정해진 시각 작업도 이 타이머가 직접 실행
+            if [[ $H -eq 6 && $M -eq 40 && "$key" != "$last2" ]]; then
+              echo "$(TZ=Asia/Seoul date '+%F %T') 이슈 데스크 기본 수집"
+              gh workflow run issuedesk.yml -R "$REPO" || echo "실행 요청 실패"; last2="$key"
+            fi
+            if [[ $H -eq 2 && $M -eq 30 && "$key" != "$last2" ]]; then
+              echo "$(TZ=Asia/Seoul date '+%F %T') 전날 기사 반응 수집"
+              gh workflow run engage.yml -R "$REPO" || echo "실행 요청 실패"; last2="$key"
             fi
             if [[ -n "$mode" && "$key" != "$last" ]]; then
               echo "$(TZ=Asia/Seoul date '+%F %T') 수집 실행: $mode"

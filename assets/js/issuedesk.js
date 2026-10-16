@@ -93,7 +93,9 @@ export async function issuedesk(el, r, ctx) {
     issues.forEach((i) => { counts[i.category] = (counts[i.category] || 0) + 1; if (i._new) nc[i.category] = (nc[i.category] || 0) + 1; });
     chips(groups, counts, nc);
     $w("#idkLegendExtra").innerHTML = `<i class="idk-sw"></i>연한 회색 배경 = 분야별 추천 상위 ${TOP_N}건 ${info("idkTop")}`;
-    const list = issues.filter((i) => filter === "전체" || i.category === filter).sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : (b._top ? 1 : 0) - (a._top ? 1 : 0) || (b.score || 0) - (a.score || 0) || heat(b) - heat(a)));
+    // 최신 자료 우선: 게시일(없으면 보고서 날짜) 최신순 → 같은 날 안에서 분야 추천 상위 → 추천도 → 반응
+    const dkey = (i) => (/^\d{4}-\d{2}-\d{2}$/.test(i.date || "") ? i.date : i.day);
+    const list = issues.filter((i) => filter === "전체" || i.category === filter).sort((a, b) => (dkey(a) < dkey(b) ? 1 : dkey(a) > dkey(b) ? -1 : 0) || (a.day < b.day ? 1 : a.day > b.day ? -1 : 0) || (b._top ? 1 : 0) - (a._top ? 1 : 0) || (b.score || 0) - (a.score || 0) || heat(b) - heat(a));
     if (!list.length) return ($w("#idkBody").innerHTML = `<div class="empty">해당 분야 항목이 없습니다.</div>`);
     $w("#idkBody").innerHTML = `<div class="idk-list">${list.map((i) => {
       const nums = [["조회", num(i.views)], ["추천", num(i.likes)], ["댓글", num(i.comments)]].filter((x) => x[1]).map((x) => `${x[0]} ${x[1]}`).join(" · ");
@@ -173,7 +175,12 @@ export async function issuedesk(el, r, ctx) {
       if (now?.updatedAt && now.updatedAt !== before) {
         clearInterval(polling);
         toast("이슈 데스크를 새로 고쳤습니다");
-        if (location.hash.startsWith("#/issuedesk")) window.dispatchEvent(new HashChangeEvent("hashchange"));
+        // 새로 모은 오늘 자료가 보이도록 어제~오늘로 이동
+        if (location.hash.startsWith("#/issuedesk")) {
+          const t = kstISO(0), y = kstISO(-1);
+          const next = `#/issuedesk?s=${y}&e=${t}${tab === "press" ? "&tab=press" : ""}`;
+          if (location.hash === next) window.dispatchEvent(new HashChangeEvent("hashchange")); else location.hash = next;
+        }
         return;
       }
       let run = null;

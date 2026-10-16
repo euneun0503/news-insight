@@ -136,7 +136,9 @@ async function render() {
       $("#rangeNote").innerHTML = `조회 기간: <b>${rangeLabel(R)}</b>${missing > 0 ? ` · <span class="warn">수집되지 않은 날 ${missing}일 포함</span>` : ""}${endMissing ? ` · <span class="warn">${R.e.replace(/-/g, ".")} 랭킹은 아직 수집 전${lastRank ? ` (가장 최근 수집: ${lastRank.replace(/-/g, ".")})` : ""}</span>` : ""}${R.agg.kwAllDays ? ` · <span class="warn">${LIMITS.articleDays}일 넘는 기간의 키워드·기자 통계는 매체 설정과 관계없이 수집 매체 전체 기준</span>` : ""}${R.n > LIMITS.articleDays ? ` · 기사 단위 목록은 ${LIMITS.articleDays}일(랭킹은 ${LIMITS.rankingDays}일) 이하에서 전체 제공` : ""}`;
       await DATA_PAGES[page](view, R, ctx);
     } else if (page === "issuedesk") {
-      const r = currentRange(q);
+      // 기간을 따로 고르지 않았으면(메뉴로 들어온 경우) 오늘 보고서부터 보이게: 어제~오늘
+      const today = kstToday();
+      const r = q.s && q.e ? currentRange(q) : { s: addDays(today, -1), e: today };
       syncFilter(r);
       $("#rangeNote").innerHTML = `조회 기간: <b>${r.s.replace(/-/g, ".")} ~ ${r.e.replace(/-/g, ".")}</b> · 이슈 데스크 보고서는 매일 아침 쌓입니다`;
       view.innerHTML = '<div class="loading">이슈 데스크 불러오는 중…</div>';

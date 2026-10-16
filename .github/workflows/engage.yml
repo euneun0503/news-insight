@@ -41,6 +41,8 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.debug }}" ]; then python collector/engage_daily.py --debug "${{ github.event.inputs.debug }}"; fi
           if [ -n "${{ github.event.inputs.debug }}" ]; then exit 0; fi
+          Y=$(TZ=Asia/Seoul date -d yesterday +%F); T=$(TZ=Asia/Seoul date +%F)
+          if [ "${{ github.event_name }}" = "schedule" ] && grep -q "\"updated_at\":\"$T" "data/engage/$Y.json" 2>/dev/null; then echo "오늘 새벽 수집은 이미 했음"; exit 0; fi
           python collector/engage_daily.py "${{ github.event.inputs.day }}"
       - name: 저장소에 커밋
         run: |

@@ -1264,10 +1264,18 @@ export async function loadContacts() {
   if (!pk.text) throw new Error("아직 암호화 열쇠가 없습니다. '기자 메일 암호화 설정'을 먼저 해 주세요.");
   const raw = await unseal(await aesKey(fromB64(session.k)), JSON.parse(pk.text));
   const priv = await crypto.subtle.importKey("pkcs8", raw, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["decrypt"]);
-  const idx = JSON.parse((await getFile("data/contacts/index.json")).text || '{"files":[]}');
-  const seen = JSON.parse((await getFile("data/contacts/seen.json")).text || "{}");
+  // 30분 수집분(index.json) + 과거 채우기분(bf-index.json)
+  const files = [], seen = {};
+  for (const p of ["", "bf-"]) {
+    const idx = JSON.parse((await getFile(`data/contacts/${p}index.json`)).text || '{"files":[]}');
+    files.push(...(idx.files || []));
+    for (const [h, v] of Object.entries(JSON.parse((await getFile(`data/contacts/${p}seen.json`)).text || "{}"))) {
+      const o = seen[h];
+      seen[h] = o ? { c: (o.c || 1) + (v.c || 1), f: [o.f, v.f].filter(Boolean).sort()[0], l: [o.l, v.l].filter(Boolean).sort().pop() } : v;
+    }
+  }
   const out = new Map();
-  for (const f of idx.files || []) {
+  for (const f of files) {
     const { text } = await getFile(`data/contacts/${f}`);
     for (const line of (text || "").split("\n").filter(Boolean)) {
       try {

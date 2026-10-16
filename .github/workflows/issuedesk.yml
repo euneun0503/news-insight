@@ -29,7 +29,10 @@ jobs:
       - name: 이슈데스크 수집
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python collector/issuedesk.py
+        run: |
+          # 예약 실행이 늦게 도착했을 때(타이머가 이미 06:40에 돌린 경우) 다시 돌지 않음
+          if [ "${{ github.event_name }}" = "schedule" ] && [ -f "data/issuedesk/$(TZ=Asia/Seoul date +%F).json" ]; then echo "오늘 기본 수집은 이미 했음"; exit 0; fi
+          python collector/issuedesk.py
       - name: 저장소에 커밋
         run: |
           git config user.name "news-collector[bot]"
