@@ -226,12 +226,18 @@ function uaSummary() {
 }
 const kstYM = () => kstToday().slice(0, 7);
 let logQ = Promise.resolve();
+// 이 브라우저의 공인 IP (사이트에 서버가 없어 IP 확인 서비스에 한 번 물어봄, 실패하면 빈 값)
+let ipP = null;
+const myIP = () => (ipP ||= fetch("https://api.ipify.org?format=json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : {})).then((j) => j.ip || "").catch(() => ""));
 function writeLog(kind, entries) {
   if (!session || !entries.length) return logQ;
   const path = `data/logs/${kind}/${kstYM()}.json`;
   const R = session.R, token = session.token, by = who();
   if (!token) return logQ;
-  logQ = logQ.then(() =>
+  logQ = logQ.then(async () => {
+    const ip = await myIP();
+    entries.forEach((e) => { if (e.ip == null) e.ip = ip; });
+  }).then(() =>
     updateJSON(path, () => ({ items: [] }), (d) => { d.items ||= []; d.items.push(...entries); }, `${kind === "access" ? "접속" : "활동"} 기록 — ${by}`, R, token)
   ).catch((e) => console.warn("기록 저장 실패", e));
   return logQ;
@@ -644,8 +650,8 @@ async function logView(pane, kind) {
     const w = $("#who", card).value, ev = $("#ev", card).value, q = $("#q", card).value.trim();
     const rows = items.filter((e) => (!w || e.id === w) && (!ev || e.ev === ev) && (!q || `${e.detail} ${e.name} ${e.id}`.includes(q)));
     $("#lb", card).innerHTML = rows.length
-      ? `<div class="form-hint" style="margin-bottom:6px">${rows.length}건</div><div class="table-wrap"><table class="t"><thead><tr><th>일시</th><th>아이디</th><th>이름</th><th>구분</th>${kind === "activity" ? "<th>내용</th>" : "<th>메모</th>"}<th>기기</th></tr></thead><tbody>${rows
-          .map((e) => `<tr><td class="num" style="white-space:nowrap">${kstDateTime(e.t)}</td><td>${esc(e.id)}</td><td>${esc(e.name || "")}${e.role === "master" ? ' <span class="tag orange">M</span>' : ""}</td><td><span class="tag ${/실패|삭제|중지/.test(e.ev) ? "new" : /로그아웃/.test(e.ev) ? "gray" : "blue"}">${esc(e.ev)}</span></td><td class="title">${esc(e.detail || "")}</td><td class="form-hint" style="white-space:nowrap">${esc(e.ua || "")}</td></tr>`)
+      ? `<div class="form-hint" style="margin-bottom:6px">${rows.length}건</div><div class="table-wrap"><table class="t"><thead><tr><th>일시</th><th>아이디</th><th>이름</th><th>구분</th>${kind === "activity" ? "<th>내용</th>" : "<th>메모</th>"}<th>기기</th><th>IP</th></tr></thead><tbody>${rows
+          .map((e) => `<tr><td class="num" style="white-space:nowrap">${kstDateTime(e.t)}</td><td>${esc(e.id)}</td><td>${esc(e.name || "")}${e.role === "master" ? ' <span class="tag orange">M</span>' : ""}</td><td><span class="tag ${/실패|삭제|중지/.test(e.ev) ? "new" : /로그아웃/.test(e.ev) ? "gray" : "blue"}">${esc(e.ev)}</span></td><td class="title">${esc(e.detail || "")}</td><td class="form-hint" style="white-space:nowrap">${esc(e.ua || "")}</td><td class="num" style="white-space:nowrap">${esc(e.ip || "-")}</td></tr>`)
           .join("")}</tbody></table></div>`
       : '<div class="empty">기록이 없습니다.</div>';
   };
@@ -667,7 +673,7 @@ async function logView(pane, kind) {
   $("#q", card).addEventListener("input", draw);
   $("#csv", card).addEventListener("click", () => {
     const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const lines = [["일시(KST)", "아이디", "이름", "구분", "내용", "기기"].join(",")].concat(items.map((e) => [kstDateTime(e.t), e.id, e.name, e.ev, e.detail, e.ua].map(cell).join(",")));
+    const lines = [["일시(KST)", "아이디", "이름", "구분", "내용", "기기", "IP"].join(",")].concat(items.map((e) => [kstDateTime(e.t), e.id, e.name, e.ev, e.detail, e.ua, e.ip || ""].map(cell).join(",")));
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));
     a.download = `${title}_${$("#ym", card).value}.csv`;
