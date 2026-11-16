@@ -2,7 +2,7 @@
  "https://news.naver.com/main/officeList.naver": {
   "status": 200,
   "final": "https://news.naver.com/main/officeList.naver",
-  "len": 341090
+  "len": 341704
  },
  "https://media.naver.com/channel/settings": {
   "status": 200,
@@ -10,41 +10,41 @@
   "len": 364806
  },
  "count_check": {
-  "346 2026-11-01": {
+  "346 2026-11-08": {
    "fast": 2,
-   "detail": 26
+   "detail": 24
   },
-  "346 2026-10-31": {
-   "fast": 2,
-   "detail": 25
-  },
-  "346 2026-10-30": {
-   "fast": 2,
-   "detail": 65
-  },
-  "296 2026-11-01": {
-   "fast": 2,
-   "detail": 31
-  },
-  "296 2026-10-31": {
+  "346 2026-11-07": {
    "fast": 2,
    "detail": 23
   },
-  "296 2026-10-30": {
+  "346 2026-11-06": {
    "fast": 2,
-   "detail": 51
+   "detail": 60
   },
-  "001 2026-11-01": {
+  "296 2026-11-08": {
    "fast": 2,
-   "detail": 1056
+   "detail": 20
   },
-  "001 2026-10-31": {
+  "296 2026-11-07": {
    "fast": 2,
-   "detail": 510
+   "detail": 22
   },
-  "001 2026-10-30": {
+  "296 2026-11-06": {
    "fast": 2,
-   "detail": 2399
+   "detail": 47
+  },
+  "001 2026-11-08": {
+   "fast": 2,
+   "detail": 1581
+  },
+  "001 2026-11-07": {
+   "fast": 2,
+   "detail": 836
+  },
+  "001 2026-11-06": {
+   "fast": 2,
+   "detail": 2341
   }
  },
  "pages_found": 87,
